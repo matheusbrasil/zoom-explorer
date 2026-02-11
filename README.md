@@ -7,6 +7,48 @@ The user-friendly patch manager for the Zoom MS+ pedals is here: [sym.bios.is](h
 
 All numeric values listed below are in hexadecimal.
 
+
+## Electron desktop app (Windows-first)
+
+The Electron integration has been refactored to match the Electron Forge boilerplate layout:
+
+```
+/electron
+  main.js
+  preload.js
+/forge.config.js
+```
+
+### Prerequisites
+
+* Windows 10/11
+* Node.js 20+
+* USB-MIDI capable Zoom pedal connected through USB
+
+### Install dependencies
+
+```
+npm install
+```
+
+### Run desktop app (Electron Forge)
+
+```
+npm run electron:start
+```
+
+### Build a Windows installer/package
+
+```
+npm run electron:make:win
+```
+
+### MIDI over USB in Electron
+
+The desktop app startup enables Chromium Web MIDI + Web MIDI SysEx and allows `midi` / `midiSysex` permissions in the Electron session, including MIDI device permission handling. This is required so Zoom Explorer can discover and control Zoom pedals through USB MIDI ports on Windows.
+
+If the pedal does not appear, close any other MIDI app that might lock the port, then reconnect the pedal USB cable.
+
 ## Device IDs
 
 * 6E = Zoom MS-50G+
