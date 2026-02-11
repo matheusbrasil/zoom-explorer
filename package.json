@@ -2,11 +2,14 @@
   "name": "zoom-explorer",
   "version": "0.0.1",
   "description": "Tools for exploring the Zoom MS Plus series of effect pedals",
-  "main": "index.js",
+  "main": "electron/main.js",
   "scripts": {
     "build": "tsc && npm run build:copy-public",
     "build:copy-public": "copyfiles -f ./public/** ./dist",
-    "type": "tsc --noEmit"
+    "type": "tsc --noEmit",
+    "electron:start": "npm run build && electron-forge start",
+    "electron:package": "npm run build && electron-forge package",
+    "electron:make:win": "npm run build && electron-forge make --platform win32"
   },
   "repository": {
     "type": "git",
@@ -24,7 +27,11 @@
   "homepage": "https://github.com/thammer/zoom-explorer#readme",
   "devDependencies": {
     "@types/wicg-file-system-access": "^2023.10.5",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "electron": "^33.2.1",
+    "@electron-forge/cli": "^7.6.1",
+    "@electron-forge/maker-squirrel": "^7.6.1",
+    "@electron-forge/maker-zip": "^7.6.1"
   },
   "dependencies": {
     "copyfiles": "^2.4.1"
