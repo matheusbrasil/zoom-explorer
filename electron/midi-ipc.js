@@ -15,6 +15,7 @@ const CHANNELS = {
   GET_SETTINGS: 'app:get-settings',
   SET_SETTINGS: 'app:set-settings',
   GET_APP_VERSION: 'app:get-version',
+  RELAUNCH_APP: 'app:relaunch',
   MIDI_MESSAGE_EVENT: 'midi:message',
 };
 
@@ -128,6 +129,13 @@ function createIpcHandlers(app) {
   ipcMain.handle(CHANNELS.GET_SETTINGS, async () => store.getSettings());
   ipcMain.handle(CHANNELS.SET_SETTINGS, async (_event, settings) => store.setSettings(settings));
   ipcMain.handle(CHANNELS.GET_APP_VERSION, async () => app.getVersion());
+  ipcMain.handle(CHANNELS.RELAUNCH_APP, async () => {
+    setImmediate(() => {
+      app.relaunch();
+      app.exit(0);
+    });
+    return true;
+  });
 }
 
 module.exports = {

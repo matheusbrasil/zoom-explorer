@@ -26,17 +26,15 @@
   },
   "homepage": "https://github.com/thammer/zoom-explorer#readme",
   "devDependencies": {
-    "@types/wicg-file-system-access": "^2023.10.5",
-    "typescript": "^5.4.5",
-    "electron": "^33.2.1",
     "@electron-forge/cli": "^7.6.1",
     "@electron-forge/maker-squirrel": "^7.6.1",
-    "@electron-forge/maker-zip": "^7.6.1"
+    "@electron-forge/maker-zip": "^7.6.1",
+    "@types/wicg-file-system-access": "^2023.10.5",
+    "electron": "^33.2.1",
+    "typescript": "^5.4.5"
   },
   "dependencies": {
-    "copyfiles": "^2.4.1"
-  },
-  "optionalDependencies": {
+    "copyfiles": "^2.4.1",
     "midi": "^2.0.0"
   }
 }

@@ -32,4 +32,5 @@ export type ZoomExplorerAPI = {
   getSettings: () => Promise<Record<string, unknown>>;
   setSettings: (settings: Record<string, unknown>) => Promise<Record<string, unknown>>;
   getAppVersion: () => Promise<string>;
+  relaunchApp: () => Promise<boolean>;
 };

@@ -43,12 +43,16 @@ function getZoomCommandName(data: Uint8Array) : string
 function updateZoomDevicesTable(zoomDevices: ZoomDevice[]) {
   let midiDevicesTable: HTMLTableElement = document.getElementById("midiDevicesTable") as HTMLTableElement;
 
+  while (midiDevicesTable.rows.length > 1) {
+    midiDevicesTable.deleteRow(1);
+  }
+
   for (let index = 0; index < zoomDevices.length; index++) {
     let info = zoomDevices[index].deviceInfo;
     let deviceName = zoomDevices[index].deviceName;
     let version = ZoomDevice.getZoomVersionNumber(info.versionNumber);
 
-    let row = midiDevicesTable.insertRow(1);
+    let row = midiDevicesTable.insertRow(-1);
     let c;
     c = row.insertCell(-1); c.textContent = deviceName;
     c = row.insertCell(-1); c.textContent = bytesToHexString([info.familyCode[0]]);
@@ -60,6 +64,64 @@ function updateZoomDevicesTable(zoomDevices: ZoomDevice[]) {
     shouldLog(LogLevel.Info) && console.log(`  ${index + 1}: ${deviceName.padEnd(8)} OS v ${version} - input: ${info.inputName.padEnd(20)} output: ${info.outputName}`);
   };
 
+}
+
+function isLikelyZoomDevice(device: MIDIDeviceDescription): boolean
+{
+  if (device.manufacturerID[0] === 0x52) {
+    return true;
+  }
+  return isLikelyZoomPortName(`${device.deviceName} ${device.inputName} ${device.outputName}`);
+}
+
+function isLikelyZoomPortName(name: string): boolean
+{
+  const hint = name.toLowerCase();
+  return hint.includes("zoom") || hint.includes("ms-50") || hint.includes("ms-60") || hint.includes("ms-70") || hint.includes("ms-90") || hint.includes("ms-200") || hint.includes("g2 four") || hint.includes("b2 four");
+}
+
+function ensureMidiFallbackNoticeElements(): {
+  container: HTMLDivElement;
+  text: HTMLSpanElement;
+  retryButton: HTMLButtonElement;
+}
+{
+  let container = document.getElementById("midiFallbackNotice") as HTMLDivElement | null;
+  let text = document.getElementById("midiFallbackNoticeText") as HTMLSpanElement | null;
+  let retryButton = document.getElementById("retryMidiDetectionButton") as HTMLButtonElement | null;
+
+  if (container !== null && text !== null && retryButton !== null) {
+    return { container, text, retryButton };
+  }
+
+  container = document.createElement("div");
+  container.id = "midiFallbackNotice";
+  container.style.display = "none";
+  container.style.margin = "4px 8px 10px 8px";
+  container.style.padding = "8px 10px";
+  container.style.border = "1px solid #c95f00";
+  container.style.backgroundColor = "#fff3e8";
+  container.style.color = "#5d2f00";
+
+  text = document.createElement("span");
+  text.id = "midiFallbackNoticeText";
+  container.appendChild(text);
+
+  retryButton = document.createElement("button");
+  retryButton.id = "retryMidiDetectionButton";
+  retryButton.type = "button";
+  retryButton.textContent = "Procurar dispositivo MIDI";
+  retryButton.style.marginLeft = "8px";
+  container.appendChild(retryButton);
+
+  const content = document.getElementById("content");
+  if (content !== null && content.parentElement !== null) {
+    content.parentElement.insertBefore(container, content);
+  } else {
+    document.body.insertBefore(container, document.body.firstChild);
+  }
+
+  return { container, text, retryButton };
 }
 
 /**
@@ -142,86 +204,144 @@ function sendZoomCommandLong(device: DeviceID, deviceId: number, data: Uint8Arra
 async function start()
 {
   await downloadEffectMaps();
+  const fallbackAutoRelaunchTimeoutMs = 15_000;
+
+  const fallbackUi = ensureMidiFallbackNoticeElements();
+  const midiFallbackNotice = fallbackUi.container;
+  const midiFallbackNoticeText = fallbackUi.text;
+  const retryMidiDetectionButton = fallbackUi.retryButton;
+
+  let usingWebMidiFallback = midi instanceof MIDIProxyForWebMIDIAPI;
+  let fallbackStatusMessage = "";
+
+  const switchToWebMidiFallback = async (reason: string): Promise<boolean> => {
+    if (midi instanceof MIDIProxyForIPC) {
+      shouldLog(LogLevel.Warning) && console.warn(reason);
+      await midi.dispose().catch((err) => {
+        shouldLog(LogLevel.Warning) && console.warn(getExceptionErrorString(err, "while disposing native MIDI proxy before fallback"));
+      });
+    }
+    midi = new MIDIProxyForWebMIDIAPI();
+    usingWebMidiFallback = true;
+    return await midi.enable().catch((fallbackErr) => {
+      shouldLog(LogLevel.Info) && console.log(getExceptionErrorString(fallbackErr));
+      return false;
+    });
+  };
 
   let success = await midi.enable().catch( (reason) => {
     shouldLog(LogLevel.Info) && console.log(getExceptionErrorString(reason));
     return false;
   });
-  if (!success && midi instanceof MIDIProxyForIPC) {
-    shouldLog(LogLevel.Warning) && console.warn("Falling back to Web MIDI API proxy in renderer");
-    midi = new MIDIProxyForWebMIDIAPI();
-    success = await midi.enable().catch((reason) => {
-      shouldLog(LogLevel.Info) && console.log(getExceptionErrorString(reason));
-      return false;
-    });
+  if (success && midi instanceof MIDIProxyForIPC) {
+    const hasNativeInputPorts = midi.inputs.size > 0;
+    const hasNativeOutputPorts = midi.outputs.size > 0;
+    if (!hasNativeInputPorts || !hasNativeOutputPorts) {
+      success = await switchToWebMidiFallback(
+        `Native MIDI backend has incomplete port visibility (inputs=${midi.inputs.size}, outputs=${midi.outputs.size}). Falling back to Web MIDI API.`
+      );
+    }
   }
+  if (!success && midi instanceof MIDIProxyForIPC) {
+    success = await switchToWebMidiFallback("Falling back to Web MIDI API proxy in renderer");
+  }
+  usingWebMidiFallback = midi instanceof MIDIProxyForWebMIDIAPI;
   if (!success) {
     throw new Error("Unable to enable MIDI backend");
   }
-
-  let midiDeviceList: MIDIDeviceDescription[] = await getMIDIDeviceList(midi, midi.inputs, midi.outputs, 100, true); 
-
-  shouldLog(LogLevel.Info) && console.log("Got MIDI Device list:");
-  for (let i=0; i<midiDeviceList.length; i++)
-  {
-    let device = midiDeviceList[i];
-    shouldLog(LogLevel.Info) && console.log(`  ${JSON.stringify(device)}`)
+  if (usingWebMidiFallback) {
+    shouldLog(LogLevel.Warning) && console.warn("Running with Web MIDI fallback. Install native 'midi' dependency for best hotplug reliability.");
   }
 
-  let zoomMidiDevices = midiDeviceList.filter( (device) => device.manufacturerID[0] === 0x52);
+  const updateMidiFallbackNotice = (searching: boolean = false): void => {
+    const shouldShow = usingWebMidiFallback && zoomDevices.length === 0;
+    downloadPatchesButton.disabled = shouldShow;
+    mapEffectsButton.disabled = shouldShow;
 
-  zoomDevices = zoomMidiDevices.map( midiDevice => new ZoomDevice(midi, midiDevice));
+    midiFallbackNotice.style.display = shouldShow ? "block" : "none";
+    if (!shouldShow) {
+      return;
+    }
 
-  updateZoomDevicesTable(zoomDevices);
-  
-  
-  for (const device of zoomDevices)
-  {
+    const statusSuffix = fallbackStatusMessage.length > 0 ? ` ${fallbackStatusMessage}` : "";
+    if (searching) {
+      midiFallbackNoticeText.textContent = `Web MIDI fallback ativo. Verificando dispositivo MIDI...${statusSuffix}`;
+    } else {
+      midiFallbackNoticeText.textContent = `Web MIDI fallback ativo. Conecte o dispositivo via USB; o aplicativo vai buscar automaticamente.${statusSuffix}`;
+    }
+    retryMidiDetectionButton.style.display = "none";
+    retryMidiDetectionButton.disabled = searching;
+  };
+
+  const registerZoomDevice = async (device: ZoomDevice): Promise<void> => {
     await device.open();
     device.parameterEditEnable();
     device.addListener(handleMIDIDataFromZoom);
     device.addMemorySlotChangedListener(handleMemorySlotChangedEvent);
     device.autoUpdateScreens = true;
-    device.addScreenChangedListener(handleScreenChangedEvent)
+    device.addScreenChangedListener(handleScreenChangedEvent);
     device.autoRequestCurrentPatch = true;
     device.addCurrentPatchChangedListener(handleCurrentPatchChanged);
     device.addPatchChangedListener(handlePatchChanged);
     device.autoRequestProgramChange = true;
     device.addTempoChangedListener(handleTempoChanged);
-  };  
+  };
 
-  let zoomDevice = zoomDevices[0];
+  let midiDeviceList: MIDIDeviceDescription[] = await getMIDIDeviceList(midi, midi.inputs, midi.outputs, 100, true);
+
+  shouldLog(LogLevel.Info) && console.log("Got MIDI Device list:");
+  for (let i = 0; i < midiDeviceList.length; i++) {
+    let device = midiDeviceList[i];
+    shouldLog(LogLevel.Info) && console.log(`  ${JSON.stringify(device)}`);
+  }
+
+  let zoomMidiDevices = midiDeviceList.filter((device) => isLikelyZoomDevice(device));
+  zoomDevices = zoomMidiDevices.map((midiDevice) => new ZoomDevice(midi, midiDevice));
+  updateZoomDevicesTable(zoomDevices);
+  updateMidiFallbackNotice();
+
+  for (const device of zoomDevices) {
+    await registerZoomDevice(device);
+  }
+
+  let zoomDevice: ZoomDevice | undefined = zoomDevices[0];
+  let isRefreshingZoomDevices = false;
+  let waitForFirstDeviceTimer: ReturnType<typeof setInterval> | undefined;
+  let autoRelaunchForHotplugRequested = false;
+  let fallbackSearchStartedAtMs: number | undefined = undefined;
+  let fallbackAutoRelaunchTriggered = false;
+  let fallbackAutoRelaunchInProgress = false;
 
   patchEditor.setTextEditedCallback( (event: Event, type: string, initialValueString: string): boolean => {
-    return handlePatchEdited(currentZoomPatch, zoomDevice, zoomDevice.effectIDMap, event, type, initialValueString);
+    return handlePatchEdited(currentZoomPatch, zoomDevice, zoomDevice?.effectIDMap, event, type, initialValueString);
   });
 
   patchEditor.setMouseMovedCallback( (cell: HTMLTableCellElement, initialValueString: string, x: number, y: number) => {
-    handleMouseMoved(currentZoomPatch, zoomDevice, zoomDevice.effectIDMap, cell, initialValueString, x, y);
+    handleMouseMoved(currentZoomPatch, zoomDevice, zoomDevice?.effectIDMap, cell, initialValueString, x, y);
   });
   
   patchEditor.setMouseUpCallback( (cell: HTMLTableCellElement, initialValueString: string, x: number, y: number) => {
-    handleMouseUp(currentZoomPatch, zoomDevice, zoomDevice.effectIDMap, cell, initialValueString, x, y);
+    handleMouseUp(currentZoomPatch, zoomDevice, zoomDevice?.effectIDMap, cell, initialValueString, x, y);
   });
 
   patchEditor.setEffectSlotOnOffCallback((effectSlot: number, on: boolean) => {
-    handleEffectSlotOnOff(currentZoomPatch, zoomDevice, zoomDevice.effectIDMap, effectSlot, on);
+    handleEffectSlotOnOff(currentZoomPatch, zoomDevice, zoomDevice?.effectIDMap, effectSlot, on);
   });
 
   patchEditor.setEffectSlotMoveCallback((effectSlot: number, direction: "left" | "right") => {
-    handleEffectSlotMove(currentZoomPatch, zoomDevice, zoomDevice.effectIDMap, effectSlot, direction);
+    handleEffectSlotMove(currentZoomPatch, zoomDevice, zoomDevice?.effectIDMap, effectSlot, direction);
   });
 
   patchEditor.setEffectSlotAddCallback((effectSlot: number, direction: "left" | "right") => {
-    handleEffectSlotAdd(currentZoomPatch, zoomDevice, zoomDevice.effectIDMap, effectSlot, direction);
+    handleEffectSlotAdd(currentZoomPatch, zoomDevice, zoomDevice?.effectIDMap, effectSlot, direction);
   });
 
   patchEditor.setEffectSlotDeleteCallback((effectSlot: number) => {
-    handleEffectSlotDelete(currentZoomPatch, zoomDevice, zoomDevice.effectIDMap, effectSlot);
+    handleEffectSlotDelete(currentZoomPatch, zoomDevice, zoomDevice?.effectIDMap, effectSlot);
   });
 
   patchEditor.setEffectSlotSelectEffectCallback((effectSlot: number) => {
-    handleEffectSlotSelectEffect(currentZoomPatch, zoomDevice, zoomDevice.effectIDMap, effectSlot);
+    handleEffectSlotSelectEffect(currentZoomPatch, zoomDevice, zoomDevice?.effectIDMap, effectSlot);
   });
 
   zoomEffectSelector = new ZoomEffectSelector();
@@ -245,7 +365,154 @@ async function start()
   effectLists.set("MS-70CDR", buildEffectIDList("MS-70CDR"));
 
   zoomEffectSelector.setHeading("Select effect");
-  zoomEffectSelector.setEffectList(effectLists, zoomDevice.deviceName);
+  zoomEffectSelector.setEffectList(effectLists, zoomDevice?.deviceName ?? "MS-60B+");
+
+  const relaunchApplicationForHotplug = async (): Promise<void> => {
+    if (window.zoomExplorerAPI?.relaunchApp === undefined) {
+      shouldLog(LogLevel.Warning) && console.warn("Hotplug partial detection requires app relaunch, but relaunch API is unavailable.");
+      return;
+    }
+    try {
+      await window.zoomExplorerAPI.relaunchApp();
+    } catch (err) {
+      shouldLog(LogLevel.Warning) && console.warn(getExceptionErrorString(err, "while relaunching app after partial hotplug detection"));
+    }
+  };
+
+  const maybeForceFallbackRelaunch = async (): Promise<void> => {
+    if (!usingWebMidiFallback || zoomDevice !== undefined) {
+      return;
+    }
+    if (fallbackAutoRelaunchTriggered || fallbackAutoRelaunchInProgress) {
+      return;
+    }
+
+    const nowMs = Date.now();
+    if (fallbackSearchStartedAtMs === undefined) {
+      fallbackSearchStartedAtMs = nowMs;
+      return;
+    }
+
+    const elapsedMs = nowMs - fallbackSearchStartedAtMs;
+    if (elapsedMs < fallbackAutoRelaunchTimeoutMs) {
+      const secondsLeft = Math.max(1, Math.ceil((fallbackAutoRelaunchTimeoutMs - elapsedMs) / 1000));
+      fallbackStatusMessage = ` Busca automatica em andamento (${secondsLeft}s restantes).`;
+      return;
+    }
+
+    fallbackAutoRelaunchInProgress = true;
+    fallbackAutoRelaunchTriggered = true;
+    fallbackStatusMessage = " Busca automatica sem sucesso em 15s. Reiniciando aplicativo para nova tentativa...";
+    updateMidiFallbackNotice(false);
+    await relaunchApplicationForHotplug();
+  };
+
+  const refreshZoomDevices = async (source: "auto" | "manual" = "auto"): Promise<void> => {
+    if (isRefreshingZoomDevices) {
+      return;
+    }
+
+    isRefreshingZoomDevices = true;
+    updateMidiFallbackNotice(true);
+    try {
+      // Web MIDI fallback can miss hotplug updates in some Electron/Chromium combos unless access is refreshed.
+      if (midi instanceof MIDIProxyForWebMIDIAPI) {
+        await midi.enable().catch((reason) => {
+          shouldLog(LogLevel.Warning) && console.warn(getExceptionErrorString(reason, "while refreshing Web MIDI access"));
+          return false;
+        });
+      }
+
+      const latestMidiDeviceList = await getMIDIDeviceList(midi, midi.inputs, midi.outputs, 100, true);
+      const latestZoomDescriptors = latestMidiDeviceList.filter((device) => isLikelyZoomDevice(device));
+      const toKey = (device: { inputID: string; outputID: string }) => `${device.inputID}|${device.outputID}`;
+
+      const availableKeys = new Set(latestZoomDescriptors.map((device) => toKey(device)));
+      zoomDevices = zoomDevices.filter((device) => availableKeys.has(toKey(device.deviceInfo)));
+
+      const knownKeys = new Set(zoomDevices.map((device) => toKey(device.deviceInfo)));
+      const newDescriptors = latestZoomDescriptors.filter((device) => !knownKeys.has(toKey(device)));
+
+      for (const descriptor of newDescriptors) {
+        const newDevice = new ZoomDevice(midi, descriptor);
+        zoomDevices.push(newDevice);
+        await registerZoomDevice(newDevice);
+      }
+
+      if (zoomDevice !== undefined) {
+        const activeDeviceKey = toKey(zoomDevice.deviceInfo);
+        const activeStillAvailable = zoomDevices.some((device) => toKey(device.deviceInfo) === activeDeviceKey);
+        if (!activeStillAvailable) {
+          zoomDevice = zoomDevices[0];
+        }
+      } else if (zoomDevices.length > 0) {
+        zoomDevice = zoomDevices[0];
+      }
+
+      updateZoomDevicesTable(zoomDevices);
+
+      if (zoomDevice !== undefined) {
+        zoomEffectSelector?.setEffectList(effectLists, zoomDevice.deviceName);
+        if (waitForFirstDeviceTimer !== undefined) {
+          clearInterval(waitForFirstDeviceTimer);
+          waitForFirstDeviceTimer = undefined;
+        }
+        fallbackSearchStartedAtMs = undefined;
+        fallbackAutoRelaunchInProgress = false;
+        fallbackAutoRelaunchTriggered = false;
+        fallbackStatusMessage = "";
+      } else {
+        shouldLog(LogLevel.Info) && console.log("No Zoom MIDI devices detected yet. Waiting for USB connection.");
+        const now = new Date();
+        fallbackStatusMessage = ` Ultima busca: ${now.toLocaleTimeString()}.`;
+
+        if (midi instanceof MIDIProxyForIPC && !autoRelaunchForHotplugRequested) {
+          const inputNames = [...midi.inputs.values()].map((port) => port.name);
+          const outputNames = [...midi.outputs.values()].map((port) => port.name);
+          const hasZoomInput = inputNames.some((name) => isLikelyZoomPortName(name));
+          const hasZoomOutput = outputNames.some((name) => isLikelyZoomPortName(name));
+          if (hasZoomOutput && !hasZoomInput) {
+            autoRelaunchForHotplugRequested = true;
+            shouldLog(LogLevel.Warning) && console.warn(
+              `Zoom hotplug detected only as output (${outputNames.join(" | ")}). Relaunching app once to refresh MIDI input enumeration.`
+            );
+            setTimeout(() => {
+              void relaunchApplicationForHotplug();
+            }, 350);
+          }
+        }
+        await maybeForceFallbackRelaunch();
+      }
+    } catch (err) {
+      shouldLog(LogLevel.Warning) && console.warn(getExceptionErrorString(err, "while refreshing Zoom MIDI devices"));
+      const now = new Date();
+      fallbackStatusMessage = ` Erro na busca (${now.toLocaleTimeString()}).`;
+    } finally {
+      isRefreshingZoomDevices = false;
+      updateMidiFallbackNotice();
+    }
+  };
+
+  midi.addConnectionListener((_deviceHandle, _portType, state) => {
+    if (state === "connected" || state === "disconnected" || zoomDevice === undefined) {
+      void refreshZoomDevices();
+    }
+  });
+
+  if (zoomDevice === undefined) {
+    shouldLog(LogLevel.Warning) && console.warn("No Zoom device found on startup. Connect the pedal over USB and wait for auto-detection.");
+  }
+
+  waitForFirstDeviceTimer = setInterval(() => {
+    if (zoomDevice !== undefined) {
+      if (waitForFirstDeviceTimer !== undefined) {
+        clearInterval(waitForFirstDeviceTimer);
+        waitForFirstDeviceTimer = undefined;
+      }
+      return;
+    }
+    void refreshZoomDevices("auto");
+  }, usingWebMidiFallback ? 1500 : 2000);
 
   // shouldLog(LogLevel.Info) && console.log("Call and response start");
   // let callAndResponse = new Map<string, string>();
@@ -498,6 +765,21 @@ function sleepForAWhile(timeoutMilliseconds: number)
   });
 }
 
+function getPrimaryZoomDevice(showMessage: boolean = true): ZoomDevice | undefined
+{
+  const device = zoomDevices[0];
+  if (device !== undefined) {
+    return device;
+  }
+
+  const message = "No Zoom MIDI device is connected. Connect the pedal over USB and wait for detection.";
+  shouldLog(LogLevel.Warning) && console.warn(message);
+  if (showMessage) {
+    infoDialog.show(message);
+  }
+  return undefined;
+}
+
 let mappings: { [key: string]: EffectParameterMap; } | undefined;
 
 let mapEffectsButton: HTMLButtonElement = document.getElementById("mapEffectsButton") as HTMLButtonElement;
@@ -506,7 +788,10 @@ let isMappingEffects = false;
 
 mapEffectsButton.addEventListener("click", async (event) => {
 
-  let zoomDevice = zoomDevices[0];
+  let zoomDevice = getPrimaryZoomDevice();
+  if (zoomDevice === undefined) {
+    return;
+  }
 
   //     <p>This is only relevant for the G- and B-series pedals (from the AllZDL7 list), so if you have any other pedals, this mapping probably won't work. 
 
@@ -1129,7 +1414,10 @@ patchesTable.addEventListener("click", (event) => {
   let patchNumber = getPatchNumber(cell) - 1;
   shouldLog(LogLevel.Info) && console.log(`Patch number clicked: ${patchNumber}`);
 
-  let device = zoomDevices[0];
+  let device = getPrimaryZoomDevice();
+  if (device === undefined) {
+    return;
+  }
 
   device.setCurrentMemorySlot(patchNumber);
 
@@ -1140,15 +1428,16 @@ patchesTable.addEventListener("click", (event) => {
 
 async function updatePatchList()
 {
-  let device = zoomDevices[0];
+  let device = getPrimaryZoomDevice();
+  if (device === undefined) {
+    return;
+  }
   
   await device.updatePatchListFromPedal();
   updatePatchesTable(device);
 
   let currentMemorySlot = await device.getCurrentMemorySlotNumber();
   if (currentMemorySlot !== undefined) {
-
-    let device = zoomDevices[0];
 
     let selected = getCellForMemorySlot(device, "patchesTable", currentMemorySlot);
 
@@ -1291,7 +1580,10 @@ function updatePatchInfoTable(patch: ZoomPatch) {
   button.id = "loadCurrentPatchButton";
   button.className = "loadSaveButtons";
   button.addEventListener("click", (event) => {
-      let device = zoomDevices[0];
+      let device = getPrimaryZoomDevice();
+      if (device === undefined) {
+        return;
+      }
       device.requestCurrentPatch();
   });
   headerCell.appendChild(button);
@@ -1303,7 +1595,10 @@ function updatePatchInfoTable(patch: ZoomPatch) {
   button.className = "loadSaveButtons";
   button.addEventListener("click", (event) => {
     if (savePatch.ptcfChunk !== null || savePatch.MSOG !== null) {
-      let device = zoomDevices[0];
+      let device = getPrimaryZoomDevice();
+      if (device === undefined) {
+        return;
+      }
 
       let convertedPatch: ZoomPatch | undefined = undefined;
       if (device.deviceName.includes("MS-70CDR+") && savePatch.MSOG !== null) {
@@ -1343,7 +1638,10 @@ function updatePatchInfoTable(patch: ZoomPatch) {
         }
         let memorySlot = getPatchNumber(lastSelected) - 1;
 
-        let device = zoomDevices[0];
+        let device = getPrimaryZoomDevice();
+        if (device === undefined) {
+          return;
+        }
 
         let nameForPatchInSlot = "";
         if (memorySlot < device.patchList.length) {
@@ -1366,7 +1664,10 @@ function updatePatchInfoTable(patch: ZoomPatch) {
   button.id = "savePatchToDiskButton";
   button.className = "loadSaveButtons";
   button.addEventListener("click", async (event) => {
-    let device = zoomDevices[0];
+    let device = getPrimaryZoomDevice();
+    if (device === undefined) {
+      return;
+    }
     let [fileEnding, shortFileEnding, fileDescription] = device.getSuggestedFileEndingForPatch();
     let suggestedName = savePatch.name.trim().replace(/[ ]{2,}/gi," ") + "." + fileEnding;
     if (savePatch.ptcfChunk !== null && savePatch.ptcfChunk.length > 0) {
@@ -1391,7 +1692,10 @@ function updatePatchInfoTable(patch: ZoomPatch) {
   button.id = "loadPatchFromDiskButton";
   button.className = "loadSaveButtons";
   button.addEventListener("click", async (event) => {
-    let zoomDevice = zoomDevices[0];
+    let zoomDevice = getPrimaryZoomDevice();
+    if (zoomDevice === undefined) {
+      return;
+    }
     let [fileEnding, shortFileEnding, fileDescription] = zoomDevice.getSuggestedFileEndingForPatch();
     let data: Uint8Array | undefined;
     let filename: string | undefined;
@@ -1433,7 +1737,10 @@ function updatePatchInfoTable(patch: ZoomPatch) {
   button.id = "loadPatchFromTextButton";
   button.className = "loadSaveButtons";
   button.addEventListener("click", async (event) => {
-    let zoomDevice = zoomDevices[0];
+    let zoomDevice = getPrimaryZoomDevice();
+    if (zoomDevice === undefined) {
+      return;
+    }
 
     currentZoomPatchToConvert = undefined;
 

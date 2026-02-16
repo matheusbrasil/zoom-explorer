@@ -20,6 +20,8 @@ export class MIDIProxyForIPC extends MIDIProxy {
   private midiMessageListenerMap = new Map<DeviceID, ListenerType[]>();
   private connectionStateChangeListeners = new Array<ConnectionListenerType>();
   private unsubscribeMidi: (() => void) | undefined;
+  private portRefreshInterval: ReturnType<typeof setInterval> | undefined;
+  private isRefreshingPorts = false;
 
   constructor(api: ZoomExplorerAPI) {
     super();
@@ -46,8 +48,33 @@ export class MIDIProxyForIPC extends MIDIProxy {
         this.onMIDIMessage(payload.inPortId, data, payload.timeStamp);
       });
     }
+
+    this.startPortRefreshPolling();
     this.enabled = true;
     return true;
+  }
+
+  async dispose(): Promise<void> {
+    if (this.portRefreshInterval) {
+      clearInterval(this.portRefreshInterval);
+      this.portRefreshInterval = undefined;
+    }
+
+    if (this.unsubscribeMidi) {
+      this.unsubscribeMidi();
+      this.unsubscribeMidi = undefined;
+    }
+
+    try {
+      await this.api.disconnectMidi();
+    } catch (error) {
+      shouldLog(LogLevel.Warning) && console.warn(`Failed to disconnect MIDI ports during IPC proxy dispose: ${String(error)}`);
+    }
+
+    this.inputMap.clear();
+    this.outputMap.clear();
+    this.isRefreshingPorts = false;
+    this.enabled = false;
   }
 
   isOutputConnected(id: DeviceID): boolean {
@@ -181,7 +208,6 @@ export class MIDIProxyForIPC extends MIDIProxy {
       return;
     }
     this.inputMap.set(deviceHandle, { ...current, connection });
-    this.emitConnectionEvent(deviceHandle, "input", "connected");
   }
 
   private updateOutputConnection(deviceHandle: DeviceID, connection: "open" | "closed"): void {
@@ -190,12 +216,74 @@ export class MIDIProxyForIPC extends MIDIProxy {
       return;
     }
     this.outputMap.set(deviceHandle, { ...current, connection });
-    this.emitConnectionEvent(deviceHandle, "output", "connected");
   }
 
   private emitConnectionEvent(deviceHandle: DeviceID, portType: PortType, state: DeviceState): void {
     for (const listener of this.connectionStateChangeListeners) {
       listener(deviceHandle, portType, state);
+    }
+  }
+
+  private startPortRefreshPolling(): void {
+    if (this.portRefreshInterval) {
+      return;
+    }
+
+    this.portRefreshInterval = setInterval(() => {
+      void this.refreshPortsFromMain();
+    }, 1000);
+  }
+
+  private async refreshPortsFromMain(): Promise<void> {
+    if (this.isRefreshingPorts) {
+      return;
+    }
+
+    this.isRefreshingPorts = true;
+    try {
+      const ports = await this.api.listMidiPorts();
+      const nextInputs = new Map<DeviceID, DeviceInfo>(ports.inputs.map((d) => [d.id, d]));
+      const nextOutputs = new Map<DeviceID, DeviceInfo>(ports.outputs.map((d) => [d.id, d]));
+
+      this.emitPortDelta(this.inputMap, nextInputs, "input");
+      this.emitPortDelta(this.outputMap, nextOutputs, "output");
+
+      this.inputMap = nextInputs;
+      this.outputMap = nextOutputs;
+    } catch (error) {
+      shouldLog(LogLevel.Warning) && console.warn(`Failed to refresh MIDI ports from IPC: ${String(error)}`);
+    } finally {
+      this.isRefreshingPorts = false;
+    }
+  }
+
+  private emitPortDelta(
+    previous: Map<DeviceID, DeviceInfo>,
+    next: Map<DeviceID, DeviceInfo>,
+    portType: PortType,
+  ): void {
+    for (const [deviceHandle, previousInfo] of previous) {
+      const nextInfo = next.get(deviceHandle);
+      const removed = nextInfo === undefined;
+      const replaced = nextInfo !== undefined && nextInfo.name !== previousInfo.name;
+      if (removed || replaced) {
+        if (portType === "input") {
+          this.midiMessageListenerMap.delete(deviceHandle);
+        }
+        this.emitConnectionEvent(deviceHandle, portType, "disconnected");
+      }
+    }
+
+    for (const [deviceHandle, nextInfo] of next) {
+      const previousInfo = previous.get(deviceHandle);
+      const added = previousInfo === undefined;
+      const replaced = previousInfo !== undefined && previousInfo.name !== nextInfo.name;
+      if (added || replaced) {
+        if (portType === "input") {
+          this.ensureInputListenerList(deviceHandle);
+        }
+        this.emitConnectionEvent(deviceHandle, portType, "connected");
+      }
     }
   }
 }

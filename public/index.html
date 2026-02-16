@@ -387,6 +387,18 @@
         padding: 1px 2px 1px 2px;
       }
 
+      #midiFallbackNotice {
+        display: none;
+        margin: 4px 8px 10px 8px;
+        padding: 8px 10px;
+        border: 1px solid #c95f00;
+        background-color: #fff3e8;
+        color: #5d2f00;
+      }
+      #midiFallbackNotice button {
+        margin-left: 8px;
+      }
+
       .effectSelectorContainer {
         width:fit-content;
         border: 1px solid black;
@@ -480,6 +492,10 @@
     <!-- For www.waveformer.net <div w3-include-html="../navbar.html"></div> -->
     <h1>Zoom Explorer by Waveformer</h1>
     <div class="source"><a href="https://github.com/thammer/zoom-explorer">Source code on github</a></div>
+    <div id="midiFallbackNotice">
+      <span id="midiFallbackNoticeText"></span>
+      <button id="retryMidiDetectionButton" type="button">Procurar dispositivo MIDI</button>
+    </div>
 
     <div id="content">
       <table id="midiDevicesTable">
