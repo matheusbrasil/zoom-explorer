@@ -1,4 +1,5 @@
 import { MIDIProxyForWebMIDIAPI } from "./MIDIProxyForWebMIDIAPI.js";
+import { MIDIProxyForIPC } from "./MIDIProxyForIPC.js";
 import { DeviceID, IMIDIProxy, MessageType } from "./midiproxy.js";
 import { getChannelMessage, getMIDIDeviceList, isMIDIIdentityResponse, isSysex } from "./miditools.js";
 import { getExceptionErrorString, partialArrayMatch, bytesToHexString, hexStringToUint8Array, getNumberFromBits, crc32, partialArrayStringMatch, eight2seven, seven2eight, bytesWithCharactersToString, compareBuffers, setBitsFromNumber, numberToHexString } from "./tools.js";
@@ -49,12 +50,12 @@ function updateZoomDevicesTable(zoomDevices: ZoomDevice[]) {
 
     let row = midiDevicesTable.insertRow(1);
     let c;
-    c = row.insertCell(-1); c.innerHTML = deviceName;
-    c = row.insertCell(-1); c.innerHTML = bytesToHexString([info.familyCode[0]]);
-    c = row.insertCell(-1); c.innerHTML = version.toString();
-    c = row.insertCell(-1); c.innerHTML = info.inputName;
-    c = row.insertCell(-1); c.innerHTML = info.outputName;
-    c = row.insertCell(-1); c.innerHTML = bytesToHexString(info.identityResponse, " ");
+    c = row.insertCell(-1); c.textContent = deviceName;
+    c = row.insertCell(-1); c.textContent = bytesToHexString([info.familyCode[0]]);
+    c = row.insertCell(-1); c.textContent = version.toString();
+    c = row.insertCell(-1); c.textContent = info.inputName;
+    c = row.insertCell(-1); c.textContent = info.outputName;
+    c = row.insertCell(-1); c.textContent = bytesToHexString(info.identityResponse, " ");
 
     shouldLog(LogLevel.Info) && console.log(`  ${index + 1}: ${deviceName.padEnd(8)} OS v ${version} - input: ${info.inputName.padEnd(20)} output: ${info.outputName}`);
   };
@@ -144,8 +145,19 @@ async function start()
 
   let success = await midi.enable().catch( (reason) => {
     shouldLog(LogLevel.Info) && console.log(getExceptionErrorString(reason));
-    return;
+    return false;
   });
+  if (!success && midi instanceof MIDIProxyForIPC) {
+    shouldLog(LogLevel.Warning) && console.warn("Falling back to Web MIDI API proxy in renderer");
+    midi = new MIDIProxyForWebMIDIAPI();
+    success = await midi.enable().catch((reason) => {
+      shouldLog(LogLevel.Info) && console.log(getExceptionErrorString(reason));
+      return false;
+    });
+  }
+  if (!success) {
+    throw new Error("Unable to enable MIDI backend");
+  }
 
   let midiDeviceList: MIDIDeviceDescription[] = await getMIDIDeviceList(midi, midi.inputs, midi.outputs, 100, true); 
 
@@ -629,13 +641,13 @@ function updateMidiMonitorTable(device: MIDIDeviceDescription, data: Uint8Array,
   let table: HTMLTableElement = document.getElementById("midiMonitorTable") as HTMLTableElement;
   let row = table.insertRow(1);
   let c;
-  c = row.insertCell(-1); c.innerHTML = messageCounter.toString();
-  c = row.insertCell(-1); c.innerHTML = device.deviceName; // FIXME: This doesn't work with unique device names.
-  c = row.insertCell(-1); c.innerHTML = bytesToHexString([data[0]]); c.style.color = color[command - 8];
-  c = row.insertCell(-1); c.innerHTML = bytesToHexString([data[1]]);
-  c = row.insertCell(-1); c.innerHTML = bytesToHexString([data[2]]); c.id = "value"; c.style.backgroundSize = (data[2] / 127 * 100) + "%";
-  c = row.insertCell(-1); c.innerHTML = MessageType[messageType];
-  c = row.insertCell(-1); c.innerHTML = data.length.toString();
+  c = row.insertCell(-1); c.textContent = messageCounter.toString();
+  c = row.insertCell(-1); c.textContent = device.deviceName; // FIXME: This doesn't work with unique device names.
+  c = row.insertCell(-1); c.textContent = bytesToHexString([data[0]]); c.style.color = color[command - 8];
+  c = row.insertCell(-1); c.textContent = bytesToHexString([data[1]]);
+  c = row.insertCell(-1); c.textContent = bytesToHexString([data[2]]); c.id = "value"; c.style.backgroundSize = (data[2] / 127 * 100) + "%";
+  c = row.insertCell(-1); c.textContent = MessageType[messageType];
+  c = row.insertCell(-1); c.textContent = data.length.toString();
 
   let documentHeight = Math.max(document.body.scrollHeight, document.body.offsetHeight,
     document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);
@@ -788,8 +800,8 @@ function updateSysexMonitorTable(device: MIDIDeviceDescription, data: Uint8Array
 
   let headerSpan = getChildWithIDThatStartsWith(headerCell.children, "sysexHeader") as HTMLSpanElement;
   // FIXME: This doesn't use unique deviceNames. Consider having a uniqueDeviceName in the device properties
-  headerSpan.innerHTML = `<b>Message #${dataset.messageNumber} from ${dataset.device.deviceName} [${bytesToHexString([dataset.device.familyCode[0]])}]` +
-  ` type "${dataTypeString}" [${dataType1} ${dataType2}] length ${sysexLength}</b> &nbsp;&nbsp;`;
+  headerSpan.textContent = `Message #${dataset.messageNumber} from ${dataset.device.deviceName} [${bytesToHexString([dataset.device.familyCode[0]])}]` +
+  ` type "${dataTypeString}" [${dataType1} ${dataType2}] length ${sysexLength}`;
 
   let current = dataset.current;
   let previous = dataset.previous;    
@@ -1214,11 +1226,11 @@ function updatePatchesTable(device: ZoomDevice)
     let patch = device.patchList[i];
     row = patchesTable.rows[1 + i % numPatchesPerRow];
     bodyCell = row.cells[Math.floor(i / numPatchesPerRow) * 2];
-    bodyCell.innerHTML = `${i + 1}`;
+    bodyCell.textContent = `${i + 1}`;
     bodyCell.dataset.memorySlot = `${i}`;
     bodyCell = row.cells[Math.floor(i / numPatchesPerRow) * 2 + 1];
     let name = patch.nameName != null ? patch.nameName : patch.name;
-    bodyCell.innerHTML = `${name}`;
+    bodyCell.textContent = `${name}`;
     bodyCell.dataset.memorySlot = `${i}`;
   }
 }
@@ -1629,7 +1641,7 @@ function updatePatchInfoTable(patch: ZoomPatch) {
 
   previousPatchInfoString = patchInfoString;
 
-  bodyCell.innerHTML = htmlPatchInfoString;
+  bodyCell.textContent = patchInfoString;
 }
 
 function loadFromSysex(sysexString: string, zoomDevice: ZoomDevice, filename: string = "")
@@ -1814,7 +1826,7 @@ function handlePatchEdited(zoomPatch: ZoomPatch | undefined, zoomDevice: ZoomDev
           zoomDevice?.setCurrentEffectSlot(effectSlot);
           updatePatchInfoTable(zoomPatch);
         }
-        cell.innerHTML = ZoomDevice.getStringFromRawParameterValueAndMap(effectIDMap, effectID, parameterNumber, rawValue);
+        cell.textContent = ZoomDevice.getStringFromRawParameterValueAndMap(effectIDMap, effectID, parameterNumber, rawValue);
         setPatchParameter(zoomDevice, zoomPatch, "effectSettings", [effectSlot, "parameters", parameterNumber, rawValue], "effectSettings");
       }
     } 
@@ -1856,7 +1868,7 @@ function handleMouseMoved(zoomPatch: ZoomPatch | undefined, zoomDevice: ZoomDevi
 
     if (newRawValue !== currentRawValue) {
       let newValueString = ZoomDevice.getStringFromRawParameterValueAndMap(effectIDMap, effectID, parameterNumber, newRawValue);
-      cell.innerHTML = newValueString;
+      cell.textContent = newValueString;
       patchEditor.updateValueBar(cell, newRawValue, maxValue);
       shouldLog(LogLevel.Info) && console.log(`Changing value for cell.id = ${cell.id} from ${currentValueString} (${currentRawValue}) to ${newValueString} (${newRawValue})`);
       setPatchParameter(zoomDevice, zoomPatch, "effectSettings", [effectSlot, "parameters", parameterNumber, newRawValue], "effectSettings");
@@ -2136,6 +2148,14 @@ function testEffectSlotPattern()
   }
 }
 
+function createMIDIProxy(): IMIDIProxy
+{
+  if (window.zoomExplorerAPI !== undefined) {
+    return new MIDIProxyForIPC(window.zoomExplorerAPI);
+  }
+  return new MIDIProxyForWebMIDIAPI();
+}
+
 
 let previousEditScreenCollection: ZoomScreenCollection | undefined = undefined;
 let lastChangedEditScreenCollection: ZoomScreenCollection | undefined = undefined;
@@ -2145,7 +2165,7 @@ let confirmDialog = new ConfirmDialog("confirmDialog", "confirmLabel", "confirmB
 let textInputDialog = new TextInputDialog("textInputDialog", "textInputLabel", "textInput", "textInputConfirmButton");
 let infoDialog = new InfoDialog("infoDialog", "infoLabel", "infoOKButton");
 let messageCounter: number = 0;
-let midi: IMIDIProxy = new MIDIProxyForWebMIDIAPI();
+let midi: IMIDIProxy = createMIDIProxy();
 
 // map from data length to previous and current data, used for comparing messages
 let sysexMap = new Map<number, {previous: Uint8Array, current: Uint8Array, device: MIDIDeviceDescription, messageNumber: number}>(); 

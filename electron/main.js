@@ -1,7 +1,16 @@
 const path = require('node:path');
+const os = require('node:os');
 const { app, BrowserWindow, session } = require('electron');
+const { createIpcHandlers } = require('./midi-ipc');
+
+const isWSL =
+  process.platform === 'linux' &&
+  (Boolean(process.env.WSL_DISTRO_NAME) || os.release().toLowerCase().includes('microsoft'));
 
 app.commandLine.appendSwitch('enable-blink-features', 'WebMidi,WebMidiSysex');
+if (isWSL) {
+  app.commandLine.appendSwitch('no-sandbox');
+}
 
 function allowMidiPermissions() {
   const ses = session.defaultSession;
@@ -30,7 +39,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      sandbox: !isWSL,
     },
   });
 
@@ -39,6 +48,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   allowMidiPermissions();
+  createIpcHandlers(app);
   createWindow();
 
   app.on('activate', () => {
