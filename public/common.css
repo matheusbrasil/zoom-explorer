@@ -1,0 +1,94 @@
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
+}
+body {
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.8em;
+}
+.titleContainer {
+  margin-left: 20px;
+  margin-right: 20px;
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 0fr;
+}
+.sitename {
+  text-align: center;
+  font-family: 'Jolly Lodger';
+  font-size: 7em;
+  font-weight: 100;
+  line-height: 0.9;
+}
+.version {
+  margin-left: auto;
+  margin-right: 20 px;
+  margin-top: 10px;
+  width:fit-content;            
+  text-align: left;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 400;
+  font-size: 1.0em;
+}
+.version a:link {
+  color:black;
+  text-decoration: none;
+}
+.version a:visited {
+  color:black;
+  text-decoration: none;
+}
+.version a:hover {
+  color: blue;
+  text-decoration:none;
+}
+.version > a > span {
+  position: relative;
+  top: 0.25em;
+}
+.donate {
+  position:fixed;
+  right: 20px;
+  margin-left: auto;
+  margin-top: 0.4em;
+  width:fit-content;
+}
+.byWaveformer {
+  text-align: center;
+  font-family: 'Roboto', sans-serif;
+  font-size: 1.75em;
+  font-weight: 600;
+  line-height: 0.1;
+  margin: 0px 0px 0px 3.5em;
+}
+.byWaveformer a:link {
+  color:black;
+  text-decoration: none;
+}
+.byWaveformer a:visited {
+  color:black;
+  text-decoration: none;
+}
+.byWaveformer a:hover {
+  color: blue;
+  text-decoration:none;
+}
+
+.subtitle {
+  padding-top: 0.8em;
+  text-align: center;
+  font-weight: 400;
+  font-size: 1.3em;
+}
+
+p#contact {
+  text-align: center;
+}
+
+#content {
+  padding: 0px;
+  overflow-x: auto;
+}
