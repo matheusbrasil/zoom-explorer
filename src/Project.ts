@@ -1,13 +1,12 @@
-// @ts-nocheck
 export class MIDIMapping {
-    device;
-    channel = 0;
-    ccNumber = 0;
-    min = 0;
-    max = 0;
-}
-export class Project {
-    name = "";
-    racks = new Array();
+  public device = "";
+  public channel = 0;
+  public ccNumber = 0;
+  public min = 0;
+  public max = 0;
 }
 
+export class Project {
+  public name = "";
+  public racks: unknown[] = [];
+}

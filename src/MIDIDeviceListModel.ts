@@ -1,162 +1,226 @@
-// @ts-nocheck
 import { LogLevel, shouldLog } from "./Logger.js";
+
 export class MIDIDeviceProperties {
-    deviceAvailable = false;
-    deviceOn = false;
-    filterMuteClock = true;
-    filterMuteCC = false;
-    filterMuteNote = false;
-    inputID = "";
-    deviceName = "";
-    inputName = "";
-    outputName = "";
-    manufacturerName = "";
-    familyCode = "";
-    modelNumber = "";
-    version = "";
-    constructor(object = undefined) {
-        if (object !== undefined) // See https://cassey.dev/til/2020-11-24-spread-object-properties-to-es6-class/
-            Object.assign(this, object);
+  public deviceAvailable = false;
+  public deviceOn = false;
+  public filterMuteClock = true;
+  public filterMuteCC = false;
+  public filterMuteNote = false;
+  public inputID = "";
+  public deviceName = "";
+  public inputName = "";
+  public outputName = "";
+  public manufacturerName = "";
+  public familyCode = "";
+  public modelNumber = "";
+  public version = "";
+
+  public constructor(object?: Partial<MIDIDeviceProperties>) {
+    if (object !== undefined) {
+      Object.assign(this, object);
     }
-    toJSON() {
-        return {
-            deviceName: this.deviceName,
-            deviceOn: this.deviceOn,
-            filterMuteClock: this.filterMuteClock,
-            filterMuteCC: this.filterMuteCC,
-            filterMuteNote: this.filterMuteNote,
-        };
-    }
-}
-export class MIDIDeviceListModel {
-    _showActivity = false;
-    _showActivityChangedListeners = [];
-    _deviceProperties = new Map();
-    _devicePropertiesChangedListeners = [];
-    _deviceOnChangedListeners = [];
-    _selectedDeviceName = "";
-    _selectedDeviceChangedListeners = [];
-    get deviceProperties() {
-        return this._deviceProperties;
-    }
-    setDeviceProperties(deviceName, properties) {
-        this._deviceProperties.set(deviceName, properties);
-        this.emitDevicePropertiesChannelChangedEvent(deviceName, properties, "set");
-    }
-    removeDevice(deviceName) {
-        let properties = this._deviceProperties.get(deviceName);
-        if (properties === undefined) {
-            shouldLog(LogLevel.Warning) && console.warn(`MIDIDeviceListModel: Attempting to remove device "${deviceName}", which is not found`);
-            return;
-        }
-        this._deviceProperties.delete(deviceName);
-        this.emitDevicePropertiesChannelChangedEvent(deviceName, properties, "remove");
-    }
-    addDevicePropertiesChangedListener(listener) {
-        this._devicePropertiesChangedListeners.push(listener);
-    }
-    removeDevicePropertiesChannelChangedListener(listener) {
-        this._devicePropertiesChangedListeners = this._devicePropertiesChangedListeners.filter((l) => l !== listener);
-    }
-    removeAllDevicePropertiesChannelChangedListeners() {
-        this._devicePropertiesChangedListeners = [];
-    }
-    emitDevicePropertiesChannelChangedEvent(deviceName, properties, operation) {
-        this._devicePropertiesChangedListeners.forEach((listener) => listener(this, deviceName, properties, operation));
-    }
-    setDeviceOn(deviceName, on) {
-        let properties = this._deviceProperties.get(deviceName);
-        if (properties === undefined) {
-            shouldLog(LogLevel.Warning) && console.warn(`MIDIDeviceListModel: Attempting to set on state for device "${deviceName}", which is not found`);
-            return;
-        }
-        properties.deviceOn = on;
-        this.emitDeviceOnChangedEvent(deviceName, on);
-    }
-    deviceIsOn(deviceName) {
-        let properties = this._deviceProperties.get(deviceName);
-        if (properties === undefined) {
-            shouldLog(LogLevel.Warning) && console.warn(`MIDIDeviceListModel: Attempting to get on state for device "${deviceName}", which is not found`);
-            return false;
-        }
-        return properties.deviceOn;
-    }
-    addDeviceOnChangedListener(listener) {
-        this._deviceOnChangedListeners.push(listener);
-    }
-    removeDeviceOnChangedListener(listener) {
-        this._deviceOnChangedListeners = this._deviceOnChangedListeners.filter((l) => l !== listener);
-    }
-    removeAllDeviceOnChangedListeners() {
-        this._deviceOnChangedListeners = [];
-    }
-    emitDeviceOnChangedEvent(deviceName, on) {
-        this._deviceOnChangedListeners.forEach((listener) => listener(this, deviceName, on));
-    }
-    get showActivity() {
-        return this._showActivity;
-    }
-    set showActivity(value) {
-        this._showActivity = value;
-        this.emitShowActivityChanged(value);
-    }
-    addShowActivityChangedListener(listener) {
-        this._showActivityChangedListeners.push(listener);
-    }
-    removeShowActivityChangedListener(listener) {
-        this._showActivityChangedListeners = this._showActivityChangedListeners.filter(l => l !== listener);
-    }
-    removeAllShowActivityChangedListeners() {
-        this._showActivityChangedListeners = [];
-    }
-    emitShowActivityChanged(showActivity) {
-        for (let listener of this._showActivityChangedListeners)
-            listener(this, showActivity);
-    }
-    get selectedDeviceName() {
-        return this._selectedDeviceName;
-    }
-    set selectedDeviceName(deviceName) {
-        if (deviceName === this._selectedDeviceName)
-            return;
-        this._selectedDeviceName = deviceName;
-        this.emitSelectedDeviceChanged(deviceName);
-    }
-    addSelectedDeviceChangedListener(listener) {
-        this._selectedDeviceChangedListeners.push(listener);
-    }
-    removeSelectedDeviceChangedListener(listener) {
-        this._selectedDeviceChangedListeners = this._selectedDeviceChangedListeners.filter(l => l !== listener);
-    }
-    removeAllSelectedDeviceChangedListeners() {
-        this._selectedDeviceChangedListeners = [];
-    }
-    emitSelectedDeviceChanged(deviceName) {
-        this._selectedDeviceChangedListeners.forEach(listener => listener(this, deviceName));
-    }
-    toJSON() {
-        return {
-            selectedDeviceName: this.selectedDeviceName,
-            showActivity: this.showActivity,
-            deviceProperties: Object.fromEntries(this._deviceProperties)
-        };
-    }
-    storeToJSON() {
-        return JSON.stringify(this);
-    }
-    setFromJSON(json) {
-        while (this._deviceProperties.size > 0)
-            this.removeDevice(this._deviceProperties.keys().next().value);
-        let model = JSON.parse(json);
-        this.showActivity = model.showActivity ?? false;
-        this.selectedDeviceName = model.selectedDeviceName ?? "";
-        if (Object.hasOwn(model, "deviceProperties")) {
-            let deviceProperties = new Map(Object.entries(model.deviceProperties));
-            for (let [deviceName, propertiesObject] of deviceProperties) {
-                let properties = new MIDIDeviceProperties(propertiesObject);
-                this.setDeviceProperties(deviceName, properties);
-            }
-        }
-    }
+  }
+
+  public toJSON(): Pick<MIDIDeviceProperties, "deviceName" | "deviceOn" | "filterMuteClock" | "filterMuteCC" | "filterMuteNote"> {
+    return {
+      deviceName: this.deviceName,
+      deviceOn: this.deviceOn,
+      filterMuteClock: this.filterMuteClock,
+      filterMuteCC: this.filterMuteCC,
+      filterMuteNote: this.filterMuteNote,
+    };
+  }
 }
 
+export type DevicePropertiesOperation = "set" | "remove";
+export type DevicePropertiesChangedListener = (
+  model: MIDIDeviceListModel,
+  deviceName: string,
+  properties: MIDIDeviceProperties,
+  operation: DevicePropertiesOperation,
+) => void;
+export type DeviceOnChangedListener = (model: MIDIDeviceListModel, deviceName: string, on: boolean) => void;
+export type ShowActivityChangedListener = (model: MIDIDeviceListModel, showActivity: boolean) => void;
+export type SelectedDeviceChangedListener = (model: MIDIDeviceListModel, deviceName: string) => void;
+
+export interface MIDIDeviceListModelJSON {
+  selectedDeviceName: string;
+  showActivity: boolean;
+  deviceProperties: Record<string, MIDIDeviceProperties>;
+}
+
+export class MIDIDeviceListModel {
+  private _showActivity = false;
+  private _showActivityChangedListeners: ShowActivityChangedListener[] = [];
+  private _deviceProperties = new Map<string, MIDIDeviceProperties>();
+  private _devicePropertiesChangedListeners: DevicePropertiesChangedListener[] = [];
+  private _deviceOnChangedListeners: DeviceOnChangedListener[] = [];
+  private _selectedDeviceName = "";
+  private _selectedDeviceChangedListeners: SelectedDeviceChangedListener[] = [];
+
+  public get deviceProperties(): Map<string, MIDIDeviceProperties> {
+    return this._deviceProperties;
+  }
+
+  public setDeviceProperties(deviceName: string, properties: MIDIDeviceProperties): void {
+    this._deviceProperties.set(deviceName, properties);
+    this.emitDevicePropertiesChannelChangedEvent(deviceName, properties, "set");
+  }
+
+  public removeDevice(deviceName: string): void {
+    const properties = this._deviceProperties.get(deviceName);
+    if (properties === undefined) {
+      shouldLog(LogLevel.Warning) && console.warn(`MIDIDeviceListModel: Attempting to remove device "${deviceName}", which is not found`);
+      return;
+    }
+
+    this._deviceProperties.delete(deviceName);
+    this.emitDevicePropertiesChannelChangedEvent(deviceName, properties, "remove");
+  }
+
+  public addDevicePropertiesChangedListener(listener: DevicePropertiesChangedListener): void {
+    this._devicePropertiesChangedListeners.push(listener);
+  }
+
+  public removeDevicePropertiesChannelChangedListener(listener: DevicePropertiesChangedListener): void {
+    this._devicePropertiesChangedListeners = this._devicePropertiesChangedListeners.filter((currentListener) => currentListener !== listener);
+  }
+
+  public removeAllDevicePropertiesChannelChangedListeners(): void {
+    this._devicePropertiesChangedListeners = [];
+  }
+
+  public setDeviceOn(deviceName: string, on: boolean): void {
+    const properties = this._deviceProperties.get(deviceName);
+    if (properties === undefined) {
+      shouldLog(LogLevel.Warning) && console.warn(`MIDIDeviceListModel: Attempting to set on state for device "${deviceName}", which is not found`);
+      return;
+    }
+
+    properties.deviceOn = on;
+    this.emitDeviceOnChangedEvent(deviceName, on);
+  }
+
+  public deviceIsOn(deviceName: string): boolean {
+    const properties = this._deviceProperties.get(deviceName);
+    if (properties === undefined) {
+      shouldLog(LogLevel.Warning) && console.warn(`MIDIDeviceListModel: Attempting to get on state for device "${deviceName}", which is not found`);
+      return false;
+    }
+
+    return properties.deviceOn;
+  }
+
+  public addDeviceOnChangedListener(listener: DeviceOnChangedListener): void {
+    this._deviceOnChangedListeners.push(listener);
+  }
+
+  public removeDeviceOnChangedListener(listener: DeviceOnChangedListener): void {
+    this._deviceOnChangedListeners = this._deviceOnChangedListeners.filter((currentListener) => currentListener !== listener);
+  }
+
+  public removeAllDeviceOnChangedListeners(): void {
+    this._deviceOnChangedListeners = [];
+  }
+
+  public get showActivity(): boolean {
+    return this._showActivity;
+  }
+
+  public set showActivity(value: boolean) {
+    this._showActivity = value;
+    this.emitShowActivityChanged(value);
+  }
+
+  public addShowActivityChangedListener(listener: ShowActivityChangedListener): void {
+    this._showActivityChangedListeners.push(listener);
+  }
+
+  public removeShowActivityChangedListener(listener: ShowActivityChangedListener): void {
+    this._showActivityChangedListeners = this._showActivityChangedListeners.filter((currentListener) => currentListener !== listener);
+  }
+
+  public removeAllShowActivityChangedListeners(): void {
+    this._showActivityChangedListeners = [];
+  }
+
+  public get selectedDeviceName(): string {
+    return this._selectedDeviceName;
+  }
+
+  public set selectedDeviceName(deviceName: string) {
+    if (deviceName === this._selectedDeviceName) {
+      return;
+    }
+
+    this._selectedDeviceName = deviceName;
+    this.emitSelectedDeviceChanged(deviceName);
+  }
+
+  public addSelectedDeviceChangedListener(listener: SelectedDeviceChangedListener): void {
+    this._selectedDeviceChangedListeners.push(listener);
+  }
+
+  public removeSelectedDeviceChangedListener(listener: SelectedDeviceChangedListener): void {
+    this._selectedDeviceChangedListeners = this._selectedDeviceChangedListeners.filter((currentListener) => currentListener !== listener);
+  }
+
+  public removeAllSelectedDeviceChangedListeners(): void {
+    this._selectedDeviceChangedListeners = [];
+  }
+
+  public toJSON(): MIDIDeviceListModelJSON {
+    return {
+      selectedDeviceName: this.selectedDeviceName,
+      showActivity: this.showActivity,
+      deviceProperties: Object.fromEntries(this._deviceProperties),
+    };
+  }
+
+  public storeToJSON(): string {
+    return JSON.stringify(this);
+  }
+
+  public setFromJSON(json: string): void {
+    while (this._deviceProperties.size > 0) {
+      const firstDeviceName = this._deviceProperties.keys().next().value as string | undefined;
+      if (firstDeviceName === undefined) {
+        break;
+      }
+      this.removeDevice(firstDeviceName);
+    }
+
+    const model = JSON.parse(json) as Partial<MIDIDeviceListModelJSON>;
+    this.showActivity = model.showActivity ?? false;
+    this.selectedDeviceName = model.selectedDeviceName ?? "";
+
+    if (model.deviceProperties !== undefined) {
+      for (const [deviceName, propertiesObject] of Object.entries(model.deviceProperties)) {
+        const properties = new MIDIDeviceProperties(propertiesObject);
+        this.setDeviceProperties(deviceName, properties);
+      }
+    }
+  }
+
+  private emitDevicePropertiesChannelChangedEvent(
+    deviceName: string,
+    properties: MIDIDeviceProperties,
+    operation: DevicePropertiesOperation,
+  ): void {
+    this._devicePropertiesChangedListeners.forEach((listener) => listener(this, deviceName, properties, operation));
+  }
+
+  private emitDeviceOnChangedEvent(deviceName: string, on: boolean): void {
+    this._deviceOnChangedListeners.forEach((listener) => listener(this, deviceName, on));
+  }
+
+  private emitShowActivityChanged(showActivity: boolean): void {
+    for (const listener of this._showActivityChangedListeners) {
+      listener(this, showActivity);
+    }
+  }
+
+  private emitSelectedDeviceChanged(deviceName: string): void {
+    this._selectedDeviceChangedListeners.forEach((listener) => listener(this, deviceName));
+  }
+}

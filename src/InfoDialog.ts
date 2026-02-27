@@ -1,28 +1,36 @@
-// @ts-nocheck
-export class InfoDialog {
-    infoDialog;
-    infoLabel;
-    confirmButton;
-    constructor(dialogID, labelID, buttonID = "") {
-        this.infoDialog = document.getElementById(dialogID);
-        this.infoLabel = document.getElementById(labelID);
-        if (buttonID !== "") {
-            this.confirmButton = document.getElementById(buttonID);
-            this.confirmButton.hidden = false;
-            this.confirmButton.addEventListener("click", (event) => {
-                event.preventDefault(); // 
-                this.infoDialog.close("ok");
-            });
-        }
-        else
-            this.confirmButton = undefined;
-    }
-    show(text) {
-        this.infoLabel.textContent = text;
-        this.infoDialog.showModal();
-    }
-    close() {
-        this.infoDialog.close();
-    }
+function getElementByIdOrThrow<T extends HTMLElement>(id: string): T {
+  const element = document.getElementById(id);
+  if (element === null) {
+    throw new Error(`Element with id "${id}" not found`);
+  }
+  return element as T;
 }
 
+export class InfoDialog {
+  private readonly infoDialog: HTMLDialogElement;
+  private readonly infoLabel: HTMLLabelElement;
+  private readonly confirmButton: HTMLButtonElement | undefined;
+
+  public constructor(dialogID: string, labelID: string, buttonID = "") {
+    this.infoDialog = getElementByIdOrThrow<HTMLDialogElement>(dialogID);
+    this.infoLabel = getElementByIdOrThrow<HTMLLabelElement>(labelID);
+    this.confirmButton = buttonID === "" ? undefined : getElementByIdOrThrow<HTMLButtonElement>(buttonID);
+
+    if (this.confirmButton !== undefined) {
+      this.confirmButton.hidden = false;
+      this.confirmButton.addEventListener("click", (event: MouseEvent) => {
+        event.preventDefault();
+        this.infoDialog.close("ok");
+      });
+    }
+  }
+
+  public show(text: string): void {
+    this.infoLabel.textContent = text;
+    this.infoDialog.showModal();
+  }
+
+  public close(): void {
+    this.infoDialog.close();
+  }
+}

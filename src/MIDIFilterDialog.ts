@@ -1,44 +1,70 @@
-// @ts-nocheck
-import { shouldLog, LogLevel } from "./Logger.js";
-export class MIDIFilterDialog {
-    dialog;
-    confirmEvent;
-    constructor(dialogID) {
-        this.dialog = document.getElementById(dialogID);
-        let button = this.dialog.querySelector("button");
-        button.addEventListener("click", (event) => {
-            event.preventDefault();
-            this.dialog.close("ok");
-            let filter = [];
-            let checkBoxes = this.dialog.querySelectorAll("input[type=checkbox]");
-            for (let i = 0; i < checkBoxes.length; i++) {
-                let checkBox = checkBoxes[i];
-                filter.push(checkBox.checked);
-            }
-            this.confirmEvent(filter);
-        });
-        this.confirmEvent = (result) => {
-            shouldLog(LogLevel.Info) && console.log("Confirm event result: " + result);
-        };
-    }
-    show() {
-        this.dialog.showModal();
-    }
-    close() {
-        this.dialog.close();
-    }
-    async getFilterSettings(filter) {
-        return new Promise((resolve, reject) => {
-            let checkBoxes = this.dialog.querySelectorAll("input[type=checkbox]");
-            for (let i = 0; i < checkBoxes.length; i++) {
-                let checkBox = checkBoxes[i];
-                checkBox.checked = filter[i];
-            }
-            this.confirmEvent = async (result) => {
-                resolve(result);
-            };
-            this.dialog.showModal();
-        });
-    }
+import { LogLevel, shouldLog } from "./Logger.js";
+
+type MIDIFilter = boolean[];
+type MIDIFilterHandler = (result: MIDIFilter) => void;
+
+function getElementByIdOrThrow<T extends HTMLElement>(id: string): T {
+  const element = document.getElementById(id);
+  if (element === null) {
+    throw new Error(`Element with id "${id}" not found`);
+  }
+  return element as T;
 }
 
+export class MIDIFilterDialog {
+  private readonly dialog: HTMLDialogElement;
+  private confirmEvent: MIDIFilterHandler;
+
+  public constructor(dialogID: string) {
+    this.dialog = getElementByIdOrThrow<HTMLDialogElement>(dialogID);
+    const button = this.dialog.querySelector<HTMLButtonElement>("button");
+    if (button === null) {
+      throw new Error(`Dialog "${dialogID}" is missing its confirm button`);
+    }
+
+    button.addEventListener("click", (event: MouseEvent) => {
+      event.preventDefault();
+      this.dialog.close("ok");
+      this.confirmEvent(this.readFilterValues());
+    });
+
+    this.confirmEvent = (result: MIDIFilter) => {
+      shouldLog(LogLevel.Info) && console.log(`Confirm event result: ${result}`);
+    };
+  }
+
+  public show(): void {
+    this.dialog.showModal();
+  }
+
+  public close(): void {
+    this.dialog.close();
+  }
+
+  public async getFilterSettings(filter: MIDIFilter): Promise<MIDIFilter> {
+    return new Promise<MIDIFilter>((resolve) => {
+      const checkBoxes = this.getCheckBoxes();
+      for (let index = 0; index < checkBoxes.length; index++) {
+        checkBoxes[index].checked = filter[index] ?? false;
+      }
+
+      this.confirmEvent = (result: MIDIFilter) => {
+        resolve(result);
+      };
+      this.dialog.showModal();
+    });
+  }
+
+  private getCheckBoxes(): NodeListOf<HTMLInputElement> {
+    return this.dialog.querySelectorAll<HTMLInputElement>("input[type=checkbox]");
+  }
+
+  private readFilterValues(): MIDIFilter {
+    const filter: MIDIFilter = [];
+    const checkBoxes = this.getCheckBoxes();
+    for (const checkBox of checkBoxes) {
+      filter.push(checkBox.checked);
+    }
+    return filter;
+  }
+}

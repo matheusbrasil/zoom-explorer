@@ -1,55 +1,84 @@
-// @ts-nocheck
 import { LogLevel, shouldLog } from "./Logger.js";
-export class ProgressDialog {
-    dialog;
-    label;
-    progressBar;
-    progressBarText;
-    summaryLabel;
-    confirmButton;
-    confirmEvent;
-    userCancelled = false;
-    constructor(dialogID = "progressDialog", progressLabelID = "progressDialogLabel", progressBarID = "progressDialogBar", progressBarTextID = "progressDialogBarText", progressSummaryLabelID = "progressDialogSummaryLabel", confirmButtonID = "progressDialogConfirmButton") {
-        this.dialog = document.getElementById(dialogID);
-        this.label = document.getElementById(progressLabelID);
-        this.progressBar = document.getElementById(progressBarID);
-        this.progressBarText = document.getElementById(progressBarTextID);
-        this.summaryLabel = document.getElementById(progressSummaryLabelID);
-        this.confirmButton = document.getElementById(confirmButtonID);
-        this.confirmEvent = (result) => {
-            shouldLog(LogLevel.Info) && console.log("Confirm event result: " + result);
-        };
-        this.dialog.addEventListener("close", (e) => {
-            this.confirmEvent(false);
-        });
-    }
-    show(text) {
-        return new Promise((resolve, reject) => {
-            this.userCancelled = false;
-            this.label.textContent = text;
-            this.summaryLabel.textContent = "";
-            this.setProgress(0);
-            this.confirmButton.textContent = "Cancel";
-            this.confirmEvent = async (result) => {
-                this.userCancelled = true;
-                resolve(result);
-            };
-            this.dialog.showModal();
-        });
-    }
-    setProgress(progress, text = "", summaryText = "") {
-        let adjustedProgress = Math.max(0, Math.min(100, progress));
-        this.progressBar.style.width = adjustedProgress + "%";
-        let extraText = text.length > 0 ? ` &nbsp;&nbsp;${text}` : "";
-        this.progressBarText.innerHTML = `${progress.toFixed(0)}%${extraText}`;
-        this.summaryLabel.innerHTML = summaryText;
-        this.confirmButton.textContent = progress >= 99.5 ? "OK" : "Cancel";
-    }
-    setText(text) {
-        this.label.textContent = text;
-    }
-    close() {
-        this.dialog.close();
-    }
+
+type ProgressDialogHandler = (confirmed: boolean) => void;
+
+function getElementByIdOrThrow<T extends HTMLElement>(id: string): T {
+  const element = document.getElementById(id);
+  if (element === null) {
+    throw new Error(`Element with id "${id}" not found`);
+  }
+  return element as T;
 }
 
+export class ProgressDialog {
+  private readonly dialog: HTMLDialogElement;
+  private readonly label: HTMLLabelElement;
+  private readonly progressBar: HTMLDivElement;
+  private readonly progressBarText: HTMLSpanElement;
+  private readonly summaryLabel: HTMLLabelElement;
+  private readonly confirmButton: HTMLButtonElement;
+  private confirmEvent: ProgressDialogHandler;
+  public userCancelled = false;
+
+  public constructor(
+    dialogID = "progressDialog",
+    progressLabelID = "progressDialogLabel",
+    progressBarID = "progressDialogBar",
+    progressBarTextID = "progressDialogBarText",
+    progressSummaryLabelID = "progressDialogSummaryLabel",
+    confirmButtonID = "progressDialogConfirmButton",
+  ) {
+    this.dialog = getElementByIdOrThrow<HTMLDialogElement>(dialogID);
+    this.label = getElementByIdOrThrow<HTMLLabelElement>(progressLabelID);
+    this.progressBar = getElementByIdOrThrow<HTMLDivElement>(progressBarID);
+    this.progressBarText = getElementByIdOrThrow<HTMLSpanElement>(progressBarTextID);
+    this.summaryLabel = getElementByIdOrThrow<HTMLLabelElement>(progressSummaryLabelID);
+    this.confirmButton = getElementByIdOrThrow<HTMLButtonElement>(confirmButtonID);
+    this.confirmEvent = (result: boolean) => {
+      shouldLog(LogLevel.Info) && console.log(`Confirm event result: ${result}`);
+    };
+
+    this.confirmButton.addEventListener("click", (event: MouseEvent) => {
+      event.preventDefault();
+      const confirmed = this.confirmButton.textContent === "OK";
+      this.dialog.close(confirmed ? "ok" : "cancel");
+    });
+
+    this.dialog.addEventListener("close", () => {
+      const confirmed = this.dialog.returnValue === "ok";
+      this.userCancelled = !confirmed;
+      this.confirmEvent(confirmed);
+    });
+  }
+
+  public async show(text: string): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      this.userCancelled = false;
+      this.label.textContent = text;
+      this.summaryLabel.textContent = "";
+      this.setProgress(0);
+      this.confirmButton.textContent = "Cancel";
+      this.confirmEvent = (result: boolean) => {
+        resolve(result);
+      };
+      this.dialog.showModal();
+    });
+  }
+
+  public setProgress(progress: number, text = "", summaryText = ""): void {
+    const adjustedProgress = Math.max(0, Math.min(100, progress));
+    this.progressBar.style.width = `${adjustedProgress}%`;
+    const extraText = text.length > 0 ? ` \u00a0\u00a0${text}` : "";
+    this.progressBarText.innerHTML = `${adjustedProgress.toFixed(0)}%${extraText}`;
+    this.summaryLabel.innerHTML = summaryText;
+    this.confirmButton.textContent = adjustedProgress >= 99.5 ? "OK" : "Cancel";
+  }
+
+  public setText(text: string): void {
+    this.label.textContent = text;
+  }
+
+  public close(): void {
+    this.dialog.close();
+  }
+}
