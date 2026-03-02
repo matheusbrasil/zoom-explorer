@@ -1,30 +1,56 @@
-// @ts-nocheck
-import { MIDIFilterDialog } from "./MIDIFilterDialog.js";
 import { htmlToElement } from "./htmltools.js";
 import { LogLevel, shouldLog } from "./Logger.js";
-import { MessageType } from "./midiproxy.js";
+import { MIDIFilterDialog } from "./MIDIFilterDialog.js";
+import {
+  DevicePropertiesOperation,
+  MIDIDeviceListModel,
+  MIDIDeviceProperties,
+} from "./MIDIDeviceListModel.js";
 import { getChannelMessage } from "./miditools.js";
+import { DeviceID, MessageType } from "./midiproxy.js";
+
 const ON_CELL = 0;
 const ACTIVITY_CELL = 9;
+
+interface ActivityRowInfo {
+  index: number;
+  timeoutID: ReturnType<typeof setTimeout> | undefined;
+  timestamp: number;
+}
+
+function queryOrThrow<T extends Element>(root: ParentNode, selector: string): T {
+  const element = root.querySelector(selector);
+  if (element === null) {
+    throw new Error(`Element matching selector "${selector}" not found`);
+  }
+  return element as T;
+}
+
+function createElementFromHTML<T extends HTMLElement>(html: string): T {
+  return htmlToElement(html) as T;
+}
+
 export class MIDIDeviceListHTMLView {
-    _model;
-    _viewElement = document.createElement("table"); // dummy element
-    _deviceListTable = document.createElement("table"); // dummy element
-    _activityCheckbox = document.createElement("input"); // dummy element
-    _deviceInputIDToRowIndexMap = new Map();
-    _enabled = true;
-    _filterDialog;
-    _activityTimeout = 2000;
-    constructor(model) {
-        this._model = model;
-        this._model.addShowActivityChangedListener(this.showActivityChanged.bind(this));
-        this._model.addDevicePropertiesChangedListener(this.devicePropertiesChanged.bind(this));
-        this._model.addSelectedDeviceChangedListener(this.selectedDeviceChanged.bind(this));
-        this._filterDialog = new MIDIFilterDialog("midiFilterDialog");
-        this.createView();
-    }
-    createView() {
-        let html = `
+  private readonly _model: MIDIDeviceListModel;
+  private _viewElement: HTMLDivElement = document.createElement("div");
+  private _deviceListTable: HTMLTableElement = document.createElement("table");
+  private _activityCheckbox: HTMLInputElement = document.createElement("input");
+  private readonly _deviceInputIDToRowIndexMap = new Map<DeviceID, ActivityRowInfo>();
+  private _enabled = true;
+  private readonly _filterDialog: MIDIFilterDialog;
+  private readonly _activityTimeout = 2000;
+
+  public constructor(model: MIDIDeviceListModel) {
+    this._model = model;
+    this._model.addShowActivityChangedListener(this.showActivityChanged.bind(this));
+    this._model.addDevicePropertiesChangedListener(this.devicePropertiesChanged.bind(this));
+    this._model.addSelectedDeviceChangedListener(this.selectedDeviceChanged.bind(this));
+    this._filterDialog = new MIDIFilterDialog("midiFilterDialog");
+    this.createView();
+  }
+
+  public createView(): HTMLDivElement {
+    const html = `
         <div id="midiDeviceList" class="midiDeviceListClass collapsibleContainer">
             <button type="button" class="collapsible" id="midiDeviceListCollapsibleButton">MIDI Devices
                 <span class="material-symbols-outlined collapsibleIcon"></span>
@@ -45,226 +71,285 @@ export class MIDIDeviceListHTMLView {
             </table>
         </div>
     `;
-        this._viewElement = htmlToElement(html);
-        this._deviceListTable = this._viewElement.getElementsByClassName("midiDeviceListTable")[0];
-        this._deviceListTable.addEventListener("click", this.deviceListTableClicked.bind(this));
-        this._activityCheckbox = this._viewElement.querySelector("input[type=checkbox]");
-        this._activityCheckbox.checked = this._model.showActivity;
-        this._activityCheckbox.addEventListener("change", this.activityCheckboxChanged.bind(this));
-        return this._viewElement;
-    }
-    get viewElement() {
-        return this._viewElement;
-    }
-    get enabled() {
-        return this._enabled;
-    }
-    set enabled(value) {
-        this._enabled = value;
-    }
-    // public updateMIDIDevicesTableDeprecated(devices: IManagedMIDIDevice[]) {
-    //   while (this._deviceListTable.rows.length > 1)
-    //     this._deviceListTable.deleteRow(this._deviceListTable.rows.length - 1);
-    //   this._deviceNameToRowIndexMap.clear();
-    //   for (let index = 0; index < devices.length; index++) {
-    //     let info = devices[index].deviceInfo;
-    //     this._deviceNameToRowIndexMap.set(info.inputID, { index: index, timeoutID: -1 });
-    //     let version = info.manufacturerID[0] === 0x52 ? ZoomDevice.getZoomVersionNumber(info.versionNumber).toString() : bytesToHexString(info.versionNumber, " ");
-    //     let row = this._deviceListTable.insertRow(-1);
-    //     let c;
-    //     c = row.insertCell(-1); c.innerHTML = info.deviceName;
-    //     c = row.insertCell(-1); c.innerHTML = info.inputName;
-    //     c = row.insertCell(-1); c.innerHTML = info.outputName;
-    //     c = row.insertCell(-1); c.innerHTML = info.manufacturerName;
-    //     c = row.insertCell(-1); c.innerHTML = bytesToHexString(info.familyCode, " ");
-    //     c = row.insertCell(-1); c.innerHTML = bytesToHexString(info.modelNumber, " ");
-    //     c = row.insertCell(-1); c.innerHTML = version;
-    //     c = row.insertCell(-1); c.innerHTML = "";
-    //     shouldLog(LogLevel.Info) && console.log(`  ${index + 1}: ${info.deviceName.padEnd(8)} OS v ${version} - input: ${info.inputName.padEnd(20)} output: ${info.outputName}`);
-    //   }
-    // }
-    updateMIDIDevicesTable() {
-        while (this._deviceListTable.rows.length > 1)
-            this._deviceListTable.deleteRow(this._deviceListTable.rows.length - 1);
-        this._deviceInputIDToRowIndexMap.clear();
-        const sortedMapArray = Array.from(this._model.deviceProperties).sort((a, b) => {
-            let aDeviceName = a[0];
-            let bDeviceName = b[0];
-            let aProperties = a[1];
-            let bProperties = b[1];
-            if (aProperties.manufacturerName !== undefined && aProperties.manufacturerName.includes("Zoom Corporation")) {
-                if (bProperties.manufacturerName !== undefined && bProperties.manufacturerName.includes("Zoom Corporation"))
-                    return aDeviceName.localeCompare(bDeviceName);
-                else
-                    return -1;
-            }
-            if (bProperties.manufacturerName !== undefined && bProperties.manufacturerName.includes("Zoom Corporation"))
-                return 1;
-            return aDeviceName.localeCompare(bDeviceName);
-        });
-        const sortedDevicePropertiesMap = new Map(sortedMapArray);
-        let index = 0;
-        for (let [deviceName, properties] of sortedDevicePropertiesMap) {
-            if (!properties.deviceAvailable)
-                continue;
-            this._deviceInputIDToRowIndexMap.set(properties.inputID, { index: index, timeoutID: -1, timestamp: 0 });
-            index++;
-            let row = this._deviceListTable.insertRow(-1);
-            row.setAttribute("data-deviceName", deviceName);
-            if (properties.deviceName === this._model.selectedDeviceName)
-                row.classList.add("midiDeviceListTableSelected");
-            let c;
-            let html = `<input type="checkbox" name="onOff" unchecked />`;
-            let deviceOn = htmlToElement(html);
-            deviceOn.checked = properties.deviceOn;
-            deviceOn.setAttribute("data-deviceName", deviceName);
-            deviceOn.addEventListener("change", this.deviceOnCheckboxChanged.bind(this));
-            c = row.insertCell(-1);
-            c.appendChild(deviceOn);
-            c = row.insertCell(-1);
-            c.innerHTML = properties.deviceName;
-            c = row.insertCell(-1);
-            c.innerHTML = properties.inputName;
-            c = row.insertCell(-1);
-            c.innerHTML = properties.outputName;
-            c = row.insertCell(-1);
-            c.innerHTML = properties.manufacturerName;
-            c = row.insertCell(-1);
-            c.innerHTML = properties.familyCode;
-            c = row.insertCell(-1);
-            c.innerHTML = properties.modelNumber;
-            c = row.insertCell(-1);
-            c.innerHTML = properties.version;
-            html = `<button></button>`;
-            let filterButton = htmlToElement(html);
-            // let filterText = "";
-            // filterText += properties.filterEnableClock ? "&#x2611;" : "&#x2610;";
-            // filterText += properties.filterEnableCC ? "&#x2611;" : "&#x2610;";
-            // filterText += properties.filterEnableNote ? "&#x2611;" : "&#x2610;";
-            // filterButton.innerHTML = filterText;
-            // <td><button><input type="checkbox" unchecked /><input type="checkbox" unchecked /><input type="checkbox" checked /></button></td>
-            html = `<input type="checkbox"/>`;
-            let checkbox = htmlToElement(html);
-            checkbox.checked = properties.filterMuteClock;
-            checkbox.addEventListener("click", (e) => e.preventDefault());
-            filterButton.appendChild(checkbox);
-            html = `<input type="checkbox"/>`;
-            checkbox = htmlToElement(html);
-            checkbox.checked = properties.filterMuteCC;
-            checkbox.addEventListener("click", (e) => e.preventDefault());
-            filterButton.appendChild(checkbox);
-            html = `<input type="checkbox"/>`;
-            checkbox = htmlToElement(html);
-            checkbox.checked = properties.filterMuteNote;
-            checkbox.addEventListener("click", (e) => e.preventDefault());
-            filterButton.appendChild(checkbox);
-            filterButton.setAttribute("data-deviceName", deviceName);
-            filterButton.addEventListener("click", this.filterButtonClicked.bind(this));
-            c = row.insertCell(-1);
-            c.appendChild(filterButton);
-            c = row.insertCell(-1);
-            c.innerHTML = ""; // activity
-        }
-    }
-    updateMIDIDevicesTableActivity(inputID, message) {
-        if (!this._enabled || !this._model.showActivity)
-            return;
-        let indexAndTimeout = this._deviceInputIDToRowIndexMap.get(inputID);
-        if (indexAndTimeout === undefined) {
-            shouldLog(LogLevel.Error) && console.error(`Unable to get index for device "${inputID}"`);
-            return;
-        }
-        let row = this._deviceListTable.rows[indexAndTimeout.index + 1];
-        let c = row.cells[ACTIVITY_CELL];
-        let [messageType, channel, data1, data2] = getChannelMessage(message);
-        let messageString;
-        if (messageType >= MessageType.SysEx) {
-            messageString = `${MessageType[messageType]}`;
-        }
-        else {
-            messageString = `Ch ${(channel + 1).toString().padStart(2, "0")} ${MessageType[messageType]}`;
-            if (data1 > -1)
-                messageString += ` ${data1.toString().padStart(3, "0")}`;
-            if (data2 > -1)
-                messageString += ` ${data2.toString().padStart(3, "0")}`;
-        }
-        c.textContent = messageString;
-        indexAndTimeout.timestamp = Date.now();
-        if (indexAndTimeout.timeoutID === -1)
-            fireOffNewTimeout(indexAndTimeout, this._activityTimeout);
-        function fireOffNewTimeout(indexAndTimeout, activityTimeout) {
-            indexAndTimeout.timeoutID = setTimeout(() => {
-                let timeDiff = Date.now() - indexAndTimeout.timestamp;
-                if (timeDiff > activityTimeout * 0.95) {
-                    c.textContent = "";
-                    indexAndTimeout.timeoutID = -1;
-                    indexAndTimeout.timestamp = 0;
-                }
-                else {
-                    // activity text was updated since we fired off the timeout, so we need to fire off a new timeout
-                    fireOffNewTimeout(indexAndTimeout, activityTimeout - timeDiff);
-                }
-            }, activityTimeout);
-        }
-    }
-    activityCheckboxChanged(event) {
-        this._model.showActivity = this._activityCheckbox.checked;
-        if (!this._activityCheckbox.checked) {
-            for (let i = 1; i < this._deviceListTable.rows.length; i++) {
-                let row = this._deviceListTable.rows[i];
-                let c = row.cells[ACTIVITY_CELL];
-                c.textContent = "";
-            }
-        }
-    }
-    showActivityChanged(model, showActivity) {
-        if (this._activityCheckbox.checked !== showActivity)
-            this._activityCheckbox.checked = showActivity;
-    }
-    devicePropertiesChanged(model, deviceName, settings, operation) {
-        this.updateMIDIDevicesTable();
-    }
-    deviceOnCheckboxChanged(event) {
-        let deviceOn = event.target;
-        let deviceName = deviceOn.getAttribute("data-deviceName");
-        this._model.setDeviceOn(deviceName, deviceOn.checked);
-    }
-    filterButtonClicked(event) {
-        let filterButton = event.target;
-        while (!(filterButton instanceof HTMLButtonElement)) {
-            filterButton = filterButton.parentElement;
-        }
-        let deviceName = filterButton.getAttribute("data-deviceName");
-        let properties = this._model.deviceProperties.get(deviceName);
-        setTimeout(async () => {
-            let filter = await this._filterDialog.getFilterSettings([properties.filterMuteClock, properties.filterMuteCC, properties.filterMuteNote]);
-            properties.filterMuteClock = filter[0];
-            properties.filterMuteCC = filter[1];
-            properties.filterMuteNote = filter[2];
-            this._model.setDeviceProperties(deviceName, properties);
-        });
-    }
-    deviceListTableClicked(event) {
-        let rowElement = event.target;
-        if (rowElement === null)
-            return;
-        if (rowElement instanceof HTMLInputElement && rowElement.checked === false)
-            return; // no point in selecting a device that is off 
-        while ((rowElement instanceof HTMLTableRowElement === false) && rowElement.parentElement !== null) {
-            rowElement = rowElement.parentElement;
-        }
-        let row = rowElement;
-        let deviceName = row.getAttribute("data-deviceName");
-        if (deviceName === null)
-            return; // user didn't click on a device row (probably clicked on the header)
-        this._model.selectedDeviceName = deviceName;
-    }
-    selectedDeviceChanged(model, deviceName) {
-        for (let i = 1; i < this._deviceListTable.rows.length; i++) {
-            let row = this._deviceListTable.rows[i];
-            let rowDeviceName = row.getAttribute("data-deviceName");
-            row.classList.toggle("midiDeviceListTableSelected", rowDeviceName === deviceName);
-        }
-    }
-}
 
+    this._viewElement = createElementFromHTML<HTMLDivElement>(html);
+    this._deviceListTable = queryOrThrow<HTMLTableElement>(this._viewElement, ".midiDeviceListTable");
+    this._deviceListTable.addEventListener("click", this.deviceListTableClicked.bind(this));
+    this._activityCheckbox = queryOrThrow<HTMLInputElement>(this._viewElement, "input[type=checkbox]");
+    this._activityCheckbox.checked = this._model.showActivity;
+    this._activityCheckbox.addEventListener("change", this.activityCheckboxChanged.bind(this));
+
+    return this._viewElement;
+  }
+
+  public get viewElement(): HTMLDivElement {
+    return this._viewElement;
+  }
+
+  public get enabled(): boolean {
+    return this._enabled;
+  }
+
+  public set enabled(value: boolean) {
+    this._enabled = value;
+  }
+
+  public updateMIDIDevicesTable(): void {
+    while (this._deviceListTable.rows.length > 1) {
+      this._deviceListTable.deleteRow(this._deviceListTable.rows.length - 1);
+    }
+
+    this._deviceInputIDToRowIndexMap.clear();
+
+    const sortedEntries = Array.from(this._model.deviceProperties.entries()).sort(([aDeviceName, aProperties], [bDeviceName, bProperties]) => {
+      const aIsZoom = aProperties.manufacturerName.includes("Zoom Corporation");
+      const bIsZoom = bProperties.manufacturerName.includes("Zoom Corporation");
+
+      if (aIsZoom && bIsZoom) {
+        return aDeviceName.localeCompare(bDeviceName);
+      }
+      if (aIsZoom) {
+        return -1;
+      }
+      if (bIsZoom) {
+        return 1;
+      }
+      return aDeviceName.localeCompare(bDeviceName);
+    });
+
+    let rowIndex = 0;
+    for (const [deviceName, properties] of sortedEntries) {
+      if (!properties.deviceAvailable) {
+        continue;
+      }
+
+      this._deviceInputIDToRowIndexMap.set(properties.inputID, {
+        index: rowIndex,
+        timeoutID: undefined,
+        timestamp: 0,
+      });
+      rowIndex++;
+
+      const row = this._deviceListTable.insertRow(-1);
+      row.setAttribute("data-deviceName", deviceName);
+      if (properties.deviceName === this._model.selectedDeviceName) {
+        row.classList.add("midiDeviceListTableSelected");
+      }
+
+      const deviceOn = createElementFromHTML<HTMLInputElement>('<input type="checkbox" name="onOff" unchecked />');
+      deviceOn.checked = properties.deviceOn;
+      deviceOn.setAttribute("data-deviceName", deviceName);
+      deviceOn.addEventListener("change", this.deviceOnCheckboxChanged.bind(this));
+      let cell = row.insertCell(-1);
+      cell.appendChild(deviceOn);
+
+      cell = row.insertCell(-1);
+      cell.textContent = properties.deviceName;
+      cell = row.insertCell(-1);
+      cell.textContent = properties.inputName;
+      cell = row.insertCell(-1);
+      cell.textContent = properties.outputName;
+      cell = row.insertCell(-1);
+      cell.textContent = properties.manufacturerName;
+      cell = row.insertCell(-1);
+      cell.textContent = properties.familyCode;
+      cell = row.insertCell(-1);
+      cell.textContent = properties.modelNumber;
+      cell = row.insertCell(-1);
+      cell.textContent = properties.version;
+
+      const filterButton = createElementFromHTML<HTMLButtonElement>("<button></button>");
+      filterButton.appendChild(this.createFilterCheckbox(properties.filterMuteClock));
+      filterButton.appendChild(this.createFilterCheckbox(properties.filterMuteCC));
+      filterButton.appendChild(this.createFilterCheckbox(properties.filterMuteNote));
+      filterButton.setAttribute("data-deviceName", deviceName);
+      filterButton.addEventListener("click", this.filterButtonClicked.bind(this));
+      cell = row.insertCell(-1);
+      cell.appendChild(filterButton);
+
+      cell = row.insertCell(-1);
+      cell.textContent = "";
+    }
+  }
+
+  public updateMIDIDevicesTableActivity(inputID: DeviceID, message: Uint8Array): void {
+    if (!this._enabled || !this._model.showActivity) {
+      return;
+    }
+
+    const rowInfo = this._deviceInputIDToRowIndexMap.get(inputID);
+    if (rowInfo === undefined) {
+      shouldLog(LogLevel.Error) && console.error(`Unable to get index for device "${inputID}"`);
+      return;
+    }
+
+    const row = this._deviceListTable.rows[rowInfo.index + 1];
+    const cell = row?.cells[ACTIVITY_CELL];
+    if (cell === undefined) {
+      return;
+    }
+
+    const [messageType, channel, data1, data2] = getChannelMessage(message);
+    let messageString: string;
+    if (messageType >= MessageType.SysEx) {
+      messageString = `${MessageType[messageType]}`;
+    } else {
+      messageString = `Ch ${(channel + 1).toString().padStart(2, "0")} ${MessageType[messageType]}`;
+      if (data1 > -1) {
+        messageString += ` ${data1.toString().padStart(3, "0")}`;
+      }
+      if (data2 > -1) {
+        messageString += ` ${data2.toString().padStart(3, "0")}`;
+      }
+    }
+
+    cell.textContent = messageString;
+    rowInfo.timestamp = Date.now();
+    if (rowInfo.timeoutID === undefined) {
+      this.scheduleActivityClear(rowInfo, cell, this._activityTimeout);
+    }
+  }
+
+  public activityCheckboxChanged(_event: Event): void {
+    this._model.showActivity = this._activityCheckbox.checked;
+    if (this._activityCheckbox.checked) {
+      return;
+    }
+
+    for (let index = 1; index < this._deviceListTable.rows.length; index++) {
+      const row = this._deviceListTable.rows[index];
+      const cell = row.cells[ACTIVITY_CELL];
+      if (cell !== undefined) {
+        cell.textContent = "";
+      }
+    }
+  }
+
+  public showActivityChanged(_model: MIDIDeviceListModel, showActivity: boolean): void {
+    if (this._activityCheckbox.checked !== showActivity) {
+      this._activityCheckbox.checked = showActivity;
+    }
+  }
+
+  public devicePropertiesChanged(
+    _model: MIDIDeviceListModel,
+    _deviceName: string,
+    _settings: MIDIDeviceProperties,
+    _operation: DevicePropertiesOperation,
+  ): void {
+    this.updateMIDIDevicesTable();
+  }
+
+  public deviceOnCheckboxChanged(event: Event): void {
+    const deviceOn = event.target;
+    if (!(deviceOn instanceof HTMLInputElement)) {
+      return;
+    }
+
+    const deviceName = deviceOn.getAttribute("data-deviceName");
+    if (deviceName === null) {
+      return;
+    }
+
+    this._model.setDeviceOn(deviceName, deviceOn.checked);
+  }
+
+  public filterButtonClicked(event: Event): void {
+    const filterButton = this.findParentButton(event.target);
+    if (filterButton === null) {
+      return;
+    }
+
+    const deviceName = filterButton.getAttribute("data-deviceName");
+    if (deviceName === null) {
+      return;
+    }
+
+    const properties = this._model.deviceProperties.get(deviceName);
+    if (properties === undefined) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      void this.updateFilterSettings(deviceName, properties);
+    }, 0);
+  }
+
+  public deviceListTableClicked(event: Event): void {
+    let rowElement = event.target;
+    if (rowElement === null) {
+      return;
+    }
+
+    if (rowElement instanceof HTMLInputElement && !rowElement.checked) {
+      return;
+    }
+
+    while (!(rowElement instanceof HTMLTableRowElement) && rowElement instanceof Node && rowElement.parentElement !== null) {
+      rowElement = rowElement.parentElement;
+    }
+
+    if (!(rowElement instanceof HTMLTableRowElement)) {
+      return;
+    }
+
+    const deviceName = rowElement.getAttribute("data-deviceName");
+    if (deviceName === null) {
+      return;
+    }
+
+    this._model.selectedDeviceName = deviceName;
+  }
+
+  public selectedDeviceChanged(_model: MIDIDeviceListModel, deviceName: string): void {
+    for (let index = 1; index < this._deviceListTable.rows.length; index++) {
+      const row = this._deviceListTable.rows[index];
+      const rowDeviceName = row.getAttribute("data-deviceName");
+      row.classList.toggle("midiDeviceListTableSelected", rowDeviceName === deviceName);
+    }
+  }
+
+  private createFilterCheckbox(checked: boolean): HTMLInputElement {
+    const checkbox = createElementFromHTML<HTMLInputElement>("<input type=\"checkbox\"/>");
+    checkbox.checked = checked;
+    checkbox.addEventListener("click", (event: MouseEvent) => event.preventDefault());
+    return checkbox;
+  }
+
+  private scheduleActivityClear(rowInfo: ActivityRowInfo, cell: HTMLTableCellElement, activityTimeout: number): void {
+    rowInfo.timeoutID = window.setTimeout(() => {
+      const timeDiff = Date.now() - rowInfo.timestamp;
+      if (timeDiff > activityTimeout * 0.95) {
+        cell.textContent = "";
+        rowInfo.timeoutID = undefined;
+        rowInfo.timestamp = 0;
+      } else {
+        this.scheduleActivityClear(rowInfo, cell, activityTimeout - timeDiff);
+      }
+    }, activityTimeout);
+  }
+
+  private findParentButton(target: EventTarget | null): HTMLButtonElement | null {
+    let current: EventTarget | null = target;
+    while (!(current instanceof HTMLButtonElement)) {
+      if (!(current instanceof Node) || current.parentElement === null) {
+        return null;
+      }
+      current = current.parentElement;
+    }
+    return current;
+  }
+
+  private async updateFilterSettings(deviceName: string, properties: MIDIDeviceProperties): Promise<void> {
+    const filter = await this._filterDialog.getFilterSettings([
+      properties.filterMuteClock,
+      properties.filterMuteCC,
+      properties.filterMuteNote,
+    ]);
+
+    properties.filterMuteClock = filter[0] ?? properties.filterMuteClock;
+    properties.filterMuteCC = filter[1] ?? properties.filterMuteCC;
+    properties.filterMuteNote = filter[2] ?? properties.filterMuteNote;
+    this._model.setDeviceProperties(deviceName, properties);
+  }
+}

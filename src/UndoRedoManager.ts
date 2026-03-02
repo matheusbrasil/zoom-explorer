@@ -1,91 +1,115 @@
-// @ts-nocheck
 // (c) 2024-2026 by Thomas Hammer, h@mmer.no
-import { shouldLog, LogLevel } from "./Logger.js";
-export class Action {
-    doAction;
-    undoAction;
-    description;
-    constructor(doAction, undoAction, description) {
-        this.doAction = doAction;
-        this.undoAction = undoAction;
-        this.description = description;
-    }
-}
-export class UndoRedoManager {
-    actions = new Array();
-    currentIndex = -1; // this will always refer to the next action to undo
-    lastValidIndex = -1; // this is the last valid index in the actions array, just so we don't have do slice/resize the array and trigger garbage collection often  
-    stateChangedListeners = new Array();
-    constructor() {
-    }
-    addAction(doAction, undoAction, description) {
-        let action = new Action(doAction, undoAction, description);
-        if (this.currentIndex + 1 >= this.actions.length)
-            this.actions.push(action);
-        else
-            this.actions[this.currentIndex + 1] = action;
-        this.currentIndex++;
-        this.lastValidIndex = this.currentIndex;
-        // doAction();
-        this.emitStateChanged();
-    }
-    async undo() {
-        if (this.currentIndex >= 0) {
-            let action = this.actions[this.currentIndex];
-            await action.undoAction();
-            this.currentIndex--;
-            shouldLog(LogLevel.Info) && console.log("Undo: " + action.description);
-            this.emitStateChanged();
-        }
-        else {
-            shouldLog(LogLevel.Info) && console.log("Nothing to undo");
-        }
-    }
-    async redo() {
-        if (this.currentIndex + 1 <= this.lastValidIndex) {
-            let action = this.actions[this.currentIndex + 1];
-            await action.doAction();
-            this.currentIndex++;
-            shouldLog(LogLevel.Info) && console.log("Redo: " + action.description);
-            this.emitStateChanged();
-        }
-        else {
-            shouldLog(LogLevel.Info) && console.log("Nothing to redo");
-        }
-    }
-    clear() {
-        this.currentIndex = -1;
-        this.lastValidIndex = -1;
-        this.emitStateChanged();
-    }
-    addStateChangedListener(listener) {
-        this.stateChangedListeners.push(listener);
-    }
-    removeStateChangedListener(listener) {
-        let index = this.stateChangedListeners.indexOf(listener);
-        if (index >= 0)
-            this.stateChangedListeners.splice(index, 1);
-    }
-    emitStateChanged() {
-        let undoAvailable = this.currentIndex >= 0;
-        let undoDescription = undoAvailable ? this.actions[this.currentIndex].description : "";
-        let redoAvailable = this.currentIndex + 1 <= this.lastValidIndex;
-        let redoDescription = redoAvailable ? this.actions[this.currentIndex + 1].description : "";
-        for (let i = 0; i < this.stateChangedListeners.length; i++)
-            this.stateChangedListeners[i](this, undoAvailable, undoDescription, redoAvailable, redoDescription);
-    }
-    get undoAvailable() {
-        return this.currentIndex >= 0;
-    }
-    get redoAvailable() {
-        return this.currentIndex + 1 <= this.lastValidIndex;
-    }
-    get undoDescription() {
-        return this.undoAvailable ? this.actions[this.currentIndex].description : "";
-    }
-    get redoDescription() {
-        return this.redoAvailable ? this.actions[this.currentIndex + 1].description : "";
-    }
-}
-// (c) 2024-2026 by Thomas Hammer, h@mmer.no
+import { LogLevel, shouldLog } from "./Logger.js";
 
+export type UndoRedoActionCallback = () => Promise<void> | void;
+export type UndoRedoStateChangedListener = (
+  manager: UndoRedoManager,
+  undoAvailable: boolean,
+  undoDescription: string,
+  redoAvailable: boolean,
+  redoDescription: string,
+) => void;
+
+export class Action {
+  public readonly doAction: UndoRedoActionCallback;
+  public readonly undoAction: UndoRedoActionCallback;
+  public readonly description: string;
+
+  public constructor(doAction: UndoRedoActionCallback, undoAction: UndoRedoActionCallback, description: string) {
+    this.doAction = doAction;
+    this.undoAction = undoAction;
+    this.description = description;
+  }
+}
+
+export class UndoRedoManager {
+  public actions: Action[] = [];
+  public currentIndex = -1;
+  public lastValidIndex = -1;
+  public stateChangedListeners: UndoRedoStateChangedListener[] = [];
+
+  public addAction(doAction: UndoRedoActionCallback, undoAction: UndoRedoActionCallback, description: string): void {
+    const action = new Action(doAction, undoAction, description);
+    if (this.currentIndex + 1 >= this.actions.length) {
+      this.actions.push(action);
+    } else {
+      this.actions[this.currentIndex + 1] = action;
+    }
+
+    this.currentIndex++;
+    this.lastValidIndex = this.currentIndex;
+    this.emitStateChanged();
+  }
+
+  public async undo(): Promise<void> {
+    if (this.currentIndex < 0) {
+      shouldLog(LogLevel.Info) && console.log("Nothing to undo");
+      return;
+    }
+
+    const action = this.actions[this.currentIndex];
+    await action.undoAction();
+    this.currentIndex--;
+    shouldLog(LogLevel.Info) && console.log(`Undo: ${action.description}`);
+    this.emitStateChanged();
+  }
+
+  public async redo(): Promise<void> {
+    if (this.currentIndex + 1 > this.lastValidIndex) {
+      shouldLog(LogLevel.Info) && console.log("Nothing to redo");
+      return;
+    }
+
+    const action = this.actions[this.currentIndex + 1];
+    await action.doAction();
+    this.currentIndex++;
+    shouldLog(LogLevel.Info) && console.log(`Redo: ${action.description}`);
+    this.emitStateChanged();
+  }
+
+  public clear(): void {
+    this.currentIndex = -1;
+    this.lastValidIndex = -1;
+    this.emitStateChanged();
+  }
+
+  public addStateChangedListener(listener: UndoRedoStateChangedListener): void {
+    this.stateChangedListeners.push(listener);
+  }
+
+  public removeStateChangedListener(listener: UndoRedoStateChangedListener): void {
+    const index = this.stateChangedListeners.indexOf(listener);
+    if (index >= 0) {
+      this.stateChangedListeners.splice(index, 1);
+    }
+  }
+
+  public get undoAvailable(): boolean {
+    return this.currentIndex >= 0;
+  }
+
+  public get redoAvailable(): boolean {
+    return this.currentIndex + 1 <= this.lastValidIndex;
+  }
+
+  public get undoDescription(): string {
+    return this.undoAvailable ? this.actions[this.currentIndex].description : "";
+  }
+
+  public get redoDescription(): string {
+    return this.redoAvailable ? this.actions[this.currentIndex + 1].description : "";
+  }
+
+  private emitStateChanged(): void {
+    const undoAvailable = this.undoAvailable;
+    const redoAvailable = this.redoAvailable;
+    const undoDescription = undoAvailable ? this.actions[this.currentIndex].description : "";
+    const redoDescription = redoAvailable ? this.actions[this.currentIndex + 1].description : "";
+
+    for (const listener of this.stateChangedListeners) {
+      listener(this, undoAvailable, undoDescription, redoAvailable, redoDescription);
+    }
+  }
+}
+
+// (c) 2024-2026 by Thomas Hammer, h@mmer.no
