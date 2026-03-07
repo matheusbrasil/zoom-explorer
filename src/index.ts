@@ -627,7 +627,8 @@ function initConvertedPatchEditor(zoomDevice) {
     effectLists.set("MS-60B", buildEffectIDList("MS-60B"));
     effectLists.set("MS-70CDR", buildEffectIDList("MS-70CDR"));
     zoomEffectSelector.setHeading("Select effect");
-    zoomEffectSelector.setEffectList(effectLists, zoomDevice.deviceName);
+    let pedalName = zoomDevice?.deviceInfo?.deviceName ?? zoomDevice?.deviceName ?? "";
+    zoomEffectSelector.setEffectList(effectLists, pedalName);
 }
 function buildEffectIDList(pedalName) {
     let zoomEffectIDList = new Map();
@@ -1349,7 +1350,8 @@ function handleEffectSlotSelectEffect(zoomPatch, zoomDevice, effectIDMap, effect
     }
     if (zoomPatch.effectSettings !== null && effectSlot < zoomPatch.effectSettings.length) {
         shouldLog(LogLevel.Info) && console.log(`Selecting effect in slot ${effectSlot}`);
-        zoomEffectSelector.getEffect(zoomPatch.effectSettings[effectSlot].id, zoomDevice ? zoomDevice.deviceName : "MS-70CDR").then(([effectID, effectName, pedalName]) => {
+        let pedalName = zoomDevice?.deviceInfo?.deviceName ?? zoomDevice?.deviceName ?? "MS-70CDR";
+        zoomEffectSelector.getEffect(zoomPatch.effectSettings[effectSlot].id, pedalName).then(([effectID, effectName, pedalName]) => {
             shouldLog(LogLevel.Info) && console.log(`User selected effectID: ${effectID}, effectName: ${effectName}, pedalName: ${pedalName}`);
             if (effectID !== -1) {
                 if (zoomPatch.effectSettings === null) {
@@ -1378,6 +1380,7 @@ function changeEffectInSlot(zoomDevice, zoomPatch, effectIDMap, effectSlot, effe
     let patchAndDeviceMatches = checkIfPatchAndDeviceMatches(zoomDevice, zoomPatch);
     let effectSettings = zoomPatch.effectSettings[effectSlot];
     let previousEffectID = effectSettings.id;
+    let previousEffectMap = effectIDMap.get(previousEffectID);
     effectSettings.id = effectID;
     ZoomDevice.setDefaultsForEffect(effectSettings, effectIDMap);
     zoomPatch.changeEffectInSlot(effectSlot, effectSettings);
@@ -1429,7 +1432,9 @@ function changeEffectInSlot(zoomDevice, zoomPatch, effectIDMap, effectSlot, effe
         ZoomDevice.setDefaultsForEffect(effectSettings, effectIDMap);
         zoomPatch.changeEffectInSlot(effectSlot, effectSettings);
         if (zoomDevice !== undefined) {
-            zoomDevice.updateScreenForEffectInSlot(effectSlot, effectMap, effectSettings);
+            if (previousEffectMap !== undefined) {
+                zoomDevice.updateScreenForEffectInSlot(effectSlot, previousEffectMap, effectSettings);
+            }
             zoomDevice.uploadPatchToCurrentPatch(zoomPatch);
             getScreenCollectionAndUpdateEditPatchTable(zoomDevice);
         }

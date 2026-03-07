@@ -261,7 +261,18 @@ export class ZoomScreenCollection
     }
     else {
       let parameterIndex = parameterNumber - 2;
-      valueString = effectMap.parameters[parameterIndex].values[value];
+      let parameterMap = effectMap.parameters[parameterIndex];
+      if (parameterMap === undefined || parameterMap.values.length === 0) {
+        shouldLog(LogLevel.Warning) && console.warn(`Missing parameter map for effect ${effectMap.name}, parameterIndex ${parameterIndex}`);
+        valueString = value.toString();
+      }
+      else {
+        let clampedValue = Math.max(0, Math.min(parameterMap.values.length - 1, value));
+        if (clampedValue !== value) {
+          shouldLog(LogLevel.Warning) && console.warn(`Parameter value ${value} out of range for effect ${effectMap.name}, parameterIndex ${parameterIndex}. Clamped to ${clampedValue}.`);
+        }
+        valueString = parameterMap.values[clampedValue];
+      }
     }
 
     shouldLog(LogLevel.Info) && console.log(`Changing effect parameter value from "${parameter.valueString}" to "${valueString}" for effect ${effectMap.name}, parameter ${parameter.name}`);
@@ -285,15 +296,30 @@ export class ZoomScreenCollection
       screen.parameters.splice(2);
 
     for (let paramIndex = 0; paramIndex < effectMap.parameters.length; paramIndex++) {
-      let value = effectSettings.parameters[paramIndex];
+      let rawValue = effectSettings.parameters[paramIndex];
       let parameter = new ZoomScreenParameter();
+      let parameterMap = effectMap.parameters[paramIndex];
 
-      if (value >= effectMap.parameters[paramIndex].values.length) {
-        shouldLog(LogLevel.Error) && console.error(`value ${value} >= effectMap.parameters[paramIndex].values.length ${effectMap.parameters[paramIndex].values.length} for effect ${effectMap.name}, parameterIndex ${paramIndex}`);
-        break;
+      if (parameterMap === undefined || parameterMap.values.length === 0) {
+        shouldLog(LogLevel.Warning) && console.warn(`No value map for effect ${effectMap.name}, parameterIndex ${paramIndex}`);
+        parameter.name = `Param ${paramIndex + 1}`;
+        parameter.valueString = rawValue !== undefined ? rawValue.toString() : "0";
+        screen.parameters.push(parameter);
+        continue;
       }
-      parameter.name = effectMap.parameters[paramIndex].name;
-      parameter.valueString = effectMap.parameters[paramIndex].values[value];
+
+      if (!Number.isInteger(rawValue as number)) {
+        rawValue = 0;
+      }
+      let value = rawValue as number;
+      if (value < 0 || value >= parameterMap.values.length) {
+        let clamped = Math.max(0, Math.min(parameterMap.values.length - 1, value));
+        shouldLog(LogLevel.Warning) && console.warn(`Parameter value ${value} out of range for effect ${effectMap.name}, parameterIndex ${paramIndex}. Clamped to ${clamped}.`);
+        value = clamped;
+      }
+
+      parameter.name = parameterMap.name;
+      parameter.valueString = parameterMap.values[value];
       screen.parameters.push(parameter);
     }
   }

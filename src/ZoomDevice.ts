@@ -915,6 +915,7 @@ export class ZoomDevice implements IManagedMIDIDevice
 
   public deleteScreenForEffectInSlot(effectSlot: number)
   {
+    this.ensureScreenCollectionFromCurrentPatch();
     // Update screens
     if (this.currentScreenCollection !== undefined)
       this.currentScreenCollection.deleteScreen(effectSlot);
@@ -923,6 +924,7 @@ export class ZoomDevice implements IManagedMIDIDevice
 
   public addScreenForEffectInSlot(effectSlot: number, screen: ZoomScreen)
   {
+    this.ensureScreenCollectionFromCurrentPatch();
     // Update screens
     if (this.currentScreenCollection !== undefined)
       this.currentScreenCollection.insertScreen(effectSlot, screen);
@@ -931,6 +933,7 @@ export class ZoomDevice implements IManagedMIDIDevice
 
   public swapScreensForEffectSlots(effectSlot1: number, effectSlot2: number)
   {
+    this.ensureScreenCollectionFromCurrentPatch();
     // Update screens
     if (this.currentScreenCollection !== undefined)
       this.currentScreenCollection.swapScreens(effectSlot1, effectSlot2);
@@ -939,10 +942,27 @@ export class ZoomDevice implements IManagedMIDIDevice
 
   public updateScreenForEffectInSlot(effectSlot: number, effectMap: EffectParameterMap, effectSettings: EffectSettings)
   {
+    this.ensureScreenCollectionFromCurrentPatch();
     // Update screens
     if (this.currentScreenCollection !== undefined)
       this.currentScreenCollection.updateScreen(effectSlot, effectMap, effectSettings);
     this.emitScreenChangedEvent();
+  }
+
+  private ensureScreenCollectionFromCurrentPatch(): void
+  {
+    if (this._currentScreenCollection !== undefined)
+      return;
+    if (this.currentPatch === undefined)
+      return;
+    if (this.effectIDMap === undefined)
+      return;
+
+    let screenCollection = ZoomScreenCollection.fromPatchAndMappings(this.currentPatch, this.effectIDMap);
+    if (screenCollection !== undefined) {
+      this._currentScreenCollection = screenCollection;
+      this._currentScreenCollectionData = undefined;
+    }
   }
 
   public async downloadCurrentPatch() : Promise<ZoomPatch | undefined>
@@ -2624,7 +2644,17 @@ export class ZoomDevice implements IManagedMIDIDevice
     let parameterStart = parameterIndex ?? 0;
     let parameterEnd = parameterIndex === undefined ? effectMapping.parameters.length : parameterIndex + 1;
 
-    effectSettings.parameters.fill(0);
+    if (effectSettings.parameters.length < effectMapping.parameters.length) {
+      effectSettings.parameters.length = effectMapping.parameters.length;
+    }
+    for (let i = 0; i < effectSettings.parameters.length; i++) {
+      if (effectSettings.parameters[i] === undefined) {
+        effectSettings.parameters[i] = 0;
+      }
+    }
+    if (parameterIndex === undefined) {
+      effectSettings.parameters.fill(0);
+    }
     // parameters.length is typically max available for that pedal, e.g. 9 for MSOG and 12 for MS+, default to 0 for all parameters, including if we don't have defaults for that effect
 
     for (let parameter = parameterStart; parameter < parameterEnd; parameter++) {
@@ -2635,10 +2665,15 @@ export class ZoomDevice implements IManagedMIDIDevice
       }
       if (parameterMapping.default === undefined) {
         shouldLog(LogLevel.Warning) && console.warn(`No default value found for effect ID ${effectSettings.id.toString(16).padStart(8, "0")} parameter ${parameter}`);
+        effectSettings.parameters[parameter] = 0;
         continue;
       }
 
       let parameterValue = parameterMapping.default;
+      if (parameterValue < 0 || parameterValue >= parameterMapping.values.length) {
+        shouldLog(LogLevel.Warning) && console.warn(`Default value ${parameterValue} out of range for effect ID ${effectSettings.id.toString(16).padStart(8, "0")} parameter ${parameter}`);
+        parameterValue = 0;
+      }
       effectSettings.parameters[parameter] = parameterValue;
     }
   }
