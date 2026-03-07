@@ -12,6 +12,7 @@ const CHANNELS = {
   DISCONNECT_MIDI: 'midi:disconnect',
   GET_SETTINGS: 'app:get-settings',
   SET_SETTINGS: 'app:set-settings',
+  READ_APP_FILE: 'app:read-file',
   GET_APP_VERSION: 'app:get-version',
   RELAUNCH_APP: 'app:relaunch',
   MIDI_MESSAGE_EVENT: 'midi:message',
@@ -34,6 +35,7 @@ contextBridge.exposeInMainWorld('zoomExplorerAPI', {
   },
   getSettings: () => ipcRenderer.invoke(CHANNELS.GET_SETTINGS),
   setSettings: (settings) => ipcRenderer.invoke(CHANNELS.SET_SETTINGS, settings),
+  readAppFile: (relativePath) => ipcRenderer.invoke(CHANNELS.READ_APP_FILE, relativePath),
   getAppVersion: () => ipcRenderer.invoke(CHANNELS.GET_APP_VERSION),
   relaunchApp: () => ipcRenderer.invoke(CHANNELS.RELAUNCH_APP),
 });

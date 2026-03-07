@@ -27,7 +27,9 @@ export class InfoDialog {
 
   public show(text: string): void {
     this.infoLabel.textContent = text;
-    this.infoDialog.showModal();
+    if (!this.infoDialog.open) {
+      this.infoDialog.showModal();
+    }
   }
 
   public close(): void {

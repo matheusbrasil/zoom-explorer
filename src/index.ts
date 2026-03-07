@@ -17,7 +17,7 @@ import { ZoomScreen, ZoomScreenCollection, ZoomScreenParameter } from "./ZoomScr
 import { MessageType } from "./midiproxy.js";
 import { loadDataFromFile, saveBlobToFile, removeAllEventListeners, TextInputDialog } from "./htmltools.js";
 import { getChannelMessage } from "./miditools.js";
-import { bytesToHexString, partialArrayStringMatch, bytesWithCharactersToString, compareBuffers, numberToHexString, sleepForAWhile, getSafeFilename } from "./tools.js";
+import { bytesToHexString, partialArrayStringMatch, bytesWithCharactersToString, compareBuffers, numberToHexString, sleepForAWhile, getSafeFilename, getExceptionErrorString } from "./tools.js";
 import { RackDeviceHTMLView } from "./RackDeviceHTMLView.js";
 import { RackDeviceModel } from "./RackDeviceModel.js";
 import { ZoomDeviceModel } from "./ZoomDeviceModel.js";
@@ -58,12 +58,32 @@ const ZoomDevices = "ZoomDevices";
 const MIDIDevices = "MIDIDevices";
 const LCXLDevices = "LCXLDevices";
 async function downloadJSONResource(filename) {
-    let response = await fetch(`${filename}`);
-    if (!response.ok) {
-        shouldLog(LogLevel.Error) && console.error(`Fetching file ${filename} failed with HTTP error ${response.status}`);
+    if (filename.toLowerCase().endsWith(".json") && window.zoomExplorerAPI !== undefined && window.zoomExplorerAPI.readAppFile !== undefined) {
+        try {
+            let fileData = await window.zoomExplorerAPI.readAppFile(filename);
+            return JSON.parse(fileData);
+        }
+        catch (error) {
+            let errorString = getExceptionErrorString(error);
+            shouldLog(LogLevel.Warning) && console.warn(`IPC app file read failed for "${filename}", falling back to fetch: ${errorString}`);
+        }
+    }
+    try {
+        let response = await fetch(`${filename}`);
+        if (!response.ok) {
+            let logFunction = filename.toLowerCase().endsWith(".rack") ? console.warn : console.error;
+            shouldLog(filename.toLowerCase().endsWith(".rack") ? LogLevel.Warning : LogLevel.Error) && logFunction(`Fetching file ${filename} failed with HTTP error ${response.status}`);
+            return undefined;
+        }
+        return await response.json();
+    }
+    catch (error) {
+        let errorString = getExceptionErrorString(error);
+        let isRackResource = filename.toLowerCase().endsWith(".rack");
+        let logFunction = isRackResource ? console.warn : console.error;
+        shouldLog(isRackResource ? LogLevel.Warning : LogLevel.Error) && logFunction(`Failed loading JSON resource "${filename}": ${errorString}`);
         return undefined;
     }
-    return await response.json();
 }
 async function downloadEffectMaps(prefix = "") {
     let startTime = performance.now();
@@ -73,37 +93,51 @@ async function downloadEffectMaps(prefix = "") {
     if (!prefix.endsWith("/"))
         prefix = prefix + "/";
     let obj = await downloadJSONResource(`${prefix}zoom-effect-mappings-ms50gp.json`);
+    if (obj === undefined)
+        throw new Error(`Failed to load effect map ${prefix}zoom-effect-mappings-ms50gp.json`);
     shouldLog(LogLevel.Info) && console.log(`Downloading took  ${((performance.now() - startTime) / 1000).toFixed(3)} seconds ***`);
     let mapForMS50GPlus = new Map(Object.entries(obj).map(([key, value]) => [parseInt(key, 16), value]));
     shouldLog(LogLevel.Info) && console.log(`mapForMS50GPlus.size = ${mapForMS50GPlus.size}`);
     startTime = performance.now();
     obj = await downloadJSONResource(`${prefix}zoom-effect-mappings-ms70cdrp.json`);
+    if (obj === undefined)
+        throw new Error(`Failed to load effect map ${prefix}zoom-effect-mappings-ms70cdrp.json`);
     shouldLog(LogLevel.Info) && console.log(`Downloading took  ${((performance.now() - startTime) / 1000).toFixed(3)} seconds ***`);
     let mapForMS70CDRPlus = new Map(Object.entries(obj).map(([key, value]) => [parseInt(key, 16), value]));
     shouldLog(LogLevel.Info) && console.log(`mapForMS70CDRPlus.size = ${mapForMS70CDRPlus.size}`);
     startTime = performance.now();
     obj = await downloadJSONResource(`${prefix}zoom-effect-mappings-ms60bp.json`);
+    if (obj === undefined)
+        throw new Error(`Failed to load effect map ${prefix}zoom-effect-mappings-ms60bp.json`);
     shouldLog(LogLevel.Info) && console.log(`Downloading took  ${((performance.now() - startTime) / 1000).toFixed(3)} seconds ***`);
     let mapForMS60BPlus = new Map(Object.entries(obj).map(([key, value]) => [parseInt(key, 16), value]));
     shouldLog(LogLevel.Info) && console.log(`mapForMS60BPlus.size = ${mapForMS60BPlus.size}`);
     startTime = performance.now();
     obj = await downloadJSONResource("zoom-effect-mappings-ms200dp.json");
+    if (obj === undefined)
+        throw new Error("Failed to load effect map zoom-effect-mappings-ms200dp.json");
     shouldLog(LogLevel.Info) && console.log(`Downloading took  ${((performance.now() - startTime) / 1000).toFixed(3)} seconds ***`);
     let mapForMS200DPlus = new Map(Object.entries(obj).map(([key, value]) => [parseInt(key, 16), value]));
     shouldLog(LogLevel.Info) && console.log(`mapForMS200DPlus.size = ${mapForMS200DPlus.size}`);
     replaceEffectNamesInMap(mapForMS200DPlus, zoomEffectIDsFullNamesMS200DPlus);
     startTime = performance.now();
     obj = await downloadJSONResource("zoom-effect-mappings-g2four.json");
+    if (obj === undefined)
+        throw new Error("Failed to load effect map zoom-effect-mappings-g2four.json");
     shouldLog(LogLevel.Info) && console.log(`Downloading took  ${((performance.now() - startTime) / 1000).toFixed(3)} seconds ***`);
     let mapForG2FOUR = new Map(Object.entries(obj).map(([key, value]) => [parseInt(key, 16), value]));
     shouldLog(LogLevel.Info) && console.log(`mapForG2FOUR.size = ${mapForG2FOUR.size}`);
     startTime = performance.now();
     obj = await downloadJSONResource("zoom-effect-mappings-b2four.json");
+    if (obj === undefined)
+        throw new Error("Failed to load effect map zoom-effect-mappings-b2four.json");
     shouldLog(LogLevel.Info) && console.log(`Downloading took  ${((performance.now() - startTime) / 1000).toFixed(3)} seconds ***`);
     let mapForB2FOUR = new Map(Object.entries(obj).map(([key, value]) => [parseInt(key, 16), value]));
     shouldLog(LogLevel.Info) && console.log(`mapForB2FOUR.size = ${mapForB2FOUR.size}`);
     startTime = performance.now();
     obj = await downloadJSONResource(`${prefix}zoom-effect-mappings-msog.json`);
+    if (obj === undefined)
+        throw new Error(`Failed to load effect map ${prefix}zoom-effect-mappings-msog.json`);
     shouldLog(LogLevel.Info) && console.log(`Downloading took  ${((performance.now() - startTime) / 1000).toFixed(3)} seconds ***`);
     startTime = performance.now();
     // mapForMSOG = new Map<number, EffectParameterMap>(Object.entries(obj).map(([key, value]) => [parseInt(key, 16), value as EffectParameterMap]));
@@ -1771,17 +1805,24 @@ async function waitForWebMIDI(reconnectTimeoutMilliseconds) {
     toplevelContentDiv.style.display = "none";
     infoDialog.show("Please make sure WebMIDI is enabled in your browser and connect a Zoom MS or MS+ pedal");
     let hasWebMIDI = false;
+    let attemptCounter = 0;
+    let lastEnableError = "";
     while (!hasWebMIDI) {
+        attemptCounter++;
         hasWebMIDI = await midi.enable().catch((reason) => {
-            //shouldLog(LogLevel.Info) && console.log(`Exception while trying to enable WebMIDI: ${getExceptionErrorString(reason)}`);
+            lastEnableError = getExceptionErrorString(reason);
+            console.error(`Failed to enable MIDI backend (attempt ${attemptCounter}): ${lastEnableError}`);
             return false;
         });
         if (!hasWebMIDI) {
-            // shouldLog(LogLevel.Info) && console.log("Failed to enable WebMIDI");
+            if (attemptCounter === 1 || attemptCounter % 5 === 0) {
+                let suffix = lastEnableError.length > 0 ? ` Last error: ${lastEnableError}` : "";
+                infoDialog.show(`Waiting for MIDI backend to initialize.${suffix}`);
+            }
             await sleepForAWhile(reconnectTimeoutMilliseconds);
         }
-        ;
     }
+    console.warn(`MIDI backend enabled. Inputs=${midi.inputs.size}, outputs=${midi.outputs.size}`);
     infoDialog.close();
     toplevelContentDiv.style.display = "block";
 }
@@ -1789,16 +1830,46 @@ async function waitForZoomDevices(timeoutMilliseconds) {
     toplevelContentDiv.style.display = "none";
     infoDialog.show("Please connect a Zoom MS or MS+ pedal");
     let zoomDevices = [];
+    let retryCounter = 0;
+    let warnedAboutUnclassifiedZoom = false;
     while (zoomDevices.length === 0) {
         zoomDevices = deviceManager.getDevices(ZoomDevices);
         if (zoomDevices.length === 0) {
-            await sleepForAWhile(reconnectTimeoutMilliseconds);
+            let midiDevices = deviceManager.getDevices(MIDIDevices);
+            if (!warnedAboutUnclassifiedZoom && midiDevices.length > 0) {
+                let possibleZoomNames = midiDevices
+                    .map((d) => `${d.deviceInfo.inputName} ${d.deviceInfo.outputName}`.trim())
+                    .filter((name) => /zoom|ms\s*plus|ms-\d+/i.test(name));
+                if (possibleZoomNames.length > 0) {
+                    warnedAboutUnclassifiedZoom = true;
+                    console.warn(`MIDI devices detected but not classified as Zoom yet: ${possibleZoomNames.join(" | ")}`);
+                    infoDialog.show("Zoom MIDI device detected, but identity/classification is still pending. Keep the pedal connected.");
+                }
+            }
+            retryCounter++;
+            if (retryCounter % 5 === 0) {
+                let inputNames = [...midi.inputs.values()].map((input) => input.name);
+                let outputNames = [...midi.outputs.values()].map((output) => output.name);
+                let detectedNames = [...new Set([...inputNames, ...outputNames])];
+                console.warn(`Still waiting for Zoom classification (attempt ${retryCounter}). Inputs=${inputNames.length}, outputs=${outputNames.length}${detectedNames.length > 0 ? `, names: ${detectedNames.join(" | ")}` : ""}`);
+                infoDialog.show(`Waiting for Zoom pedal detection (attempt ${retryCounter}).${detectedNames.length > 0 ? ` Detected MIDI ports: ${detectedNames.join(" | ")}` : " No MIDI ports detected yet."}`);
+                await deviceManager.updateMIDIDeviceList().catch((error) => {
+                    console.warn(`Retrying MIDI device list update failed: ${String(error)}`);
+                });
+            }
+            await sleepForAWhile(timeoutMilliseconds);
         }
     }
     infoDialog.close();
+    toplevelContentDiv.style.display = "block";
     // We wait with enabling the midiDeviceListView untill all devices have been loaded, otherwise
     // we might get error "Unable to get index for device" in MIDIDeviceListHTMLView.updateMIDIDevicesTableActivity
     midiDeviceListView.enabled = !performanceMode;
+    let openZoomDevice = zoomDevices.find((d) => d.isOpen);
+    if (openZoomDevice === undefined && zoomDevices.length > 0) {
+        console.warn(`Zoom device detected but not open yet. Auto-opening "${zoomDevices[0].deviceName}"`);
+        await handleZoomDeviceOn(deviceManager, zoomDevices[0]);
+    }
     // When device connected and on, display will be set to "block", see handleZoomDeviceOn()
     // toplevelContentDiv.style.display = "block";
     // shouldLog(LogLevel.Info) && console.log("MIDI Device list:");
@@ -1849,6 +1920,7 @@ async function handleDisconnect(deviceManager, device, key) {
     shouldLog(LogLevel.Info) && console.log(`Device disconnected ${device.deviceName} (${device.deviceInfo.inputName}, ${device.deviceInfo.outputName})`);
     if (key === ZoomDevices) {
         setTimeout(async () => {
+            initializedZoomDevices.delete(device.deviceName);
             let zoomDevices = deviceManager.getDevices(ZoomDevices);
             let lcxlDevices = deviceManager.getDevices(LCXLDevices);
             let midiDevices = deviceManager.getDevices(MIDIDevices);
@@ -1880,6 +1952,7 @@ async function handleDisconnect(deviceManager, device, key) {
     }
 }
 async function handleZoomDeviceOff(deviceManager, zoomDeviceOff) {
+    initializedZoomDevices.delete(zoomDeviceOff.deviceName);
     if (currentZoomDevice !== undefined && zoomDeviceOff.deviceInfo.inputID === currentZoomDevice.deviceInfo.inputID) {
         let zoomDevices = deviceManager.getDevices(ZoomDevices);
         let zoomDevice = zoomDevices.find(zoomDevice => zoomDevice.isOpen);
@@ -1907,43 +1980,56 @@ async function handleMIDIDeviceOff(deviceManager, midiDeviceOff) {
 function handleConnect(deviceManager, device, key) {
     shouldLog(LogLevel.Info) && console.log(`Device connected ${device.deviceName} (${device.deviceInfo.inputName}, ${device.deviceInfo.outputName})`);
     setTimeout(async () => {
-        let zoomDevices = deviceManager.getDevices(ZoomDevices);
-        let lcxlDevices = deviceManager.getDevices(LCXLDevices);
-        let midiDevices = deviceManager.getDevices(MIDIDevices);
-        let allDevices = [...zoomDevices, ...lcxlDevices, ...midiDevices];
-        // midiDeviceListView.updateMIDIDevicesTableDeprecated(allDevices);
-        updateMIDIMappingsTable(allDevices);
-        if (device instanceof ZoomDevice) {
-            if (!undoRedoManagers.has(device.deviceName)) {
-                let undoRedoManager = new UndoRedoManager();
-                undoRedoManagers.set(device.deviceName, undoRedoManager);
-                undoRedoManager.addStateChangedListener(undoRedoStateChanged);
+        try {
+            let properties = midiDeviceListModel.deviceProperties.get(device.deviceName);
+            let deviceShouldBeOn = properties !== undefined ? properties.deviceOn : true; // default ON for first-time discovery before UI model is populated
+            if (properties === undefined) {
+                shouldLog(LogLevel.Info) && console.log(`No UI device properties found yet for "${device.deviceName}". Defaulting to On=true for initial connection.`);
             }
-            if (!undoRedoManagers.has("patchlist_" + device.deviceName)) {
-                let undoRedoManager = new UndoRedoManager();
-                undoRedoManagers.set("patchlist_" + device.deviceName, undoRedoManager);
+            else if (!deviceShouldBeOn) {
+                console.warn(`Device "${device.deviceName}" is marked Off in MIDI Devices list. Skipping auto-open.`);
             }
-            if (midiDeviceListModel.deviceIsOn(device.deviceName))
-                await handleZoomDeviceOn(deviceManager, device);
+            let zoomDevices = deviceManager.getDevices(ZoomDevices);
+            let lcxlDevices = deviceManager.getDevices(LCXLDevices);
+            let midiDevices = deviceManager.getDevices(MIDIDevices);
+            let allDevices = [...zoomDevices, ...lcxlDevices, ...midiDevices];
+            // midiDeviceListView.updateMIDIDevicesTableDeprecated(allDevices);
+            updateMIDIMappingsTable(allDevices);
+            if (device instanceof ZoomDevice) {
+                if (!undoRedoManagers.has(device.deviceName)) {
+                    let undoRedoManager = new UndoRedoManager();
+                    undoRedoManagers.set(device.deviceName, undoRedoManager);
+                    undoRedoManager.addStateChangedListener(undoRedoStateChanged);
+                }
+                if (!undoRedoManagers.has("patchlist_" + device.deviceName)) {
+                    let undoRedoManager = new UndoRedoManager();
+                    undoRedoManagers.set("patchlist_" + device.deviceName, undoRedoManager);
+                }
+                if (deviceShouldBeOn)
+                    await handleZoomDeviceOn(deviceManager, device);
+            }
+            else if (device instanceof LCXLDevice) {
+                if (deviceShouldBeOn)
+                    await handleLCXLDeviceOn(deviceManager, device);
+            }
+            else if (device instanceof MIDIDevice) {
+                if (deviceShouldBeOn)
+                    await handleMIDIDeviceOn(deviceManager, device);
+            }
+            if (zoomCCMapper !== null && device.deviceName === zoomCCMapperModel.inputDevice) {
+                zoomCCMapperController.updateInputDevice();
+            }
+            // shouldLog(LogLevel.Info) && console.log("MIDI Device list:");
+            // let midiDeviceList = deviceManager.midiDeviceList;
+            // for (let i=0; i<midiDeviceList.length; i++)
+            // {
+            //   let device = midiDeviceList[i];
+            //   shouldLog(LogLevel.Info) && console.log(`  ${JSON.stringify(device)}`)
+            // }
         }
-        else if (device instanceof LCXLDevice) {
-            if (midiDeviceListModel.deviceIsOn(device.deviceName))
-                await handleLCXLDeviceOn(deviceManager, device);
+        catch (error) {
+            console.error(`Failed while handling connected device "${device?.deviceName ?? "unknown"}":`, error);
         }
-        else if (device instanceof MIDIDevice) {
-            if (midiDeviceListModel.deviceIsOn(device.deviceName))
-                await handleMIDIDeviceOn(deviceManager, device);
-        }
-        if (zoomCCMapper !== null && device.deviceName === zoomCCMapperModel.inputDevice) {
-            zoomCCMapperController.updateInputDevice();
-        }
-        // shouldLog(LogLevel.Info) && console.log("MIDI Device list:");
-        // let midiDeviceList = deviceManager.midiDeviceList;
-        // for (let i=0; i<midiDeviceList.length; i++)
-        // {
-        //   let device = midiDeviceList[i];
-        //   shouldLog(LogLevel.Info) && console.log(`  ${JSON.stringify(device)}`)
-        // }
     });
 }
 async function handleZoomDeviceOn(deviceManager, zoomDevice) {
@@ -1966,19 +2052,33 @@ async function handleMIDIDeviceOn(deviceManager, midiDevice) {
     updateMappingsFromLocalStorage();
 }
 async function openAndSyncNewZoomDevice(zoomDevice) {
-    await zoomDevice.open();
-    zoomDevice.parameterEditEnable();
-    zoomDevice.addMemorySlotChangedListener(handleMemorySlotChanged);
-    zoomDevice.autoUpdateScreens = true;
-    zoomDevice.addScreenChangedListener(handleScreenChanged);
-    zoomDevice.autoRequestCurrentPatch = true;
-    zoomDevice.addCurrentPatchChangedListener(handleCurrentPatchChanged);
-    zoomDevice.addPatchChangedListener(handlePatchChanged);
-    zoomDevice.addEffectParameterChangedListener(handleEffectParameterChanged);
-    zoomDevice.autoRequestProgramChange = true;
-    zoomDevice.addTempoChangedListener(handleTempoChanged);
-    zoomDevice.addEffectSlotChangedListener(handleEffectSlotChanged);
-    await zoomDevice.updatePatchListFromPedal();
+    let shouldInitialize = !initializedZoomDevices.has(zoomDevice.deviceName);
+    if (!zoomDevice.isOpen) {
+        await zoomDevice.open();
+        shouldInitialize = true;
+    }
+    if (!shouldInitialize) {
+        return;
+    }
+    initializedZoomDevices.add(zoomDevice.deviceName);
+    try {
+        zoomDevice.parameterEditEnable();
+        zoomDevice.addMemorySlotChangedListener(handleMemorySlotChanged);
+        zoomDevice.autoUpdateScreens = true;
+        zoomDevice.addScreenChangedListener(handleScreenChanged);
+        zoomDevice.autoRequestCurrentPatch = true;
+        zoomDevice.addCurrentPatchChangedListener(handleCurrentPatchChanged);
+        zoomDevice.addPatchChangedListener(handlePatchChanged);
+        zoomDevice.addEffectParameterChangedListener(handleEffectParameterChanged);
+        zoomDevice.autoRequestProgramChange = true;
+        zoomDevice.addTempoChangedListener(handleTempoChanged);
+        zoomDevice.addEffectSlotChangedListener(handleEffectSlotChanged);
+        await zoomDevice.updatePatchListFromPedal();
+    }
+    catch (error) {
+        initializedZoomDevices.delete(zoomDevice.deviceName);
+        throw error;
+    }
 }
 async function updateStateWithNewCurrentZoomDevice(zoomDevice) {
     currentZoomDevice = zoomDevice;
@@ -2409,7 +2509,7 @@ async function downoadDemoRackPresets(prefix = "") {
         let remotePath = `${prefix}files${path}`;
         let json = await downloadJSONResource(remotePath);
         if (json === undefined) {
-            shouldLog(LogLevel.Error) && console.error(`Failed to download demo rack preset "${path}"`);
+            shouldLog(LogLevel.Warning) && console.warn(`Failed to download demo rack preset "${path}"`);
         }
         else {
             shouldLog(LogLevel.Info) && console.log(`Downloaded demo rack preset "${path}"`);
@@ -2468,7 +2568,9 @@ function updatePerformanceMode() {
 }
 async function start(reconnectTimeoutMilliseconds) {
     await downloadEffectMaps();
-    await downoadDemoRackPresets();
+    if (window.zoomExplorerAPI === undefined) {
+        await downoadDemoRackPresets();
+    }
     zoomEffectSelector = new ZoomEffectSelector();
     let effectSelectors = document.getElementById("effectSelectors");
     effectSelectors.append(zoomEffectSelector.htmlElement);
@@ -2696,6 +2798,7 @@ if (zoomCCMapper !== null) {
 let currentZoomDevice = undefined;
 let currentLCXLDevice = undefined;
 let currentZoomPatch = undefined;
+let initializedZoomDevices = new Set();
 // Maps from device name to UndoRedoManager
 let undoRedoManagers = new Map();
 let patchEditorModel = new ZoomPatchEditorModel(); // currently only used for on/off state
@@ -2825,7 +2928,12 @@ settingsModel.addPropertyChangedListener("experimentalPlayground", (propertyName
     storeSettings();
     updateFromSettings();
 });
-start(reconnectTimeoutMilliseconds);
+start(reconnectTimeoutMilliseconds).catch((error) => {
+    let errorString = getExceptionErrorString(error);
+    console.error(`Fatal startup error in Zoom Explorer: ${errorString}`);
+    toplevelContentDiv.style.display = "none";
+    infoDialog.show(`Zoom Explorer failed to start MIDI detection. ${errorString}`);
+});
 // File Browser Demo
 function initializeFileBrowser(fileBrowser) {
     // Create some sample data to demonstrate the file browser

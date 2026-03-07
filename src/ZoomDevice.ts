@@ -1,7 +1,7 @@
 import { EffectSettings, ZoomPatch } from "./ZoomPatch.js";
 import { ZoomScreen, ZoomScreenCollection } from "./ZoomScreenInfo.js";
 import { DeviceID, IMIDIProxy, ListenerType, MessageType } from "./midiproxy.js";
-import { getChannelMessage } from "./miditools.js";
+import { getChannelMessage, getDeviceName, isMIDIIdentityResponse } from "./miditools.js";
 import { Throttler } from "./throttler.js";
 import { crc32, eight2seven, getExceptionErrorString, getNumberOfEightBitBytes, partialArrayMatch, partialArrayStringMatch, seven2eight, bytesToHexString, hexStringToUint8Array, sleepForAWhile } from "./tools.js";
 import zoomEffectIDsMS70CDRPlus from "./zoom-effect-ids-ms70cdrp.js";
@@ -214,7 +214,12 @@ export class ZoomDevice implements IManagedMIDIDevice
 
   public static isDeviceType(device: MIDIDeviceDescription): boolean
   {
-    return device.manufacturerID[0] === 0x52;
+    if (device.manufacturerID[0] === 0x52)
+      return true;
+
+    // Fallback for systems where SysEx identity response was missed during pairing.
+    let names = `${device.deviceName} ${device.inputName} ${device.outputName}`.toUpperCase();
+    return names.includes("ZOOM");
   }
 
   public async open()
@@ -224,15 +229,37 @@ export class ZoomDevice implements IManagedMIDIDevice
       return;
     }
     shouldLog(LogLevel.Info) && console.log(`Opening ZoomDevice ${this.deviceName}`);
-    this._isOpen = true;
-    await this._midi.openInput(this._midiDevice.inputID);
-    await this._midi.openOutput(this._midiDevice.outputID);
-    this.connectMessageHandler();
-    await this.probeDevice();
-    this.startAutoRequestProgramChangeIfNeeded();
-    if (this.autoRequestCurrentPatch)
-      await this.downloadCurrentPatch();
-    this.emitOpenCloseEvent(true);
+    let inputOpened = false;
+    let outputOpened = false;
+    let messageHandlerConnected = false;
+    try {
+      await this._midi.openInput(this._midiDevice.inputID);
+      inputOpened = true;
+      await this._midi.openOutput(this._midiDevice.outputID);
+      outputOpened = true;
+      await this.hydrateIdentityFromUniversalRequestIfNeeded();
+      this.connectMessageHandler();
+      messageHandlerConnected = true;
+      await this.probeDevice();
+      this.startAutoRequestProgramChangeIfNeeded();
+      if (this.autoRequestCurrentPatch)
+        await this.downloadCurrentPatch();
+      this._isOpen = true;
+      this.emitOpenCloseEvent(true);
+    } catch (error) {
+      shouldLog(LogLevel.Error) && console.error(`Failed to open ZoomDevice ${this.deviceName}: ${String(error)}`);
+      if (messageHandlerConnected) {
+        this.disconnectMessageHandler();
+      }
+      if (outputOpened) {
+        await this._midi.closeOutput(this._midiDevice.outputID).catch(() => {});
+      }
+      if (inputOpened) {
+        await this._midi.closeInput(this._midiDevice.inputID).catch(() => {});
+      }
+      this._isOpen = false;
+      throw error;
+    }
   }
 
   public async close()
@@ -267,6 +294,62 @@ export class ZoomDevice implements IManagedMIDIDevice
     
     shouldLog(LogLevel.Info) && console.log(`Closed ZoomDevice ${this._zoomDeviceID}`);
     this.emitOpenCloseEvent(false);
+  }
+
+  private async hydrateIdentityFromUniversalRequestIfNeeded(): Promise<void>
+  {
+    const alreadyHasZoomIdentity = this._midiDevice.manufacturerID[0] === 0x52 && this._midiDevice.familyCode[0] !== 0;
+    if (alreadyHasZoomIdentity) {
+      return;
+    }
+
+    const identityRequest = new Uint8Array([0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7]);
+    const replyTimeoutMilliseconds = 500;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let reply: Uint8Array | undefined = await this._midi.sendAndGetReply(
+        this._midiDevice.outputID,
+        identityRequest,
+        this._midiDevice.inputID,
+        (data: Uint8Array) => isMIDIIdentityResponse(data),
+        replyTimeoutMilliseconds,
+      );
+
+      if (reply === undefined || !isMIDIIdentityResponse(reply)) {
+        continue;
+      }
+
+      let dataOffset: number = reply[5] !== 0 ? 0 : 2;
+      let manufacturerID: [number] | [number, number, number] = reply[5] !== 0 ? [reply[5]] : [reply[5], reply[6], reply[7]];
+      if (manufacturerID[0] !== 0x52) {
+        continue;
+      }
+
+      let familyCode: [number, number] = [reply[6 + dataOffset], reply[7 + dataOffset]];
+      let modelNumber: [number, number] = [reply[8 + dataOffset], reply[9 + dataOffset]];
+      let versionNumber: [number, number, number, number] = [reply[10 + dataOffset], reply[11 + dataOffset], reply[12 + dataOffset], reply[13 + dataOffset]];
+      let detectedDeviceName = getDeviceName(manufacturerID, familyCode, modelNumber);
+      let existingUniqueName = this._midiDevice.deviceNameUnique;
+
+      this._midiDevice = new MIDIDeviceDescription({
+        ...this._midiDevice,
+        manufacturerID,
+        manufacturerName: "Zoom Corporation",
+        familyCode,
+        modelNumber,
+        versionNumber,
+        deviceName: detectedDeviceName,
+        deviceNameUnique: existingUniqueName,
+        identityResponse: reply,
+      });
+
+      this._zoomDeviceID = familyCode[0];
+      this._zoomDeviceIdString = this._zoomDeviceID.toString(16).padStart(2, "0");
+      console.warn(`Recovered Zoom identity for "${existingUniqueName}": ${detectedDeviceName} (ID ${this._zoomDeviceIdString})`);
+      return;
+    }
+
+    console.warn(`Could not recover Zoom identity for "${this._midiDevice.deviceNameUnique}". Zoom protocol probing may fail until identity reply is available.`);
   }
 
   public setMuteState(messageType: MessageType, mute: boolean): void

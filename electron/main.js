@@ -8,6 +8,7 @@ const isWSL =
   (Boolean(process.env.WSL_DISTRO_NAME) || os.release().toLowerCase().includes('microsoft'));
 
 app.commandLine.appendSwitch('enable-blink-features', 'WebMidi,WebMidiSysex');
+app.commandLine.appendSwitch('allow-file-access-from-files');
 if (isWSL) {
   app.commandLine.appendSwitch('no-sandbox');
 }
@@ -41,6 +42,21 @@ function createWindow() {
       nodeIntegration: false,
       sandbox: !isWSL,
     },
+  });
+
+  win.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    const levelLabels = ['debug', 'info', 'warn', 'error'];
+    const label = levelLabels[level] ?? 'log';
+    const source = sourceId ? `${sourceId}:${line}` : `line ${line}`;
+    console.log(`[renderer:${label}] ${message} (${source})`);
+  });
+
+  win.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+    console.error(`[main] Renderer failed to load (${errorCode}): ${errorDescription}. URL=${validatedURL}`);
+  });
+
+  win.webContents.on('render-process-gone', (_event, details) => {
+    console.error(`[main] Renderer process gone: reason=${details.reason}, exitCode=${details.exitCode}`);
   });
 
   win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));

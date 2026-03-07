@@ -31,6 +31,7 @@ export type ZoomExplorerAPI = {
   onMidiMessage: (callback: (payload: MidiMessageEventDTO) => void) => () => void;
   getSettings: () => Promise<Record<string, unknown>>;
   setSettings: (settings: Record<string, unknown>) => Promise<Record<string, unknown>>;
+  readAppFile: (relativePath: string) => Promise<string>;
   getAppVersion: () => Promise<string>;
   relaunchApp: () => Promise<boolean>;
 };
