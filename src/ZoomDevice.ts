@@ -1126,6 +1126,10 @@ export class ZoomDevice implements IManagedMIDIDevice
     let eightBitData: Uint8Array | undefined = undefined;
 
     if (this._supportedCommands.get(ZoomDevice.messageTypes.requestPatchDumpForMemoryLocationV2.str) === SupportType.Supported) {
+      if (this._patchesPerBank <= 0) {
+        shouldLog(LogLevel.Warning) && console.warn(`Cannot download patch ${memorySlot} with V2 command because patchesPerBank is invalid (${this._patchesPerBank})`);
+        return undefined;
+      }
       let bank = Math.floor(memorySlot / this._patchesPerBank);
       let program = memorySlot % this._patchesPerBank;
       let bankProgram = new Uint8Array(4);
@@ -1138,10 +1142,19 @@ export class ZoomDevice implements IManagedMIDIDevice
       command.set(bankProgram, ZoomDevice.messageTypes.requestPatchDumpForMemoryLocationV2.bytes.length);
        
       reply = await this.sendCommandAndGetReply(command, 
-        received => this.zoomCommandMatch(received, ZoomDevice.messageTypes.patchDumpForMemoryLocationV2.bytes));
+        received => {
+          if (!this.zoomCommandMatch(received, ZoomDevice.messageTypes.patchDumpForMemoryLocationV2.bytes)) {
+            return false;
+          }
+          if (received.length < 13) {
+            return false;
+          }
+          let replyBank = received[7] + (received[8] << 7);
+          let replyProgram = received[9] + (received[10] << 7);
+          return replyBank === bank && replyProgram === program;
+        });
       if (reply !== undefined) {
-        let offset = 13;
-        eightBitData = seven2eight(reply, offset, reply.length-2);
+        [eightBitData] = ZoomDevice.sysexToPatchData(reply);
       }
     }
     else {
@@ -1151,10 +1164,17 @@ export class ZoomDevice implements IManagedMIDIDevice
       command[ZoomDevice.messageTypes.requestPatchDumpForMemoryLocationV1.bytes.length] = memorySlot;
        
       reply = await this.sendCommandAndGetReply(command, 
-        received => this.zoomCommandMatch(received, ZoomDevice.messageTypes.patchDumpForMemoryLocationV1.bytes));
+        received => {
+          if (!this.zoomCommandMatch(received, ZoomDevice.messageTypes.patchDumpForMemoryLocationV1.bytes)) {
+            return false;
+          }
+          if (received.length < 9) {
+            return false;
+          }
+          return received[7] === memorySlot;
+        });
       if (reply !== undefined) {
-        let offset = 10;
-        eightBitData = seven2eight(reply, offset, reply.length - 2 - this._patchDumpForMemoryLocationV1CRCBytes);
+        [eightBitData] = ZoomDevice.sysexToPatchData(reply);
       }
     }
     if (eightBitData != undefined) {
@@ -1642,29 +1662,24 @@ export class ZoomDevice implements IManagedMIDIDevice
 
   private parsePatchFromMemorySlot(data: Uint8Array): [patch: ZoomPatch | undefined, memorySlot: number | undefined]
   {
-    let offset: number = 0;
-    let crcBytes: number = 0;
+    let patchData: Uint8Array | undefined;
     let memorySlot: number = 0;
     
     if (this.isMessageType(data, ZoomDevice.messageTypes.patchDumpForMemoryLocationV1)) {
-      offset = 10;
-      crcBytes = this._patchDumpForMemoryLocationV1CRCBytes;
       memorySlot = data[7]; 
     }
     else {
-      offset = 13;
-      crcBytes = 0;
-      let bank = data[7] + ((data[8] & 0b0111111) >> 7); 
-      let program = data[9] + ((data[10] & 0b0111111) >> 7); 
+      let bank = data[7] + (data[8] << 7); 
+      let program = data[9] + (data[10] << 7); 
       if (this._patchesPerBank !== -1)
         program += bank * this._patchesPerBank;
       memorySlot = program;
     }
 
-    let eightBitData = seven2eight(data, offset, data.length - 2 - crcBytes); // skip the last byte (0x7F)in the sysex message, and crc bytes if v1 message
+    [patchData] = ZoomDevice.sysexToPatchData(data);
 
-    if (eightBitData !== undefined) {
-      let patch = ZoomPatch.fromPatchData(eightBitData);
+    if (patchData !== undefined) {
+      let patch = ZoomPatch.fromPatchData(patchData);
       return [patch, memorySlot];
     }
 
@@ -2176,8 +2191,8 @@ export class ZoomDevice implements IManagedMIDIDevice
     else if (this.isMessageType(data, ZoomDevice.messageTypes.patchDumpForMemoryLocationV2)) {
       if (log) shouldLog(LogLevel.Info) && console.log(`${performance.now().toFixed(1)} Received patch dump for bank number ${data[7] + (data[8]<<7)} ` +
         `program number ${data[9] + (data[10]<<7)}, raw: ${bytesToHexString(data, " ")}`);
-      let bank = data[7] + ((data[8] & 0b0111111) >> 7); 
-      let program = data[9] + ((data[10] & 0b0111111) >> 7); 
+      let bank = data[7] + (data[8] << 7); 
+      let program = data[9] + (data[10] << 7); 
       if (this._patchesPerBank !== -1)
         program += bank * this._patchesPerBank;
       let memorySlot = program;
