@@ -57,6 +57,8 @@ import { LocalFileSystem } from "./LocalFileSystem.js";
 const ZoomDevices = "ZoomDevices";
 const MIDIDevices = "MIDIDevices";
 const LCXLDevices = "LCXLDevices";
+let patchSelectorSyncing = false;
+let patchSelectorUIInitialized = false;
 async function downloadJSONResource(filename) {
     if (filename.toLowerCase().endsWith(".json") && window.zoomExplorerAPI !== undefined && window.zoomExplorerAPI.readAppFile !== undefined) {
         try {
@@ -305,6 +307,148 @@ async function downloadEffectMaps(prefix = "") {
 function updateMIDIMappingsTable(devices) {
     // virtualMIDIDeviceController.updateMIDIMappingsTable(devices);
 }
+function initializeModernEditorLayout() {
+    const hideSelectors = [".titleContainer", ".subtitle", "#contact", "#settingsContainer", "#midiDeviceList", "#zoomCCMapper", "#midiMappers", "#rackDevices", "#sidebar", "#fileBrowserSidebar"];
+    for (let selector of hideSelectors) {
+        let elements = document.querySelectorAll(selector);
+        for (let element of elements) {
+            if (element instanceof HTMLElement)
+                element.style.display = "none";
+        }
+    }
+    let patchListHeader = document.getElementById("patchListCollapsibleButton");
+    if (patchListHeader !== null && patchListHeader.parentElement !== null)
+        patchListHeader.parentElement.style.display = "none";
+    let patchEditorHeader = document.getElementById("patchEditorCollapsibleButton");
+    if (patchEditorHeader !== null)
+        patchEditorHeader.style.display = "none";
+}
+function closePatchSelectorMenu() {
+    let menu = document.getElementById("patchSelectorMenu");
+    let button = document.getElementById("patchSelectorButton");
+    if (menu instanceof HTMLDivElement)
+        menu.classList.remove("open");
+    if (button instanceof HTMLButtonElement)
+        button.setAttribute("aria-expanded", "false");
+}
+function updatePatchSelectorButtonLabel() {
+    let dropdown = document.getElementById("patchSelectorDropdown");
+    let label = document.getElementById("patchSelectorButtonLabel");
+    if (!(dropdown instanceof HTMLSelectElement) || !(label instanceof HTMLSpanElement))
+        return;
+    let selectedOption = dropdown.selectedOptions.length > 0 ? dropdown.selectedOptions[0] : undefined;
+    label.textContent = selectedOption !== undefined ? selectedOption.text : "Select patch";
+}
+function rebuildPatchSelectorMenu() {
+    let dropdown = document.getElementById("patchSelectorDropdown");
+    let menu = document.getElementById("patchSelectorMenu");
+    if (!(dropdown instanceof HTMLSelectElement) || !(menu instanceof HTMLDivElement))
+        return;
+    while (menu.firstChild !== null)
+        menu.removeChild(menu.firstChild);
+    for (let i = 0; i < dropdown.options.length; i++) {
+        let option = dropdown.options[i];
+        let itemButton = document.createElement("button");
+        itemButton.className = "patchSelectorMenuItem";
+        itemButton.type = "button";
+        itemButton.dataset.value = option.value;
+        itemButton.textContent = option.text;
+        if (dropdown.value === option.value)
+            itemButton.classList.add("selected");
+        itemButton.addEventListener("click", () => {
+            dropdown.value = option.value;
+            dropdown.dispatchEvent(new Event("change"));
+            closePatchSelectorMenu();
+        });
+        menu.appendChild(itemButton);
+    }
+}
+function initPatchSelectorUI() {
+    let button = document.getElementById("patchSelectorButton");
+    let menu = document.getElementById("patchSelectorMenu");
+    if (!(button instanceof HTMLButtonElement) || !(menu instanceof HTMLDivElement))
+        return;
+    button.onclick = null;
+    button.addEventListener("click", (event) => {
+        event.preventDefault();
+        let willOpen = !menu.classList.contains("open");
+        closePatchSelectorMenu();
+        if (willOpen) {
+            menu.classList.add("open");
+            button.setAttribute("aria-expanded", "true");
+        }
+        else {
+            button.setAttribute("aria-expanded", "false");
+        }
+    });
+    if (!patchSelectorUIInitialized) {
+        document.addEventListener("click", (event) => {
+            let target = event.target;
+            if (!(target instanceof Node))
+                return;
+            if (button.contains(target) || menu.contains(target))
+                return;
+            closePatchSelectorMenu();
+        });
+        patchSelectorUIInitialized = true;
+    }
+    rebuildPatchSelectorMenu();
+    updatePatchSelectorButtonLabel();
+}
+function updatePatchSelectorOptions(zoomDevice) {
+    let dropdown = document.getElementById("patchSelectorDropdown");
+    if (!(dropdown instanceof HTMLSelectElement))
+        return;
+    patchSelectorSyncing = true;
+    while (dropdown.options.length > 0)
+        dropdown.remove(0);
+    for (let i = 0; i < zoomDevice.patchList.length; i++) {
+        let patch = zoomDevice.patchList[i];
+        let option = document.createElement("option");
+        option.value = i.toString();
+        option.text = `${(i + 1).toString().padStart(3, "0")} - ${patch.nameTrimmed}`;
+        dropdown.add(option);
+    }
+    if (patchList.currentlySelectedMemorySlot >= 0 && patchList.currentlySelectedMemorySlot < dropdown.options.length)
+        dropdown.value = patchList.currentlySelectedMemorySlot.toString();
+    patchSelectorSyncing = false;
+    rebuildPatchSelectorMenu();
+    updatePatchSelectorButtonLabel();
+}
+function updatePatchSelectorSelection(memorySlot) {
+    let dropdown = document.getElementById("patchSelectorDropdown");
+    if (!(dropdown instanceof HTMLSelectElement))
+        return;
+    if (memorySlot < 0 || memorySlot >= dropdown.options.length)
+        return;
+    patchSelectorSyncing = true;
+    dropdown.value = memorySlot.toString();
+    patchSelectorSyncing = false;
+    rebuildPatchSelectorMenu();
+    updatePatchSelectorButtonLabel();
+}
+function initPatchSelectorDropdown(zoomDevice) {
+    let dropdown = document.getElementById("patchSelectorDropdown");
+    if (!(dropdown instanceof HTMLSelectElement))
+        return;
+    dropdown = removeAllEventListeners(dropdown);
+    if (!(dropdown instanceof HTMLSelectElement))
+        return;
+    dropdown.addEventListener("change", () => {
+        if (patchSelectorSyncing || currentZoomDevice === undefined)
+            return;
+        let memorySlot = Number.parseInt(dropdown.value);
+        if (Number.isNaN(memorySlot))
+            return;
+        patchList.currentlySelectedMemorySlot = memorySlot;
+        currentZoomPatchToConvert = undefined;
+        loadedPatchEditor.hide();
+        currentZoomDevice.setCurrentMemorySlot(memorySlot);
+        updatePatchSelectorButtonLabel();
+    });
+    initPatchSelectorUI();
+    updatePatchSelectorOptions(zoomDevice);
+}
 function initPatchesTable(zoomDevice) {
     if (zoomDevice !== currentZoomDevice)
         shouldLog(LogLevel.Error) && console.error(`initPatchesTable() called for ZoomDevice "${zoomDevice.deviceName}" that is not currentZoomDevice "${currentZoomDevice.deviceName}".`);
@@ -314,11 +458,13 @@ function initPatchesTable(zoomDevice) {
         return;
     }
     patchList.initPatchesTable(zoomDevice, patchListUndoRedoManager);
+    initPatchSelectorDropdown(zoomDevice);
 }
 async function updatePatchesTable(zoomDevice) {
     if (zoomDevice !== currentZoomDevice)
         shouldLog(LogLevel.Error) && console.error(`updatePatchesTable() called for ZoomDevice "${zoomDevice.deviceName}" that is not currentZoomDevice "${currentZoomDevice.deviceName}".`);
     patchList.updatePatchesTable(zoomDevice);
+    updatePatchSelectorOptions(zoomDevice);
     // if (fileBrowser !== undefined)
     // {
     //   let patchListRoot = fileBrowser.getItemByPath("/Patchlist");
@@ -609,6 +755,11 @@ function initConvertedPatchEditor(zoomDevice) {
     loadedPatchEditor.setEffectSlotSelectEffectCallback((effectSlot) => {
         handleEffectSlotSelectEffect(currentZoomPatchToConvert, zoomDevice, mapForMSOG, effectSlot);
     });
+    loadedPatchEditor.setEffectSlotSelectCallback((effectSlot) => {
+        if (currentZoomPatchToConvert !== undefined)
+            currentZoomPatchToConvert.currentEffectSlot = effectSlot;
+        loadedPatchEditor.updateEffectSlotFrame(effectSlot);
+    });
     zoomEffectSelector = new ZoomEffectSelector();
     let effectSelectors = document.getElementById("effectSelectors");
     effectSelectors.append(zoomEffectSelector.htmlElement);
@@ -626,7 +777,7 @@ function initConvertedPatchEditor(zoomDevice) {
     effectLists.set("MS-50G", buildEffectIDList("MS-50G"));
     effectLists.set("MS-60B", buildEffectIDList("MS-60B"));
     effectLists.set("MS-70CDR", buildEffectIDList("MS-70CDR"));
-    zoomEffectSelector.setHeading("Select effect");
+    zoomEffectSelector.setHeading("Amps and Effects");
     let pedalName = zoomDevice?.deviceInfo?.deviceName ?? zoomDevice?.deviceName ?? "";
     zoomEffectSelector.setEffectList(effectLists, pedalName);
 }
@@ -668,7 +819,8 @@ function getScreenCollectionAndUpdateEditPatchTable(zoomDevice) {
         compare = lastChangedEditScreenCollection;
     else
         lastChangedEditScreenCollection = previousEditScreenCollection;
-    const patchNumbertext = `${loadedPatchEditor.visible ? zoomDevice.deviceName + " " : ""}Patch ${(zoomDevice.currentMemorySlotNumber + 1).toString().padStart(2, "0")}:`;
+    const patchNumber = (zoomDevice.currentMemorySlotNumber + 1).toString().padStart(3, "0");
+    const patchNumbertext = loadedPatchEditor.visible ? `${zoomDevice.deviceName} ${patchNumber}` : patchNumber;
     if (patchEditorModel.on)
         patchEditor.update(zoomDevice, screenCollection, currentZoomPatch, patchNumbertext, compare, previousEditPatch);
     previousEditScreenCollection = screenCollection;
@@ -1620,6 +1772,11 @@ function updateDirtyState(localDirtyState, force = false) {
     patchIsDirty = force ? localDirtyState : localDirtyState || patchIsDirty;
     let button = document.getElementById("syncPatchToPedalButton");
     button.disabled = !patchIsDirty;
+    let indicator = document.getElementById("patchDirtyIndicator");
+    if (indicator !== null) {
+        indicator.textContent = patchIsDirty ? "Modified" : "Saved";
+        indicator.classList.toggle("dirty", patchIsDirty);
+    }
 }
 function setPatchNotDirty() {
     updateDirtyState(false, true);
@@ -1807,8 +1964,9 @@ function updateLCXLColors(lcxlDevice, zoomDevice, zoomPatch) {
     }
 }
 async function waitForWebMIDI(reconnectTimeoutMilliseconds) {
-    toplevelContentDiv.style.display = "none";
-    infoDialog.show("Please make sure WebMIDI is enabled in your browser and connect a Zoom MS or MS+ pedal");
+    if (toplevelContentDiv !== null)
+        toplevelContentDiv.style.display = "none";
+    setStartupLoadingState("Loading", "Initializing MIDI backend...");
     let hasWebMIDI = false;
     let attemptCounter = 0;
     let lastEnableError = "";
@@ -1820,20 +1978,18 @@ async function waitForWebMIDI(reconnectTimeoutMilliseconds) {
             return false;
         });
         if (!hasWebMIDI) {
-            if (attemptCounter === 1 || attemptCounter % 5 === 0) {
-                let suffix = lastEnableError.length > 0 ? ` Last error: ${lastEnableError}` : "";
-                infoDialog.show(`Waiting for MIDI backend to initialize.${suffix}`);
-            }
+            let suffix = lastEnableError.length > 0 ? ` Last error: ${lastEnableError}` : "";
+            setStartupLoadingState("Loading", `Waiting for MIDI backend to initialize (attempt ${attemptCounter}).${suffix}`);
             await sleepForAWhile(reconnectTimeoutMilliseconds);
         }
     }
     console.warn(`MIDI backend enabled. Inputs=${midi.inputs.size}, outputs=${midi.outputs.size}`);
-    infoDialog.close();
-    toplevelContentDiv.style.display = "block";
+    setStartupLoadingState("Loading", "MIDI backend ready.");
 }
 async function waitForZoomDevices(timeoutMilliseconds) {
-    toplevelContentDiv.style.display = "none";
-    infoDialog.show("Please connect a Zoom MS or MS+ pedal");
+    if (toplevelContentDiv !== null)
+        toplevelContentDiv.style.display = "none";
+    setStartupLoadingState("Waiting for Zoom pedal connection", "Please connect a Zoom MS or MS+ pedal.");
     let zoomDevices = [];
     let retryCounter = 0;
     let warnedAboutUnclassifiedZoom = false;
@@ -1848,32 +2004,38 @@ async function waitForZoomDevices(timeoutMilliseconds) {
                 if (possibleZoomNames.length > 0) {
                     warnedAboutUnclassifiedZoom = true;
                     console.warn(`MIDI devices detected but not classified as Zoom yet: ${possibleZoomNames.join(" | ")}`);
-                    infoDialog.show("Zoom MIDI device detected, but identity/classification is still pending. Keep the pedal connected.");
+                    setStartupLoadingState("Waiting for Zoom pedal connection", "Zoom MIDI device detected, but identity/classification is still pending.");
                 }
             }
             retryCounter++;
+            let inputNames = [...midi.inputs.values()].map((input) => input.name);
+            let outputNames = [...midi.outputs.values()].map((output) => output.name);
+            let detectedNames = [...new Set([...inputNames, ...outputNames])];
             if (retryCounter % 5 === 0) {
-                let inputNames = [...midi.inputs.values()].map((input) => input.name);
-                let outputNames = [...midi.outputs.values()].map((output) => output.name);
-                let detectedNames = [...new Set([...inputNames, ...outputNames])];
                 console.warn(`Still waiting for Zoom classification (attempt ${retryCounter}). Inputs=${inputNames.length}, outputs=${outputNames.length}${detectedNames.length > 0 ? `, names: ${detectedNames.join(" | ")}` : ""}`);
-                infoDialog.show(`Waiting for Zoom pedal detection (attempt ${retryCounter}).${detectedNames.length > 0 ? ` Detected MIDI ports: ${detectedNames.join(" | ")}` : " No MIDI ports detected yet."}`);
                 await deviceManager.updateMIDIDeviceList().catch((error) => {
                     console.warn(`Retrying MIDI device list update failed: ${String(error)}`);
                 });
             }
+            setStartupLoadingState("Waiting for Zoom pedal connection", `Attempt ${retryCounter}.` +
+                `${detectedNames.length > 0 ? ` Detected MIDI ports: ${detectedNames.join(" | ")}` : " No MIDI ports detected yet."}`);
             await sleepForAWhile(timeoutMilliseconds);
         }
     }
-    infoDialog.close();
-    toplevelContentDiv.style.display = "block";
+    setStartupLoadingState("Loading", `Zoom pedal detected: ${zoomDevices[0].deviceName}`);
     // We wait with enabling the midiDeviceListView untill all devices have been loaded, otherwise
     // we might get error "Unable to get index for device" in MIDIDeviceListHTMLView.updateMIDIDevicesTableActivity
     midiDeviceListView.enabled = !performanceMode;
     let openZoomDevice = zoomDevices.find((d) => d.isOpen);
     if (openZoomDevice === undefined && zoomDevices.length > 0) {
         console.warn(`Zoom device detected but not open yet. Auto-opening "${zoomDevices[0].deviceName}"`);
+        setStartupLoadingState("Loading", `Connecting to ${zoomDevices[0].deviceName}...`);
         await handleZoomDeviceOn(deviceManager, zoomDevices[0]);
+    }
+    if (currentZoomDevice !== undefined) {
+        if (toplevelContentDiv !== null)
+            toplevelContentDiv.style.display = "block";
+        hideStartupLoadingOverlay();
     }
     // When device connected and on, display will be set to "block", see handleZoomDeviceOn()
     // toplevelContentDiv.style.display = "block";
@@ -2038,11 +2200,16 @@ function handleConnect(deviceManager, device, key) {
     });
 }
 async function handleZoomDeviceOn(deviceManager, zoomDevice) {
+    setStartupLoadingState("Loading", `Syncing ${zoomDevice.deviceName}...`);
     await openAndSyncNewZoomDevice(zoomDevice);
     if (currentZoomDevice === undefined) {
-        toplevelContentDiv.style.display = "block";
+        if (toplevelContentDiv !== null)
+            toplevelContentDiv.style.display = "block";
         await updateStateWithNewCurrentZoomDevice(zoomDevice);
     }
+    if (toplevelContentDiv !== null)
+        toplevelContentDiv.style.display = "block";
+    hideStartupLoadingOverlay();
 }
 async function handleLCXLDeviceOn(deviceManager, lcxlDevice) {
     await lcxlDevice.open();
@@ -2572,10 +2739,13 @@ function updatePerformanceMode() {
         sceneDeviceHTMLView.enabled = !performanceMode;
 }
 async function start(reconnectTimeoutMilliseconds) {
+    setStartupLoadingState("Loading", "Loading effect maps...");
     await downloadEffectMaps();
     if (window.zoomExplorerAPI === undefined) {
+        setStartupLoadingState("Loading", "Loading local demo presets...");
         await downoadDemoRackPresets();
     }
+    setStartupLoadingState("Loading", "Preparing effect selector...");
     zoomEffectSelector = new ZoomEffectSelector();
     let effectSelectors = document.getElementById("effectSelectors");
     effectSelectors.append(zoomEffectSelector.htmlElement);
@@ -2593,9 +2763,10 @@ async function start(reconnectTimeoutMilliseconds) {
     effectLists.set("MS-50G", buildEffectIDList("MS-50G"));
     effectLists.set("MS-60B", buildEffectIDList("MS-60B"));
     effectLists.set("MS-70CDR", buildEffectIDList("MS-70CDR"));
-    zoomEffectSelector.setHeading("Select effect");
+    zoomEffectSelector.setHeading("Amps and Effects");
     zoomEffectSelector.setEffectList(effectLists);
     let zoomDevices = [];
+    setStartupLoadingState("Loading", "Starting MIDI subsystem...");
     await waitForWebMIDI(reconnectTimeoutMilliseconds);
     if (midiMappers) {
         virtualMIDIDeviceController = new VirtualMIDIDeviceController(virtualMIDIDeviceModel, virtualMIDIDeviceView, midi, deviceManager);
@@ -2608,6 +2779,7 @@ async function start(reconnectTimeoutMilliseconds) {
         zoomCCMapperModel.addInputDeviceChangedListener(handleZoomCCMapperInputDeviceChanged);
         zoomCCMapperModel.addOutputDeviceChannelChangedListener(handleZoomCCMapperOutputDeviceChannelChanged);
     }
+    setStartupLoadingState("Loading", "Scanning MIDI devices...");
     await deviceManager.updateMIDIDeviceList();
     await waitForZoomDevices(reconnectTimeoutMilliseconds);
 }
@@ -2723,6 +2895,54 @@ let infoDialog = new InfoDialog("infoDialog", "infoLabel");
 let progressDialog = new ProgressDialog();
 let toplevelContentDiv = document.getElementById("content");
 let mainLayout = document.getElementById("mainLayout");
+function createStartupLoadingOverlay() {
+    let overlay = document.getElementById("startupLoadingOverlay");
+    if (!(overlay instanceof HTMLDivElement)) {
+        overlay = document.createElement("div");
+        overlay.id = "startupLoadingOverlay";
+        overlay.classList.add("visible");
+        overlay.innerHTML = `
+      <div class="startupLoadingCard">
+        <div class="startupLoadingSpinner" aria-hidden="true"></div>
+        <div class="startupLoadingTitle">Loading</div>
+        <div class="startupLoadingDetail">Starting Zoom Explorer...</div>
+      </div>
+    `;
+        document.body.appendChild(overlay);
+    }
+    else if (overlay.querySelector(".startupLoadingCard") === null) {
+        overlay.innerHTML = `
+      <div class="startupLoadingCard">
+        <div class="startupLoadingSpinner" aria-hidden="true"></div>
+        <div class="startupLoadingTitle">Loading</div>
+        <div class="startupLoadingDetail">Starting Zoom Explorer...</div>
+      </div>
+    `;
+    }
+    let titleElement = overlay.querySelector(".startupLoadingTitle");
+    let detailElement = overlay.querySelector(".startupLoadingDetail");
+    return {
+        overlay,
+        title: titleElement instanceof HTMLDivElement ? titleElement : undefined,
+        detail: detailElement instanceof HTMLDivElement ? detailElement : undefined
+    };
+}
+let startupLoadingOverlay = createStartupLoadingOverlay();
+function setStartupLoadingState(title, detail = "") {
+    document.body.classList.add("startup-pending");
+    startupLoadingOverlay.overlay.classList.add("visible");
+    if (startupLoadingOverlay.title !== undefined)
+        startupLoadingOverlay.title.textContent = title;
+    if (startupLoadingOverlay.detail !== undefined)
+        startupLoadingOverlay.detail.textContent = detail;
+}
+function hideStartupLoadingOverlay() {
+    startupLoadingOverlay.overlay.classList.remove("visible");
+    document.body.classList.remove("startup-pending");
+}
+if (toplevelContentDiv !== null)
+    toplevelContentDiv.style.display = "none";
+setStartupLoadingState("Loading", "Starting Zoom Explorer...");
 // let knob = new Knob(25, 0, 127, (valueString: string) => Number.parseFloat(valueString), (rawValue: number) => rawValue.toFixed(0));
 // let knobView = new KnobView(knob, true);
 // toplevelContentDiv.appendChild(knobView.element); // should we inherit from HTMLElement/Div instead ?
@@ -2818,6 +3038,7 @@ let patchList = new ZoomPatchList(progressDialog, confirmDialog);
 patchList.addCurrentMemorySlotChangedListener((patchList, previousMemorySlot, currentMemorySlot) => {
     currentZoomPatchToConvert = undefined;
     loadedPatchEditor.hide();
+    updatePatchSelectorSelection(currentMemorySlot);
     if (patchList.zoomDevice !== undefined) {
         currentZoomPatch = patchList.zoomDevice.patchList[currentMemorySlot].clone();
         // MSOG pedals doesn't call handleScreenChanged, so we need to update patch name here
@@ -2834,6 +3055,7 @@ patchList.addCurrentPatchUpdatedListener((patchList) => {
     shouldLog(LogLevel.Info) && console.log(`Patches restored`);
 });
 patchLists.appendChild(patchList.viewElement);
+initializeModernEditorLayout();
 let patchIsDirty = false;
 let muteLCXLForEdit = true;
 // Initialize the file browser after the page loads
@@ -2936,7 +3158,9 @@ settingsModel.addPropertyChangedListener("experimentalPlayground", (propertyName
 start(reconnectTimeoutMilliseconds).catch((error) => {
     let errorString = getExceptionErrorString(error);
     console.error(`Fatal startup error in Zoom Explorer: ${errorString}`);
-    toplevelContentDiv.style.display = "none";
+    if (toplevelContentDiv !== null)
+        toplevelContentDiv.style.display = "none";
+    setStartupLoadingState("Startup failed", errorString);
     infoDialog.show(`Zoom Explorer failed to start MIDI detection. ${errorString}`);
 });
 // File Browser Demo

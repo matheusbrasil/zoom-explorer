@@ -572,7 +572,8 @@ export class ZoomPatch
     let bpmBits: number = 0;
 
     for (let i = 0; i < effectSettings.length; i++) {
-      if (effectSettings[i].id === 0x07000ff0) { // see zoom-effect-ids-ms70cdrp.ts, last effect in list
+      // Some devices/firmwares report BPM as 0x07000ff0 while others report 0x09000ff0.
+      if (effectSettings[i].id === 0x07000ff0 || effectSettings[i].id === 0x09000ff0) {
         bpmBits |= 1 << i;
       }
     }

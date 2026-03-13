@@ -13,6 +13,16 @@
     <!-- <link rel="icon" type="image/x-icon" href="http://sym.bios.is/favicon.ico" /> -->
     
     <style>
+        body.startup-pending {
+            overflow: hidden;
+        }
+        body.startup-pending > * {
+            visibility: hidden;
+        }
+        body.startup-pending #startupLoadingOverlay {
+            visibility: visible;
+            display: flex !important;
+        }
 
         #settings {
             display:flex;
@@ -1217,7 +1227,14 @@
 
     </style>
   </head>
-  <body>
+  <body class="startup-pending">
+    <div id="startupLoadingOverlay" class="visible" aria-live="polite" aria-busy="true">
+      <div class="startupLoadingCard">
+        <div class="startupLoadingSpinner" aria-hidden="true"></div>
+        <div class="startupLoadingTitle">Loading</div>
+        <div class="startupLoadingDetail">Starting Zoom Explorer...</div>
+      </div>
+    </div>
 
     <div class="titleContainer">
         <div></div>

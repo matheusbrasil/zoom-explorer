@@ -49860,5 +49860,13 @@
         "max": 1
       }
     ]
+  },
+  "07000ff0": {
+    "name": "BPM",
+    "parameters": []
+  },
+  "09000ff0": {
+    "name": "BPM",
+    "parameters": []
   }
 }
