@@ -42,7 +42,9 @@ export class ZoomPatchEditor
   private parameterSelectionPointer: HTMLDivElement;
 
   private patchNumberCell: HTMLTableCellElement;
+  private patchNumberText: HTMLSpanElement;
   private patchNameCell: HTMLTableCellElement;
+  private patchNameText: HTMLElement;
   private patchTempoCell: HTMLTableCellElement;
   private patchDescriptionCell: HTMLTableCellElement;
 
@@ -83,7 +85,9 @@ export class ZoomPatchEditor
     const parameterTitle = this.patchEditorTable.querySelector(".parameterEditorEffectName");
     const parameterSelectionPointer = this.patchEditorTable.querySelector(".parameterSelectionPointer");
     const patchNumberCell = this.patchEditorTable.querySelector(".editPatchTableNumber");
+    const patchNumberText = this.patchEditorTable.querySelector(".editPatchTableNumberText");
     const patchNameCell = this.patchEditorTable.querySelector(".editPatchTableName");
+    const patchNameText = this.patchEditorTable.querySelector(".editPatchNameText");
     const patchTempoCell = this.patchEditorTable.querySelector(".editPatchTableTempoValue");
     const patchDescriptionCell = this.patchEditorTable.querySelector(".editPatchTableDescription");
 
@@ -93,7 +97,9 @@ export class ZoomPatchEditor
       !(parameterTitle instanceof HTMLSpanElement) ||
       !(parameterSelectionPointer instanceof HTMLDivElement) ||
       !(patchNumberCell instanceof HTMLTableCellElement) ||
+      !(patchNumberText instanceof HTMLSpanElement) ||
       !(patchNameCell instanceof HTMLTableCellElement) ||
+      !(patchNameText instanceof HTMLElement) ||
       !(patchTempoCell instanceof HTMLTableCellElement) ||
       !(patchDescriptionCell instanceof HTMLTableCellElement)) {
       throw new Error("ZoomPatchEditor failed to initialize required DOM references.");
@@ -107,16 +113,50 @@ export class ZoomPatchEditor
     this.parameterSelectionPointer = parameterSelectionPointer;
 
     this.patchNumberCell = patchNumberCell;
+    this.patchNumberText = patchNumberText;
     this.patchNameCell = patchNameCell;
+    this.patchNameText = patchNameText;
     this.patchTempoCell = patchTempoCell;
     this.patchDescriptionCell = patchDescriptionCell;
 
     while (this.effectsRow.lastChild)
       this.effectsRow.removeChild(this.effectsRow.lastChild);
 
-    for (let cell of [this.patchNameCell, this.patchTempoCell, this.patchDescriptionCell]) {
+    // Set up event listeners for patch name text (span inside the cell)
+    this.patchNameText.addEventListener("input", (e) => {
+        if (this.textEditedCallback !== undefined)
+          this.textEditedCallback(e, "input", this.undoOnEscape);
+    });
+    this.patchNameText.addEventListener("focus", (e) => {
+        this.undoOnEscape = this.patchNameText.innerText;
+        if (this.textEditedCallback !== undefined)
+          this.textEditedCallback(e, "focus", this.undoOnEscape);
+    });
+    this.patchNameText.addEventListener("blur", (e) => {
+        if (this.textEditedCallback !== undefined) {
+          let acceptEdit = this.textEditedCallback(e, "blur", this.undoOnEscape);
+          if (!acceptEdit)
+            this.patchNameText.innerText = this.undoOnEscape;
+        }
+    });
+    this.patchNameText.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this.patchNameText.blur();
+        }
+        else if (e.key === "Escape" || e.key === "Esc") {
+          this.patchNameText.innerText = this.undoOnEscape;
+          if (this.textEditedCallback !== undefined)
+            this.textEditedCallback(e, "input", this.undoOnEscape);
+          this.patchNameText.blur();
+        }
+    });
+    
+    // Set up event listeners for tempo and description cells
+    for (let cell of [this.patchTempoCell, this.patchDescriptionCell]) {
       this.setupEventListenersForCell(cell as HTMLTableCellElement);
     }
+    
     this.setupActionRow();
 
     document.addEventListener("mousemove", e => {
@@ -180,34 +220,23 @@ export class ZoomPatchEditor
     const patchNameID = includeControls ? ` id="editPatchTableNameID"` : "";
     const patchTempoID = includeControls ? ` id="editPatchTableTempoValueID"` : "";
     const patchDescriptionID = includeControls ? ` id="editPatchTableDescriptionID"` : "";
+    const patchSelectorButtonID = includeControls ? ` id="patchSelectorButton"` : "";
+    const patchSelectorMenuID = includeControls ? ` id="patchSelectorMenu"` : "";
+    const patchSelectorDropdownID = includeControls ? ` id="patchSelectorDropdown"` : "";
+    const patchDirtyIndicatorID = includeControls ? ` id="patchDirtyIndicator"` : "";
 
-    const selectorHTML = includeControls ? `
-            <th class="editPatchTableSelector">
-              <div class="patchSelectorGroup">
-                <label class="patchSelectorLabel" for="patchSelectorDropdown">Patch</label>
-                <button id="patchSelectorButton" class="patchSelectorButton" type="button" aria-haspopup="listbox" aria-expanded="false">
-                  <span id="patchSelectorButtonLabel">Loading patches...</span>
-                  <span class="material-symbols-outlined">expand_more</span>
-                </button>
-                <div id="patchSelectorMenu" class="patchSelectorMenu" role="listbox"></div>
-                <select id="patchSelectorDropdown" class="patchSelectorDropdown" tabindex="-1" aria-hidden="true">
-                  <option value="">Loading patches...</option>
-                </select>
-                <span id="patchDirtyIndicator" class="patchDirtyIndicator">Saved</span>
-              </div>
-            </th>` : "";
-
-    const buttonsHTML = includeControls ? `
-            <th class="editPatchTableButtons" rowspan="2">
-              <button id="syncPatchToPedalButton" class="loadSaveButtons" tooltip="Save edited patch to selected memory slot on pedal" disabled><span class="material-symbols-outlined">save</span><br/>Save</button>
-              <button id="undoEditPatchButton" class="loadSaveButtons" disabled><span class="material-symbols-outlined">undo</span><br/>Undo</button>
-              <button id="redoEditPatchButton" class="loadSaveButtons" disabled><span class="material-symbols-outlined">redo</span><br/>Redo</button>
-              <button id="savePatchToDiskButton" class="loadSaveButtons" tooltip="Save selected patch to file"><span class="material-symbols-outlined">save</span><br/>Save</button>
-              <button id="loadPatchFromDiskButton" class="loadSaveButtons" tooltip="Load patch from file and save to selected memory slot on pedal"><span class="material-symbols-outlined">file_open</span><br/>Load</button>
-              <button id="loadPatchFromTextButton" class="loadSaveButtons" tooltip="Load patch from sysex text and save to selected memory slot on pedal"><span class="material-symbols-outlined">article_shortcut</span><br/>Text</button>
-            </th>` : "";
     const topColSpan = includeControls ? 5 : 4;
-    const fullColSpan = includeControls ? 6 : 4;
+    const fullColSpan = includeControls ? 5 : 4;
+    const patchSelectorHTML = includeControls ? `
+            <div class="patchSelectorGroup">
+              <button${patchSelectorButtonID} class="patchSelectorButton" type="button" aria-haspopup="listbox" aria-expanded="false" title="Loading patches...">
+                <span class="material-symbols-outlined">expand_more</span>
+              </button>
+              <div${patchSelectorMenuID} class="patchSelectorMenu" role="listbox"></div>
+              <select${patchSelectorDropdownID} class="patchSelectorDropdown" tabindex="-1" aria-hidden="true">
+                <option value="">Loading patches...</option>
+              </select>
+            </div>` : "";
     const actionRowHTML = includeControls ? `
         <tr class="editPatchActionRow">
           <td colspan="${fullColSpan}" class="editPatchActionCell">
@@ -215,9 +244,9 @@ export class ZoomPatchEditor
               <button class="patchActionButton" data-action="add"><span class="material-symbols-outlined">add_circle</span><span>Add</span></button>
               <button class="patchActionButton" data-action="delete"><span class="material-symbols-outlined">delete</span><span>Delete</span></button>
               <button class="patchActionButton" data-action="change"><span class="material-symbols-outlined">swap_horiz</span><span>Change</span></button>
-              <button class="patchActionButton" data-action="clip" disabled><span class="material-symbols-outlined">content_cut</span><span>Clip</span></button>
-              <button class="patchActionButton" data-action="clipboard" disabled><span class="material-symbols-outlined">content_paste</span><span>Clipboard</span></button>
-              <button class="patchActionButton" data-action="tuner" disabled><span class="material-symbols-outlined">tune</span><span>Tuner</span></button>
+              <button id="savePatchToDiskButton" class="patchActionButton"><span class="material-symbols-outlined">save</span><span>Export Patch</span></button>
+              <button id="loadPatchFromDiskButton" class="patchActionButton"><span class="material-symbols-outlined">file_open</span><span>Import Patch</span></button>
+              <button id="loadPatchFromTextButton" class="patchActionButton"><span class="material-symbols-outlined">article_shortcut</span><span>Text</span></button>
             </div>
           </td>
         </tr>` : "";
@@ -225,19 +254,29 @@ export class ZoomPatchEditor
     let html = `
       <table${tableID} class="editPatchTable">
         <tr class="editPatchTopRow">
-          <th class="editPatchTableNumber">Patch 00:</th>
-          <th class="editPatchTableName"${patchNameID}>Patch Name</th>
-          <th class="editPatchTableTempoValue"${patchTempoID}>120</th>
-          <th class="editPatchTableTempoLabel">BPM</th>
-          ${selectorHTML}
-          ${buttonsHTML}
+          <th class="editPatchTableNumber">
+            <span class="editPatchTableNumberText">Patch 00:</span>
+            <span${patchDirtyIndicatorID} class="patchDirtyIndicator"></span>
+          </th>
+          <th class="editPatchTableName">
+            <span class="editPatchNameText" contenteditable="plaintext-only"${patchNameID}>Patch Name</span>
+            ${patchSelectorHTML}
+          </th>
+          <th class="editPatchTableTempoValue"${patchTempoID}></th>
+          <th class="editPatchTableStatus">
+            <div class="topBarActions">
+              <button id="undoEditPatchButton" class="topBarActionButton" disabled title="Undo Edit"><span class="material-symbols-outlined">undo</span></button>
+              <button id="redoEditPatchButton" class="topBarActionButton" disabled title="Redo Edit"><span class="material-symbols-outlined">redo</span></button>
+              <button id="syncPatchToPedalButton" class="topBarActionButton topBarSaveButton" disabled title="Save to pedal"><span class="material-symbols-outlined">publish</span><span class="topBarActionLabel">Save</span></button>
+            </div>
+          </th>
         </tr>
         <tr class="editPatchDescriptionRow">
-          <th colspan="${topColSpan}" class="editPatchTableDescription"${patchDescriptionID}></th>
+          <th colspan="4" class="editPatchTableDescription"${patchDescriptionID}></th>
         </tr>
         ${actionRowHTML}
         <tr class="editPatchEffectsRow">
-          <td colspan="${fullColSpan}" class="editPatchEffectsCell">
+          <td colspan="4" class="editPatchEffectsCell">
             <div class="effectsChainViewport">
               <table class="editEffectsChainTable">
                 <tr></tr>
@@ -661,6 +700,7 @@ export class ZoomPatchEditor
             <div class="effectPedalImageWrapper">
               <img class="effectPedalImage" alt="" draggable="false" />
               <div class="effectPedalFallback">No Image</div>
+              <div class="effectSelectionIndicator"></div>
             </div>
             <div class="editEffectTableButtons">
               <button class="material-symbols-outlined effectActionButton effectAddLeftButton" tooltip="Add effect to the left">add_circle</button>
@@ -672,7 +712,6 @@ export class ZoomPatchEditor
             <div class="effectCardBottomRow">
               <button class="material-symbols-outlined effectSelectButton" tooltip="Select a different effect">tune</button>
             </div>
-            <div class="effectSelectionIndicator"></div>
           </th>
         </tr>
       </table>
@@ -1367,8 +1406,9 @@ export class ZoomPatchEditor
     this.cachedPreviousPatch = previousPatch;
 
     if (patch !== undefined) {
-      this.updateTextContentIfChanged(this.patchNumberCell, patchNumberText);
-      this.updateTextContentIfChanged(this.patchNameCell, patch.nameTrimmed, true);
+      this.updateTextContentIfChanged(this.patchNumberText, patchNumberText);
+      this.updateTextContentIfChanged(this.patchNameText, patch.nameTrimmed, true);
+      this.patchNameText.title = patch.nameTrimmed;
       this.updateTextContentIfChanged(this.patchTempoCell, patch.tempo.toString().padStart(3, "0"), true);
       this.updateTextContentIfChanged(this.patchDescriptionCell, patch.descriptionEnglishTrimmed ? patch.descriptionEnglishTrimmed : "", true);
     }

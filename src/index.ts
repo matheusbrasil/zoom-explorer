@@ -334,10 +334,19 @@ function closePatchSelectorMenu() {
 function updatePatchSelectorButtonLabel() {
     let dropdown = document.getElementById("patchSelectorDropdown");
     let label = document.getElementById("patchSelectorButtonLabel");
-    if (!(dropdown instanceof HTMLSelectElement) || !(label instanceof HTMLSpanElement))
+    let button = document.getElementById("patchSelectorButton");
+    if (!(dropdown instanceof HTMLSelectElement))
         return;
     let selectedOption = dropdown.selectedOptions.length > 0 ? dropdown.selectedOptions[0] : undefined;
-    label.textContent = selectedOption !== undefined ? selectedOption.text : "Select patch";
+    let selectedName = selectedOption?.dataset.patchName ?? selectedOption?.text ?? "Select patch";
+    let selectedMemorySlot = Number.parseInt(dropdown.value);
+    if (!Number.isNaN(selectedMemorySlot) && currentZoomPatch !== undefined && currentZoomDevice !== undefined && selectedMemorySlot === currentZoomDevice.currentMemorySlotNumber) {
+        selectedName = currentZoomPatch.nameTrimmed;
+    }
+    if (label instanceof HTMLSpanElement)
+        label.textContent = selectedName;
+    if (button instanceof HTMLButtonElement)
+        button.title = selectedName;
 }
 function rebuildPatchSelectorMenu() {
     let dropdown = document.getElementById("patchSelectorDropdown");
@@ -371,9 +380,19 @@ function initPatchSelectorUI() {
     button.onclick = null;
     button.addEventListener("click", (event) => {
         event.preventDefault();
+        event.stopPropagation();
+        rebuildPatchSelectorMenu();
         let willOpen = !menu.classList.contains("open");
         closePatchSelectorMenu();
         if (willOpen) {
+            if (menu.childElementCount === 0) {
+                let emptyItem = document.createElement("button");
+                emptyItem.className = "patchSelectorMenuItem";
+                emptyItem.type = "button";
+                emptyItem.disabled = true;
+                emptyItem.textContent = "No patches available";
+                menu.appendChild(emptyItem);
+            }
             menu.classList.add("open");
             button.setAttribute("aria-expanded", "true");
         }
@@ -386,7 +405,13 @@ function initPatchSelectorUI() {
             let target = event.target;
             if (!(target instanceof Node))
                 return;
-            if (button.contains(target) || menu.contains(target))
+            let currentButton = document.getElementById("patchSelectorButton");
+            let currentMenu = document.getElementById("patchSelectorMenu");
+            if (!(currentButton instanceof HTMLButtonElement) || !(currentMenu instanceof HTMLDivElement)) {
+                closePatchSelectorMenu();
+                return;
+            }
+            if (currentButton.contains(target) || currentMenu.contains(target))
                 return;
             closePatchSelectorMenu();
         });
@@ -404,9 +429,14 @@ function updatePatchSelectorOptions(zoomDevice) {
         dropdown.remove(0);
     for (let i = 0; i < zoomDevice.patchList.length; i++) {
         let patch = zoomDevice.patchList[i];
+        let patchName = patch.nameTrimmed && patch.nameTrimmed.length > 0 ? patch.nameTrimmed : `Patch ${(i + 1).toString().padStart(3, "0")}`;
+        if (currentZoomPatch !== undefined && i === patchList.currentlySelectedMemorySlot) {
+            patchName = currentZoomPatch.nameTrimmed;
+        }
         let option = document.createElement("option");
         option.value = i.toString();
-        option.text = `${(i + 1).toString().padStart(3, "0")} - ${patch.nameTrimmed}`;
+        option.text = `${(i + 1).toString().padStart(3, "0")} - ${patchName}`;
+        option.dataset.patchName = patchName;
         dropdown.add(option);
     }
     if (patchList.currentlySelectedMemorySlot >= 0 && patchList.currentlySelectedMemorySlot < dropdown.options.length)
@@ -565,10 +595,14 @@ function initPatchTable(zoomDevice) {
         titleButton.classList.toggle("on", patchEditorModel.on);
         storePatchEditorToLocalStorage();
     });
-    let button;
-    button = document.getElementById("undoEditPatchButton");
-    button = removeAllEventListeners(button);
-    button.addEventListener("click", async (event) => {
+    let bindActionButtonClick = (buttonID, listener) => {
+        let buttons = getPatchActionButtons(buttonID);
+        for (let button of buttons) {
+            let resetButton = removeAllEventListeners(button);
+            resetButton.addEventListener("click", listener);
+        }
+    };
+    bindActionButtonClick("undoEditPatchButton", async (event) => {
         if (currentZoomPatch === undefined) {
             shouldLog(LogLevel.Error) && console.error("Can't undo edit since no patch is selected. currentPatch == null.");
             return;
@@ -579,9 +613,7 @@ function initPatchTable(zoomDevice) {
         }
         await undoRedoManager.undo();
     });
-    button = document.getElementById("redoEditPatchButton");
-    button = removeAllEventListeners(button);
-    button.addEventListener("click", async (event) => {
+    bindActionButtonClick("redoEditPatchButton", async (event) => {
         if (currentZoomPatch === undefined) {
             shouldLog(LogLevel.Error) && console.error("Can't redo edit since no patch is selected. currentPatch == null.");
             return;
@@ -592,18 +624,16 @@ function initPatchTable(zoomDevice) {
         }
         await undoRedoManager.redo();
     });
-    button = document.getElementById("syncPatchToPedalButton");
-    button = removeAllEventListeners(button);
-    button.addEventListener("click", async (event) => {
+    bindActionButtonClick("syncPatchToPedalButton", async (event) => {
         if (currentZoomPatch === undefined) {
             shouldLog(LogLevel.Error) && console.error("Can't sync current patch to pedal since no patch is selected. currentPatch == null.");
             return;
         }
-        uploadPatchToSelectedMemorySlot(currentZoomPatch, zoomDevice, false);
+        let patchWasSaved = await uploadPatchToSelectedMemorySlot(currentZoomPatch, zoomDevice, false);
+        if (patchWasSaved)
+            setPatchNotDirty(true);
     });
-    button = document.getElementById("savePatchToDiskButton");
-    button = removeAllEventListeners(button);
-    button.addEventListener("click", async (event) => {
+    bindActionButtonClick("savePatchToDiskButton", async (event) => {
         if (currentZoomPatch === undefined) {
             shouldLog(LogLevel.Error) && console.error("Can't save current patch to file since no patch is selected. currentPatch == null.");
             return;
@@ -628,9 +658,7 @@ function initPatchTable(zoomDevice) {
             await saveBlobToFile(blob, suggestedName, fileEnding, fileDescription);
         }
     });
-    button = document.getElementById("loadPatchFromDiskButton");
-    button = removeAllEventListeners(button);
-    button.addEventListener("click", async (event) => {
+    bindActionButtonClick("loadPatchFromDiskButton", async (event) => {
         let [fileEnding, shortFileEnding, fileDescription] = zoomDevice.getSuggestedFileEndingForPatch();
         let data;
         let filename;
@@ -672,9 +700,7 @@ function initPatchTable(zoomDevice) {
             }
         }
     });
-    button = document.getElementById("loadPatchFromTextButton");
-    button = removeAllEventListeners(button);
-    button.addEventListener("click", async (event) => {
+    bindActionButtonClick("loadPatchFromTextButton", async (event) => {
         let patch = undefined;
         currentZoomPatchToConvert = undefined;
         let sysexString = await textInputDialog.getUserText("Sysex text", "", "Load");
@@ -817,10 +843,7 @@ function getScreenCollectionAndUpdateEditPatchTable(zoomDevice) {
     // Note: should probably take patch equality into consideration...
     if (screenCollection !== undefined && screenCollection.equals(previousEditScreenCollection))
         compare = lastChangedEditScreenCollection;
-    else
-        lastChangedEditScreenCollection = previousEditScreenCollection;
-    const patchNumber = (zoomDevice.currentMemorySlotNumber + 1).toString().padStart(3, "0");
-    const patchNumbertext = loadedPatchEditor.visible ? `${zoomDevice.deviceName} ${patchNumber}` : patchNumber;
+    let patchNumbertext = (patchList.currentlySelectedMemorySlot + 1).toString().padStart(3, "0");
     if (patchEditorModel.on)
         patchEditor.update(zoomDevice, screenCollection, currentZoomPatch, patchNumbertext, compare, previousEditPatch);
     previousEditScreenCollection = screenCollection;
@@ -989,6 +1012,8 @@ function handlePatchEdited(zoomPatch, zoomDevice, effectIDMap, event, type, init
             if (zoomPatch !== undefined && cell.innerText !== initialValueString) {
                 setPatchParameter(zoomPatch, zoomDevice, effectIDMap, "name", cell.innerText, "name");
                 cell.innerText = zoomPatch.nameTrimmed;
+                if (zoomDevice !== undefined)
+                    updatePatchSelectorOptions(zoomDevice);
             }
         }
         else if (type === "input") {
@@ -1768,18 +1793,47 @@ function setPatchParameter(zoomPatch, zoomDevice, effectIDMap, key, value, keyFr
         return [actionDescription, valueChanged];
     }
 }
-function updateDirtyState(localDirtyState, force = false) {
-    patchIsDirty = force ? localDirtyState : localDirtyState || patchIsDirty;
-    let button = document.getElementById("syncPatchToPedalButton");
-    button.disabled = !patchIsDirty;
+function hidePatchStatusIndicator() {
     let indicator = document.getElementById("patchDirtyIndicator");
     if (indicator !== null) {
-        indicator.textContent = patchIsDirty ? "Modified" : "Saved";
-        indicator.classList.toggle("dirty", patchIsDirty);
+        indicator.textContent = "";
+        indicator.classList.remove("visible-saved", "visible-modified");
     }
 }
-function setPatchNotDirty() {
-    updateDirtyState(false, true);
+function showPatchStatusIndicator(text: string, modified: boolean, autoHide = false) {
+    let indicator = document.getElementById("patchDirtyIndicator");
+    if (indicator === null)
+        return;
+    indicator.textContent = text;
+    indicator.classList.remove("visible-saved", "visible-modified");
+    indicator.classList.add(modified ? "visible-modified" : "visible-saved");
+    if (patchStatusHideTimer !== undefined) {
+        clearTimeout(patchStatusHideTimer);
+        patchStatusHideTimer = undefined;
+    }
+    if (autoHide) {
+        patchStatusHideTimer = setTimeout(() => {
+            hidePatchStatusIndicator();
+            patchStatusHideTimer = undefined;
+        }, PATCH_STATUS_HIDE_DELAY_MS);
+    }
+}
+function updateDirtyState(localDirtyState, force = false, showSavedTransient = false) {
+    patchIsDirty = force ? localDirtyState : localDirtyState || patchIsDirty;
+    for (let button of getPatchActionButtons("syncPatchToPedalButton"))
+        button.disabled = !patchIsDirty;
+    if (patchIsDirty) {
+        showPatchStatusIndicator("Modified", true, false);
+    }
+    else if (showSavedTransient) {
+        showPatchStatusIndicator("Saved", false, true);
+    }
+    else {
+        hidePatchStatusIndicator();
+    }
+}
+function setPatchNotDirty(showSavedTransient = false) {
+    updateDirtyState(false, true, showSavedTransient);
 }
 function getCurrentUndoRedoManager() {
     if (currentZoomDevice === undefined) {
@@ -1799,12 +1853,19 @@ function undoRedoStateChanged(undoRedoManager, undoAvailable, undoDescription, r
         shouldLog(LogLevel.Error) && console.error(`undoRedoStateChanged() called for undoRedoManager ${undoRedoManager} that is not currentUndoRedoManager ${currentUndoRedoManager}.`);
         return;
     }
-    let undoButton = document.getElementById("undoEditPatchButton");
-    let redoButton = document.getElementById("redoEditPatchButton");
-    undoButton.disabled = !undoAvailable;
-    undoButton.setAttribute("tooltip", undoDescription.length > 0 ? "Undo: " + undoDescription : "Nothing to undo");
-    redoButton.disabled = !redoAvailable;
-    redoButton.setAttribute("tooltip", redoDescription.length > 0 ? "Redo: " + redoDescription : "Nothing to redo");
+    for (let undoButton of getPatchActionButtons("undoEditPatchButton")) {
+        undoButton.style.display = undoAvailable ? "" : "none";
+        undoButton.disabled = !undoAvailable;
+        undoButton.setAttribute("tooltip", undoDescription.length > 0 ? "Undo: " + undoDescription : "Nothing to undo");
+    }
+    for (let redoButton of getPatchActionButtons("redoEditPatchButton")) {
+        redoButton.style.display = redoAvailable ? "" : "none";
+        redoButton.disabled = !redoAvailable;
+        redoButton.setAttribute("tooltip", redoDescription.length > 0 ? "Redo: " + redoDescription : "Nothing to redo");
+    }
+}
+function getPatchActionButtons(buttonID) {
+    return Array.from(document.querySelectorAll(`button#${buttonID}`)).filter((button) => button instanceof HTMLButtonElement);
 }
 function convertPatchAndUpdateEditors(zoomDevice, patch) {
     // Update the main patch editor with the converted patch
@@ -3057,6 +3118,8 @@ patchList.addCurrentPatchUpdatedListener((patchList) => {
 patchLists.appendChild(patchList.viewElement);
 initializeModernEditorLayout();
 let patchIsDirty = false;
+const PATCH_STATUS_HIDE_DELAY_MS = 7000;
+let patchStatusHideTimer: ReturnType<typeof setTimeout> | undefined = undefined;
 let muteLCXLForEdit = true;
 // Initialize the file browser after the page loads
 let fileBrowser;
