@@ -372,6 +372,24 @@ function rebuildPatchSelectorMenu() {
         menu.appendChild(itemButton);
     }
 }
+function alignPatchSelectorMenuToCurrentSelection() {
+    let dropdown = document.getElementById("patchSelectorDropdown");
+    let menu = document.getElementById("patchSelectorMenu");
+    if (!(dropdown instanceof HTMLSelectElement) || !(menu instanceof HTMLDivElement))
+        return;
+    let selectedItem = undefined;
+    let menuItems = menu.querySelectorAll(".patchSelectorMenuItem");
+    for (let item of menuItems) {
+        if (!(item instanceof HTMLButtonElement))
+            continue;
+        let isSelected = item.dataset.value === dropdown.value;
+        item.classList.toggle("selected", isSelected);
+        if (isSelected)
+            selectedItem = item;
+    }
+    if (selectedItem !== undefined)
+        selectedItem.scrollIntoView({ block: "nearest" });
+}
 function initPatchSelectorUI() {
     let button = document.getElementById("patchSelectorButton");
     let menu = document.getElementById("patchSelectorMenu");
@@ -395,6 +413,7 @@ function initPatchSelectorUI() {
             }
             menu.classList.add("open");
             button.setAttribute("aria-expanded", "true");
+            requestAnimationFrame(() => alignPatchSelectorMenuToCurrentSelection());
         }
         else {
             button.setAttribute("aria-expanded", "false");
@@ -418,6 +437,7 @@ function initPatchSelectorUI() {
         patchSelectorUIInitialized = true;
     }
     rebuildPatchSelectorMenu();
+    alignPatchSelectorMenuToCurrentSelection();
     updatePatchSelectorButtonLabel();
 }
 function updatePatchSelectorOptions(zoomDevice) {
@@ -439,8 +459,14 @@ function updatePatchSelectorOptions(zoomDevice) {
         option.dataset.patchName = patchName;
         dropdown.add(option);
     }
-    if (patchList.currentlySelectedMemorySlot >= 0 && patchList.currentlySelectedMemorySlot < dropdown.options.length)
-        dropdown.value = patchList.currentlySelectedMemorySlot.toString();
+    let selectedSlot = patchList.currentlySelectedMemorySlot;
+    if ((selectedSlot < 0 || selectedSlot >= dropdown.options.length) && zoomDevice.currentMemorySlotNumber !== undefined) {
+        let currentSlot = zoomDevice.currentMemorySlotNumber;
+        if (currentSlot >= 0 && currentSlot < dropdown.options.length)
+            selectedSlot = currentSlot;
+    }
+    if (selectedSlot >= 0 && selectedSlot < dropdown.options.length)
+        dropdown.value = selectedSlot.toString();
     patchSelectorSyncing = false;
     rebuildPatchSelectorMenu();
     updatePatchSelectorButtonLabel();
@@ -970,8 +996,7 @@ function handleTempoChanged(zoomDevice, tempo) {
         return;
     if (currentZoomPatch !== undefined && zoomDevice.currentPatch !== undefined) {
         setPatchParameter(currentZoomPatch, zoomDevice, zoomDevice.effectIDMap, "tempo", tempo, "", "", false);
-        patchEditor.updateTempo(tempo);
-        //getScreenCollectionAndUpdateEditPatchTable(zoomDevice);
+        getScreenCollectionAndUpdateEditPatchTable(zoomDevice);
     }
 }
 function handleEffectSlotChanged(zoomDevice, effectSlot) {
@@ -987,6 +1012,28 @@ function handleEffectSlotChanged(zoomDevice, effectSlot) {
 function checkIfPatchAndDeviceMatches(zoomDevice, zoomPatch) {
     return zoomDevice !== undefined && zoomPatch !== undefined && zoomDevice.currentPatch !== undefined &&
         zoomPatch.MSOG === zoomDevice.currentPatch.MSOG && zoomPatch.PTCF === zoomDevice.currentPatch.PTCF;
+}
+const BPM_TEMPO_MIN = 40;
+const BPM_TEMPO_MAX = 250;
+function clampTempoFromBPMParameter(value) {
+    let tempo = Math.round(value);
+    if (Number.isNaN(tempo))
+        tempo = BPM_TEMPO_MIN;
+    return Math.max(BPM_TEMPO_MIN, Math.min(BPM_TEMPO_MAX, tempo));
+}
+function isBPMLinkedEffectSlot(zoomPatch, effectSlot) {
+    if (zoomPatch === undefined || effectSlot === undefined)
+        return false;
+    if (zoomPatch.prm2BPMSlot !== null && zoomPatch.prm2BPMSlot !== undefined) {
+        return ((zoomPatch.prm2BPMSlot >> effectSlot) & 1) === 1;
+    }
+    if (zoomPatch.effectSettings === null || effectSlot >= zoomPatch.effectSettings.length)
+        return false;
+    let effectID = zoomPatch.effectSettings[effectSlot].id;
+    return effectID === 0x07000ff0 || effectID === 0x09000ff0 || effectID === 0x1c000010;
+}
+function isBPMTempoParameter(zoomPatch, effectSlot, parameterNumber) {
+    return parameterNumber === 2 && isBPMLinkedEffectSlot(zoomPatch, effectSlot);
 }
 function handlePatchEdited(zoomPatch, zoomDevice, effectIDMap, event, type, initialValueString) {
     if (zoomDevice !== undefined && zoomDevice !== currentZoomDevice)
@@ -1046,6 +1093,52 @@ function handlePatchEdited(zoomPatch, zoomDevice, effectIDMap, event, type, init
     }
     else if (effectSlot !== undefined && parameterNumber !== undefined) {
         if (zoomPatch !== undefined && zoomPatch.effectSettings !== null && effectSlot < zoomPatch.effectSettings.length) {
+            if (isBPMTempoParameter(zoomPatch, effectSlot, parameterNumber)) {
+                let updateParameter = false;
+                let rawValue = clampTempoFromBPMParameter(Number.parseInt(cell.innerText));
+                if (type === "focus") {
+                    if (zoomPatch.currentEffectSlot !== effectSlot) {
+                        zoomPatch.currentEffectSlot = effectSlot;
+                        if (patchAndDeviceMatches)
+                            zoomDevice?.setCurrentEffectSlot(effectSlot);
+                        patchEditor.updateEffectSlotFrame(effectSlot);
+                        if (patchAndDeviceMatches && currentLCXLDevice && zoomDevice !== undefined)
+                            updateLCXLColors(currentLCXLDevice, zoomDevice, zoomPatch);
+                    }
+                }
+                else if (type === "blur") {
+                    updateParameter = true;
+                }
+                else if (type === "key" && event instanceof KeyboardEvent) {
+                    updateParameter = false;
+                    rawValue = clampTempoFromBPMParameter(zoomPatch.tempo);
+                    if (event.key === "ArrowUp") {
+                        rawValue = clampTempoFromBPMParameter(rawValue + 1);
+                        updateParameter = true;
+                    }
+                    else if (event.key === "ArrowDown") {
+                        rawValue = clampTempoFromBPMParameter(rawValue - 1);
+                        updateParameter = true;
+                    }
+                    else if (event.key === "PageUp") {
+                        rawValue = clampTempoFromBPMParameter(rawValue + 10);
+                        updateParameter = true;
+                    }
+                    else if (event.key === "PageDown") {
+                        rawValue = clampTempoFromBPMParameter(rawValue - 10);
+                        updateParameter = true;
+                    }
+                }
+                if (updateParameter && rawValue !== zoomPatch.tempo) {
+                    let valueString = rawValue.toString().padStart(3, "0");
+                    cell.innerHTML = valueString;
+                    patchEditor.updateValueBar(cell, rawValue, BPM_TEMPO_MAX, BPM_TEMPO_MIN);
+                    setPatchParameter(zoomPatch, zoomDevice, effectIDMap, "tempo", rawValue, "tempo");
+                    patchEditor.updateTempo(rawValue);
+                }
+                updateDirtyState(initialValueString !== cell.innerText);
+                return true;
+            }
             let effectID = -1;
             effectID = zoomPatch.effectSettings[effectSlot].id;
             let valueString = cell.innerText;
@@ -1130,6 +1223,20 @@ function handleMouseMoved(zoomPatch, zoomDevice, effectIDMap, cell, initialValue
     // shouldLog(LogLevel.Info) && console.log(`Mouse move (${x}, ${y}) for cell.id = ${cell.id}, effectSlot = ${effectSlot}, parameterNumber = ${parameterNumber}`);
     if (effectSlot !== undefined && parameterNumber !== undefined && zoomPatch !== undefined &&
         zoomPatch.effectSettings !== null && effectSlot < zoomPatch.effectSettings.length) {
+        if (isBPMTempoParameter(zoomPatch, effectSlot, parameterNumber)) {
+            let currentRawValue = clampTempoFromBPMParameter(Number.parseInt(cell.innerText));
+            let initialRawValue = clampTempoFromBPMParameter(Number.parseInt(initialValueString));
+            let newRawValue = clampTempoFromBPMParameter(calculateNewRawValue(x, y, BPM_TEMPO_MAX, initialRawValue));
+            if (newRawValue !== currentRawValue) {
+                let newValueString = newRawValue.toString().padStart(3, "0");
+                cell.innerHTML = newValueString;
+                patchEditor.updateValueBar(cell, newRawValue, BPM_TEMPO_MAX, BPM_TEMPO_MIN);
+                shouldLog(LogLevel.Info) && console.log(`Changing BPM-linked tempo for cell.id = ${cell.id} from ${currentRawValue} to ${newRawValue}`);
+                setPatchParameter(zoomPatch, zoomDevice, effectIDMap, "tempo", newRawValue, "tempo", "", true, true, false, true);
+                patchEditor.updateTempo(newRawValue);
+            }
+            return;
+        }
         let effectID = -1;
         effectID = zoomPatch.effectSettings[effectSlot].id;
         let currentValueString = cell.innerText;
@@ -1175,6 +1282,20 @@ function handleMouseUp(zoomPatch, zoomDevice, effectIDMap, cell, initialValueStr
     // shouldLog(LogLevel.Info) && console.log(`Mouse up (${x}, ${y}) for cell.id = ${cell.id}, effectSlot = ${effectSlot}, parameterNumber = ${parameterNumber}`);
     if (effectSlot !== undefined && parameterNumber !== undefined && zoomPatch !== undefined &&
         zoomPatch.effectSettings !== null && effectSlot < zoomPatch.effectSettings.length) {
+        if (isBPMTempoParameter(zoomPatch, effectSlot, parameterNumber)) {
+            let initialRawValue = clampTempoFromBPMParameter(Number.parseInt(initialValueString));
+            let newRawValue = clampTempoFromBPMParameter(calculateNewRawValue(x, y, BPM_TEMPO_MAX, initialRawValue));
+            if (newRawValue !== initialRawValue) {
+                let newValueString = newRawValue.toString().padStart(3, "0");
+                cell.innerHTML = newValueString;
+                patchEditor.updateValueBar(cell, newRawValue, BPM_TEMPO_MAX, BPM_TEMPO_MIN);
+                shouldLog(LogLevel.Info) && console.log(`Changing BPM-linked tempo for cell.id = ${cell.id} from ${initialRawValue} to ${newRawValue} and storing undo state`);
+                setPatchParameter(zoomPatch, zoomDevice, effectIDMap, "tempo", newRawValue, "tempo", "", true, true, true, false);
+                patchEditor.updateTempo(newRawValue);
+                updateDirtyState(true);
+            }
+            return;
+        }
         let effectID = -1;
         effectID = zoomPatch.effectSettings[effectSlot].id;
         let currentValueString = cell.innerText;
@@ -2051,7 +2172,7 @@ async function waitForWebMIDI(reconnectTimeoutMilliseconds) {
             await sleepForAWhile(reconnectTimeoutMilliseconds);
         }
     }
-    console.warn(`MIDI backend enabled. Inputs=${midi.inputs.size}, outputs=${midi.outputs.size}`);
+    shouldLog(LogLevel.Info) && console.log(`MIDI backend enabled. Inputs=${midi.inputs.size}, outputs=${midi.outputs.size}`);
     setStartupLoadingState("Loading", "MIDI backend ready.");
 }
 async function waitForZoomDevices(timeoutMilliseconds) {
@@ -2071,7 +2192,7 @@ async function waitForZoomDevices(timeoutMilliseconds) {
                     .filter((name) => /zoom|ms\s*plus|ms-\d+/i.test(name));
                 if (possibleZoomNames.length > 0) {
                     warnedAboutUnclassifiedZoom = true;
-                    console.warn(`MIDI devices detected but not classified as Zoom yet: ${possibleZoomNames.join(" | ")}`);
+                    shouldLog(LogLevel.Warning) && console.warn(`MIDI devices detected but not classified as Zoom yet: ${possibleZoomNames.join(" | ")}`);
                     setStartupLoadingState("Waiting for Zoom pedal connection", "Zoom MIDI device detected, but identity/classification is still pending.");
                 }
             }
@@ -2080,9 +2201,9 @@ async function waitForZoomDevices(timeoutMilliseconds) {
             let outputNames = [...midi.outputs.values()].map((output) => output.name);
             let detectedNames = [...new Set([...inputNames, ...outputNames])];
             if (retryCounter % 5 === 0) {
-                console.warn(`Still waiting for Zoom classification (attempt ${retryCounter}). Inputs=${inputNames.length}, outputs=${outputNames.length}${detectedNames.length > 0 ? `, names: ${detectedNames.join(" | ")}` : ""}`);
+                shouldLog(LogLevel.Warning) && console.warn(`Still waiting for Zoom classification (attempt ${retryCounter}). Inputs=${inputNames.length}, outputs=${outputNames.length}${detectedNames.length > 0 ? `, names: ${detectedNames.join(" | ")}` : ""}`);
                 await deviceManager.updateMIDIDeviceList().catch((error) => {
-                    console.warn(`Retrying MIDI device list update failed: ${String(error)}`);
+                    shouldLog(LogLevel.Warning) && console.warn(`Retrying MIDI device list update failed: ${String(error)}`);
                 });
             }
             setStartupLoadingState("Waiting for Zoom pedal connection", `Attempt ${retryCounter}.` +
@@ -2096,7 +2217,7 @@ async function waitForZoomDevices(timeoutMilliseconds) {
     midiDeviceListView.enabled = !performanceMode;
     let openZoomDevice = zoomDevices.find((d) => d.isOpen);
     if (openZoomDevice === undefined && zoomDevices.length > 0) {
-        console.warn(`Zoom device detected but not open yet. Auto-opening "${zoomDevices[0].deviceName}"`);
+        shouldLog(LogLevel.Warning) && console.warn(`Zoom device detected but not open yet. Auto-opening "${zoomDevices[0].deviceName}"`);
         setStartupLoadingState("Loading", `Connecting to ${zoomDevices[0].deviceName}...`);
         await handleZoomDeviceOn(deviceManager, zoomDevices[0]);
     }
@@ -2361,6 +2482,7 @@ async function updateStateWithNewCurrentZoomDevice(zoomDevice) {
     let currentMemorySlot = await zoomDevice.getCurrentMemorySlotNumber();
     if (currentMemorySlot !== undefined) {
         patchList.currentlySelectedMemorySlot = currentMemorySlot;
+        updatePatchSelectorSelection(currentMemorySlot);
         // currentZoomPatch = zoomDevice.patchList[currentMemorySlot].clone();
         if (zoomDevice.currentPatch === undefined) {
             shouldLog(LogLevel.Warning) && console.warn(`zoomDevice.currentPatch is undefined. using patch in currentMemorySlot (${currentMemorySlot}) instead`);

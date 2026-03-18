@@ -377,7 +377,7 @@ body {
 }
 
 #patchEditors .patchSelectorMenu.open {
-  display: block;
+  display: block !important;
 }
 
 #patchEditors .patchSelectorMenuItem {

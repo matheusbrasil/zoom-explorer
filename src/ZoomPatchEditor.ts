@@ -19,6 +19,8 @@ export type EditPatchEffectSlotSelectListenerType = (effectSlot: number) => void
 
 export class ZoomPatchEditor
 {
+  private static readonly BPM_TEMPO_MIN = 40;
+  private static readonly BPM_TEMPO_MAX = 250;
   private parameterSelectionPointerUpdatePending = false;
   private parameterEditorHasVisibleParameters = false;
   private readonly maxEffectSlots = 6;
@@ -916,10 +918,46 @@ export class ZoomPatchEditor
     return undefined;
   }
 
+  private isBPMEffect(effectID: number, effectName: string): boolean
+  {
+    let normalizedName = effectName.trim().toLowerCase();
+    if (normalizedName === "bpm")
+      return true;
+    return effectID === 0x07000ff0 || effectID === 0x09000ff0 || effectID === 0x1c000010;
+  }
+
   private getDisplayParameters(screen: ZoomScreen, patch: ZoomPatch, effectSlot: number, effectIDMap: EffectIDMap | undefined, effectID: number):
     { name: string, valueString: string }[]
   {
     let parameters = screen.parameters.map(parameter => ({ name: parameter.name, valueString: parameter.valueString }));
+    let effectMap = this.resolveEffectMap(effectIDMap, effectID);
+    let bpmLinked = false;
+    if (patch.prm2BPMSlot !== null)
+      bpmLinked = ((patch.prm2BPMSlot >> effectSlot) & 1) === 1;
+    if (!bpmLinked && effectMap !== undefined)
+      bpmLinked = this.isBPMEffect(effectID, effectMap.name);
+
+    if (bpmLinked) {
+      if (parameters.length > 2)
+        parameters = parameters.slice(0, 2);
+
+      if (patch.effectSettings !== null && effectSlot < patch.effectSettings.length) {
+        if (parameters.length === 0) {
+          parameters.push({ name: "OnOff", valueString: patch.effectSettings[effectSlot].enabled ? "1" : "0" });
+        }
+        if (parameters.length === 1) {
+          let effectName = effectMap?.name ?? parameters[1]?.name ?? "BPM";
+          parameters.push({ name: effectName, valueString: effectName });
+        }
+        else if (parameters[1].name.trim().length === 0 || parameters[1].name === "Effect") {
+          parameters[1] = { name: effectMap?.name ?? "BPM", valueString: effectMap?.name ?? "BPM" };
+        }
+      }
+
+      parameters.push({ name: "Tempo", valueString: patch.tempo.toString().padStart(3, "0") });
+      return parameters;
+    }
+
     let hasUsableScreenParameters = parameters.length > 2 && parameters.slice(2).some(parameter => {
       if (!this.shouldRenderParameter(parameter))
         return false;
@@ -937,7 +975,6 @@ export class ZoomPatchEditor
     if (patch.effectSettings === null || effectSlot >= patch.effectSettings.length)
       return parameters;
 
-    let effectMap = this.resolveEffectMap(effectIDMap, effectID);
     if (effectMap === undefined)
       return parameters;
 
@@ -1340,11 +1377,18 @@ export class ZoomPatchEditor
         let rawValue = -1;
         let maxValue = -1;
         let mappedEffectID = this.resolveEffectIDForMap(effectIDMap, effectID);
+        let effectMapForParameter = this.resolveEffectMap(effectIDMap, effectID);
+        let bpmLinkedParameter = parameterNumber === 2 &&
+          (((patch.prm2BPMSlot ?? 0) >> effectSlot & 1) === 1 || this.isBPMEffect(effectID, effectMapForParameter?.name ?? ""));
         if (effectID !== -1) {
           [rawValue, maxValue] = ZoomDevice.getRawParameterValueFromStringAndMap(effectIDMap, effectID, parameterNumber, valueString);
           if (maxValue === -1 && mappedEffectID !== undefined && mappedEffectID !== effectID) {
             [rawValue, maxValue] = ZoomDevice.getRawParameterValueFromStringAndMap(effectIDMap, mappedEffectID, parameterNumber, valueString);
           }
+        }
+        if (bpmLinkedParameter) {
+          rawValue = patch.tempo;
+          maxValue = ZoomPatchEditor.BPM_TEMPO_MAX;
         }
 
         let lowerParameterName = parameterName.trim().toLowerCase();
@@ -1382,7 +1426,17 @@ export class ZoomPatchEditor
           if (valueCell.childElementCount > 0)
             valueCell.replaceChildren(document.createTextNode(valueString));
           if (effectID !== -1) {
-            let percentage = maxValue === -1 ? 0 : (rawValue / maxValue) * 100;
+            let percentage = 0;
+            if (maxValue !== -1) {
+              if (bpmLinkedParameter) {
+                let range = ZoomPatchEditor.BPM_TEMPO_MAX - ZoomPatchEditor.BPM_TEMPO_MIN;
+                percentage = range <= 0 ? 0 : ((rawValue - ZoomPatchEditor.BPM_TEMPO_MIN) / range) * 100;
+              }
+              else {
+                percentage = (rawValue / maxValue) * 100;
+              }
+            }
+            percentage = Math.max(0, Math.min(100, percentage));
             this.updateBackgroundSizeIfChanged(valueCell, percentage.toFixed(0).toString() + "%");
           }
           else {
@@ -1601,11 +1655,12 @@ export class ZoomPatchEditor
       this.effectSlotSelectEffectCallback(effectSlot);
   }
 
-  updateValueBar(cell: HTMLTableCellElement, rawValue: number, maxValue: number)
+  updateValueBar(cell: HTMLTableCellElement, rawValue: number, maxValue: number, minValue: number = 0)
   {
-    if (maxValue <= 0)
+    if (maxValue <= minValue)
       return;
-    let percentage = (rawValue / maxValue) * 100;
+    let percentage = ((rawValue - minValue) / (maxValue - minValue)) * 100;
+    percentage = Math.max(0, Math.min(100, percentage));
     cell.style.backgroundSize = percentage.toFixed(0).toString() + "%";
     cell.style.setProperty("--value-percent", percentage.toFixed(0));
   }
