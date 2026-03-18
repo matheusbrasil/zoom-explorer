@@ -1865,22 +1865,23 @@
     </dialog>    
 
     <dialog id="textInputDialog">
-        <form>
-        <p>
-            <p>
-            <label id="textInputLabel">
-                Enter some text:
-            </label>
-            </p>
-            <p>
-            <textarea id="textInput" rows="4" cols="80"> </textarea>
-            </p>
-        </p>
-        <div>
-            <button formmethod="dialog" value="cancel">Cancel</button>
-            <button id="textInputConfirmButton" value="ok">Yes</button>
+        <div class="textInputPanel">
+            <div class="textInputHeader">
+                <h2 class="textInputTitle">Import Patch From Text</h2>
+            </div>
+            <form class="textInputForm">
+                <div class="textInputContent">
+                    <label id="textInputLabel" class="textInputLabel">
+                        Enter some text:
+                    </label>
+                    <textarea id="textInput" class="textInputArea" placeholder="Paste your patch data here..."></textarea>
+                </div>
+                <div class="textInputActions">
+                    <button class="textInputButton textInputCancelButton" formmethod="dialog" value="cancel">Cancel</button>
+                    <button class="textInputButton textInputConfirmButton" id="textInputConfirmButton" value="ok">Load</button>
+                </div>
+            </form>
         </div>
-        </form>
     </dialog>    
 
     <dialog id="midiFilterDialog">

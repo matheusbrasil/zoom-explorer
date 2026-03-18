@@ -628,6 +628,11 @@ function initPatchTable(zoomDevice) {
             resetButton.addEventListener("click", listener);
         }
     };
+    let refreshPatchListsAfterImport = async () => {
+        await updatePatchesTable(zoomDevice);
+        updatePatchSelectorSelection(patchList.currentlySelectedMemorySlot);
+        alignPatchSelectorMenuToCurrentSelection();
+    };
     bindActionButtonClick("undoEditPatchButton", async (event) => {
         if (currentZoomPatch === undefined) {
             shouldLog(LogLevel.Error) && console.error("Can't undo edit since no patch is selected. currentPatch == null.");
@@ -658,6 +663,21 @@ function initPatchTable(zoomDevice) {
         let patchWasSaved = await uploadPatchToSelectedMemorySlot(currentZoomPatch, zoomDevice, false);
         if (patchWasSaved)
             setPatchNotDirty(true);
+    });
+    bindActionButtonClick("deleteCurrentPatchButton", async (event) => {
+        // Reuse legacy patch list delete flow (undo/redo and empty-patch upload semantics).
+        let selectedSlots = patchList.selectedMemorySlots;
+        if (selectedSlots.length === 0) {
+            let currentSlot = zoomDevice.currentMemorySlot;
+            if (currentSlot >= 0) {
+                patchList.currentlySelectedMemorySlot = currentSlot;
+            }
+        }
+        await patchList.deletePatches(zoomDevice);
+        // Keep selector/table text synchronized with the newly deleted patch content.
+        await updatePatchesTable(zoomDevice);
+        updatePatchSelectorSelection(patchList.currentlySelectedMemorySlot);
+        alignPatchSelectorMenuToCurrentSelection();
     });
     bindActionButtonClick("savePatchToDiskButton", async (event) => {
         if (currentZoomPatch === undefined) {
@@ -710,9 +730,9 @@ function initPatchTable(zoomDevice) {
             if (patch !== undefined) {
                 currentZoomPatchToConvert = undefined;
                 loadedPatchEditor.hide();
-                if (patch !== undefined) {
-                    uploadPatchToSelectedMemorySlot(patch, zoomDevice);
-                }
+                let patchWasUploaded = await uploadPatchToSelectedMemorySlot(patch, zoomDevice);
+                if (patchWasUploaded)
+                    await refreshPatchListsAfterImport();
             }
         }
         else {
@@ -722,6 +742,9 @@ function initPatchTable(zoomDevice) {
                 if (patch === undefined) {
                     currentZoomPatchToConvert = undefined;
                     loadedPatchEditor.hide();
+                }
+                else {
+                    await refreshPatchListsAfterImport();
                 }
             }
         }
@@ -735,6 +758,9 @@ function initPatchTable(zoomDevice) {
             if (patch === undefined) {
                 currentZoomPatchToConvert = undefined;
                 loadedPatchEditor.hide();
+            }
+            else {
+                await refreshPatchListsAfterImport();
             }
         }
     });
@@ -1975,12 +2001,12 @@ function undoRedoStateChanged(undoRedoManager, undoAvailable, undoDescription, r
         return;
     }
     for (let undoButton of getPatchActionButtons("undoEditPatchButton")) {
-        undoButton.style.display = undoAvailable ? "" : "none";
+        undoButton.style.visibility = undoAvailable ? "visible" : "hidden";
         undoButton.disabled = !undoAvailable;
         undoButton.setAttribute("tooltip", undoDescription.length > 0 ? "Undo: " + undoDescription : "Nothing to undo");
     }
     for (let redoButton of getPatchActionButtons("redoEditPatchButton")) {
-        redoButton.style.display = redoAvailable ? "" : "none";
+        redoButton.style.visibility = redoAvailable ? "visible" : "hidden";
         redoButton.disabled = !redoAvailable;
         redoButton.setAttribute("tooltip", redoDescription.length > 0 ? "Redo: " + redoDescription : "Nothing to redo");
     }

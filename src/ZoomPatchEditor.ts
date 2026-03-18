@@ -247,12 +247,9 @@ export class ZoomPatchEditor
         <tr class="editPatchActionRow">
           <td colspan="${fullColSpan}" class="editPatchActionCell">
             <div class="patchActionButtons">
-              <button class="patchActionButton" data-action="add"><span class="material-symbols-outlined">add_circle</span><span>Add</span></button>
-              <button class="patchActionButton" data-action="delete"><span class="material-symbols-outlined">delete</span><span>Delete</span></button>
-              <button class="patchActionButton" data-action="change"><span class="material-symbols-outlined">swap_horiz</span><span>Change</span></button>
-              <button id="savePatchToDiskButton" class="patchActionButton"><span class="material-symbols-outlined">save</span><span>Export Patch</span></button>
-              <button id="loadPatchFromDiskButton" class="patchActionButton"><span class="material-symbols-outlined">file_open</span><span>Import Patch</span></button>
-              <button id="loadPatchFromTextButton" class="patchActionButton"><span class="material-symbols-outlined">article_shortcut</span><span>Text</span></button>
+              <button class="patchActionButton" data-action="add"><span class="material-symbols-outlined">add_circle</span><span>Add Effect</span></button>
+              <button class="patchActionButton" data-action="delete"><span class="material-symbols-outlined">delete</span><span>Delete Effect</span></button>
+              <button class="patchActionButton" data-action="change"><span class="material-symbols-outlined">swap_horiz</span><span>Change Effect</span></button>
             </div>
           </td>
         </tr>` : "";
@@ -271,9 +268,13 @@ export class ZoomPatchEditor
           <th class="editPatchTableTempoValue"${patchTempoID}></th>
           <th class="editPatchTableStatus">
             <div class="topBarActions">
-              <button id="undoEditPatchButton" class="topBarActionButton" disabled title="Undo Edit"><span class="material-symbols-outlined">undo</span></button>
-              <button id="redoEditPatchButton" class="topBarActionButton" disabled title="Redo Edit"><span class="material-symbols-outlined">redo</span></button>
-              <button id="syncPatchToPedalButton" class="topBarActionButton topBarSaveButton" disabled title="Save to pedal"><span class="material-symbols-outlined">publish</span><span class="topBarActionLabel">Save</span></button>
+              <button id="deleteCurrentPatchButton" class="topBarActionButton topBarLabeledActionButton" title="Delete selected patch(es)"><span class="material-symbols-outlined">delete</span><span class="topBarActionLabel">Delete Patch</span></button>
+              <button id="savePatchToDiskButton" class="topBarActionButton topBarLabeledActionButton" title="Export current patch"><span class="material-symbols-outlined">save</span><span class="topBarActionLabel">Export Patch</span></button>
+              <button id="loadPatchFromDiskButton" class="topBarActionButton topBarLabeledActionButton" title="Import patch from file"><span class="material-symbols-outlined">file_open</span><span class="topBarActionLabel">Import Patch</span></button>
+              <button id="loadPatchFromTextButton" class="topBarActionButton topBarLabeledActionButton" title="Import patch from text"><span class="material-symbols-outlined">article_shortcut</span><span class="topBarActionLabel">Import Patch From Text</span></button>
+              <button id="undoEditPatchButton" class="topBarActionButton topBarIconOnly" disabled title="Undo Edit"><span class="material-symbols-outlined">undo</span></button>
+              <button id="redoEditPatchButton" class="topBarActionButton topBarIconOnly" disabled title="Redo Edit"><span class="material-symbols-outlined">redo</span></button>
+              <button id="syncPatchToPedalButton" class="topBarActionButton topBarLabeledActionButton" disabled title="Save to pedal"><span class="material-symbols-outlined">publish</span><span class="topBarActionLabel">Save</span></button>
             </div>
           </th>
         </tr>
