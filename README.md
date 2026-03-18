@@ -49,6 +49,71 @@ The desktop app startup enables Chromium Web MIDI + Web MIDI SysEx and allows `m
 
 If the pedal does not appear, close any other MIDI app that might lock the port, then reconnect the pedal USB cable.
 
+## Tauri 2.0 migration (incremental)
+
+The codebase now includes a Tauri 2.0 backend scaffold in parallel with the existing Electron app so migration can happen feature-by-feature.
+
+### Current Tauri status
+
+* Rust command layer and app state are in `src-tauri`.
+* Frontend bridge (`window.zoomExplorerAPI`) auto-detects Tauri and reuses the same API shape currently used by Electron.
+* Platform capability command is included to support desktop/mobile feature gating.
+* UI keeps the existing look-and-feel and now includes a mobile viewport meta tag for responsive behavior in mobile WebViews.
+
+### Run Tauri (desktop)
+
+```
+npm install
+npm run tauri:dev
+```
+
+### Build Tauri (desktop)
+
+```
+npm run tauri:build
+```
+
+### Mobile targets (requires Tauri mobile prerequisites)
+
+```
+npm run tauri:android:dev
+npm run tauri:ios:dev
+```
+
+### Updated project tree (migration-ready)
+
+```
+/src-tauri
+  Cargo.toml
+  tauri.conf.json
+  /capabilities
+    default.json
+  /src
+    main.rs
+    lib.rs
+    models.rs
+    /commands
+      app.rs
+      midi.rs
+    /midi
+      service.rs
+    /device
+      zoom_ms60bp.rs
+    /persistence
+      settings_store.rs
+    /logging
+      mod.rs
+
+/src
+  /shared
+    api-contract.ts
+    types.ts
+  tauri-bridge.ts
+  ...existing frontend code...
+```
+
+The Electron path remains available during migration (`npm run electron:start`) until Tauri feature parity is completed.
+
 ## Device IDs
 
 * 6E = Zoom MS-50G+

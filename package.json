@@ -4,9 +4,15 @@
   "description": "Tools for exploring the Zoom MS Plus series of effect pedals",
   "main": "electron/main.js",
   "scripts": {
-    "build": "tsc && npm run build:copy-public",
-    "build:copy-public": "copyfiles -f ./public/** ./dist",
+    "build": "npm run build:clean && tsc && npm run build:copy-public",
+    "build:clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build:copy-public": "node scripts/copy-public.cjs",
+    "tauri:serve": "npm run build && http-server dist -p 1430 -c-1 --silent",
     "type": "tsc --noEmit",
+    "tauri:dev": "npm exec tauri dev",
+    "tauri:build": "npm run build && npm exec tauri build",
+    "tauri:android:dev": "npm run build && npm exec tauri android dev",
+    "tauri:ios:dev": "npm run build && npm exec tauri ios dev",
     "electron:start": "npm run build && electron-forge start",
     "electron:package": "npm run build && electron-forge package",
     "electron:make:win": "npm run build && electron-forge make --platform win32"
@@ -29,8 +35,10 @@
     "@electron-forge/cli": "^7.6.1",
     "@electron-forge/maker-squirrel": "^7.6.1",
     "@electron-forge/maker-zip": "^7.6.1",
+    "@tauri-apps/cli": "^2.1.0",
     "@types/wicg-file-system-access": "^2023.10.5",
     "electron": "^33.2.1",
+    "http-server": "^14.1.1",
     "typescript": "^5.4.5"
   },
   "dependencies": {

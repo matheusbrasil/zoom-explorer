@@ -54,9 +54,13 @@ import { getPatchFromSysex } from "./SymbiosisTools.js";
 import { ZoomPatchList } from "./ZoomPatchList.js";
 import { FileBrowser } from "./FileBrowser.js";
 import { LocalFileSystem } from "./LocalFileSystem.js";
+import { installTauriBridge } from "./tauri-bridge.js";
 const ZoomDevices = "ZoomDevices";
 const MIDIDevices = "MIDIDevices";
 const LCXLDevices = "LCXLDevices";
+
+installTauriBridge();
+
 let patchSelectorSyncing = false;
 let patchSelectorUIInitialized = false;
 async function downloadJSONResource(filename) {

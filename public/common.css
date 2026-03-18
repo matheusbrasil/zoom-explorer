@@ -856,6 +856,7 @@ body {
   margin: 0 auto !important;
 }
 
+
 #patchEditors .patchActionButton {
   border: 0 !important;
   background: transparent !important;
@@ -874,6 +875,7 @@ body {
 #patchEditors .patchActionButton span:first-child {
   font-size: 30px !important;
 }
+
 
 #patchEditors .patchActionButton:disabled {
   opacity: 0.3 !important;
@@ -1382,6 +1384,17 @@ body {
 
 #patchEditors .editEffectSlot .effectSelectionIndicator {
   opacity: 1 !important;
+}
+
+#patchEditors .editEffectTable.blankEffect .effectSelectionIndicator {
+  display: block !important;
+  width: calc(100% - 24px) !important;
+  height: 14px !important;
+  top: calc(100% + 2px) !important;
+  clip-path: none !important;
+  border-radius: 2px !important;
+  background: linear-gradient(180deg, #ffe680 0%, #ffcf33 100%) !important;
+  box-shadow: 0 0 8px rgba(255, 207, 51, 0.85), 0 0 16px rgba(255, 207, 51, 0.55) !important;
 }
 
 #patchEditors .editPatchParametersCell {

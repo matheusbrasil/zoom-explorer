@@ -63,6 +63,7 @@ export class ZoomPatchEditor
   private lastPatchIdentity = "";
   private visibleEffectSlots: number[] = [];
   private effectImageCandidatesCache = new Map<string, string[]>();
+  private effectImageRelativeCandidatesCache = new Map<string, string[]>();
 
   private cachedPedalName = "";
   private cachedEffectIDMap: EffectIDMap | undefined = undefined;
@@ -247,7 +248,7 @@ export class ZoomPatchEditor
         <tr class="editPatchActionRow">
           <td colspan="${fullColSpan}" class="editPatchActionCell">
             <div class="patchActionButtons">
-              <button class="patchActionButton" data-action="add"><span class="material-symbols-outlined">add_circle</span><span>Add Effect</span></button>
+              <button class="patchActionButton" data-action="add-left"><span class="material-symbols-outlined">add_circle</span><span>Add Effect</span></button>
               <button class="patchActionButton" data-action="delete"><span class="material-symbols-outlined">delete</span><span>Delete Effect</span></button>
               <button class="patchActionButton" data-action="change"><span class="material-symbols-outlined">swap_horiz</span><span>Change Effect</span></button>
             </div>
@@ -397,6 +398,10 @@ export class ZoomPatchEditor
         if (effectSlot === undefined || action === undefined)
           return;
         if (action === "add" && this.effectSlotAddCallback !== undefined)
+          this.effectSlotAddCallback(effectSlot, "right");
+        else if (action === "add-left" && this.effectSlotAddCallback !== undefined)
+          this.effectSlotAddCallback(effectSlot, "left");
+        else if (action === "add-right" && this.effectSlotAddCallback !== undefined)
           this.effectSlotAddCallback(effectSlot, "right");
         else if (action === "delete" && this.effectSlotDeleteCallback !== undefined)
           this.effectSlotDeleteCallback(effectSlot);
@@ -745,7 +750,7 @@ export class ZoomPatchEditor
     let effectImage = effectTable.querySelector(".effectPedalImage") as HTMLImageElement;
     let effectFallback = effectTable.querySelector(".effectPedalFallback") as HTMLDivElement;
     effectImage.addEventListener("error", () => {
-      this.tryNextEffectImage(effectImage, effectFallback);
+      void this.tryNextEffectImage(effectImage, effectFallback);
     });
     effectImage.addEventListener("load", () => {
       effectImage.classList.remove("missing");
@@ -1025,6 +1030,11 @@ export class ZoomPatchEditor
       lower.startsWith("blank");
   }
 
+  private isThruEffectName(name: string): boolean
+  {
+    return name.trim().toLowerCase() === "thru";
+  }
+
   private getEffectImageNames(pedalName: string, effectID: number, effectName: string, fallbackName: string): string[]
   {
     let imageNames: string[] = [];
@@ -1042,22 +1052,134 @@ export class ZoomPatchEditor
       imageNames.push(trimmed);
     };
 
+    void pedalName;
+
+    // Prefer deterministic code-based file names to avoid locale and spacing issues.
+    if (effectID !== -1) {
+      addName(effectID.toString(16).padStart(8, "0").toLowerCase());
+      addName(effectID.toString(16).padStart(8, "0").toUpperCase());
+      let maskedID = effectID & 0xFFFFFFF0;
+      addName(maskedID.toString(16).padStart(8, "0").toLowerCase());
+      addName(maskedID.toString(16).padStart(8, "0").toUpperCase());
+    }
+
     let isBlankEffect = this.isBlankEffectName(effectName) || this.isBlankEffectName(fallbackName);
     if (isBlankEffect)
       addName("BLANK");
-    addName(effectName);
-    addName(fallbackName);
-    if (effectID !== -1) {
-      addName(this.getCatalogEffectName(pedalName, effectID));
-    }
 
     return imageNames;
+  }
+
+  private isEffectCodeToken(value: string): boolean
+  {
+    return /^[0-9a-f]{8}$/i.test(value.trim());
   }
 
   private getEffectImageCandidates(effectNames: string[]): string[]
   {
     let cacheKey = effectNames.map(name => name.trim().toLowerCase()).join("|");
     let cached = this.effectImageCandidatesCache.get(cacheKey);
+    if (cached !== undefined)
+      return cached;
+
+    let candidates: string[] = [];
+    let seen = new Set<string>();
+    let pushUrlCandidate = (relativePath: string) => {
+      try {
+        addCandidate(new URL(relativePath, document.baseURI).toString());
+      }
+      catch {
+        // Keep static candidates below as fallback when URL constructor fails.
+      }
+    };
+    let addCandidate = (candidate: string) => {
+      if (seen.has(candidate))
+        return;
+      seen.add(candidate);
+      candidates.push(candidate);
+    };
+
+    for (let effectName of effectNames) {
+      let variants: string[] = [];
+      let variantSeen = new Set<string>();
+      let trimmedName = effectName.trim();
+      if (this.isEffectCodeToken(trimmedName)) {
+        let lowerCode = trimmedName.toLowerCase();
+        let upperCode = trimmedName.toUpperCase();
+        let encodedLower = encodeURIComponent(lowerCode);
+        let encodedUpper = encodeURIComponent(upperCode);
+
+        pushUrlCandidate(`img/effects/${encodedLower}.png`);
+        pushUrlCandidate(`img/effects/${encodedUpper}.png`);
+        addCandidate(`/img/effects/${encodedLower}.png`);
+        addCandidate(`img/effects/${encodedLower}.png`);
+        addCandidate(`./img/effects/${encodedLower}.png`);
+        addCandidate(`/img/effects/${encodedUpper}.png`);
+        addCandidate(`img/effects/${encodedUpper}.png`);
+        addCandidate(`./img/effects/${encodedUpper}.png`);
+        continue;
+      }
+
+      let normalized = effectName
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\w\s+\-]/g, "")
+        .trim();
+      let addVariant = (variant: string) => {
+        if (variant.length === 0)
+          return;
+        if (variantSeen.has(variant))
+          return;
+        variantSeen.add(variant);
+        variants.push(variant);
+      };
+
+      addVariant(trimmedName);
+      addVariant(trimmedName.replace(/\s+/g, " "));
+      addVariant(trimmedName.replace(/\s*\/\s*/g, "-"));
+      addVariant(trimmedName.replace(/\s*-\s*/g, "-"));
+      addVariant(trimmedName.replace(/\s+/g, "-"));
+      addVariant(trimmedName.replace(/\s+/g, "_"));
+      addVariant(trimmedName.replace(/\s+/g, ""));
+      addVariant(trimmedName.toLowerCase().replace(/\s+/g, "-"));
+      addVariant(trimmedName.toLowerCase().replace(/\s+/g, "_"));
+      addVariant(trimmedName.toLowerCase().replace(/\s+/g, ""));
+
+      if (normalized.length > 0) {
+        addVariant(normalized);
+        addVariant(normalized.replace(/\s+/g, "-"));
+        addVariant(normalized.replace(/\s+/g, "_"));
+        addVariant(normalized.replace(/\s+/g, ""));
+        addVariant(normalized.toLowerCase().replace(/\s+/g, "-"));
+        addVariant(normalized.toLowerCase().replace(/\s+/g, "_"));
+        addVariant(normalized.toLowerCase().replace(/\s+/g, ""));
+      }
+
+      for (let variant of variants) {
+        let encoded = encodeURIComponent(variant);
+        let encodedRelative = `img/effects/${encoded}.png`;
+        let plainRelative = `img/effects/${variant}.png`;
+
+        pushUrlCandidate(encodedRelative);
+        pushUrlCandidate(plainRelative);
+
+        addCandidate(`/img/effects/${encoded}.png`);
+        addCandidate(`img/effects/${encoded}.png`);
+        addCandidate(`./img/effects/${encoded}.png`);
+        addCandidate(`/img/effects/${variant}.png`);
+        addCandidate(`img/effects/${variant}.png`);
+        addCandidate(`./img/effects/${variant}.png`);
+      }
+    }
+
+    this.effectImageCandidatesCache.set(cacheKey, candidates);
+    return candidates;
+  }
+
+  private getEffectImageRelativeCandidates(effectNames: string[]): string[]
+  {
+    let cacheKey = effectNames.map(name => name.trim().toLowerCase()).join("|");
+    let cached = this.effectImageRelativeCandidatesCache.get(cacheKey);
     if (cached !== undefined)
       return cached;
 
@@ -1073,6 +1195,18 @@ export class ZoomPatchEditor
     for (let effectName of effectNames) {
       let variants: string[] = [];
       let variantSeen = new Set<string>();
+      let trimmedName = effectName.trim();
+      if (this.isEffectCodeToken(trimmedName)) {
+        addCandidate(`img/effects/${trimmedName.toLowerCase()}.png`);
+        addCandidate(`img/effects/${trimmedName.toUpperCase()}.png`);
+        continue;
+      }
+
+      let normalized = effectName
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\w\s+\-]/g, "")
+        .trim();
       let addVariant = (variant: string) => {
         if (variant.length === 0)
           return;
@@ -1082,28 +1216,35 @@ export class ZoomPatchEditor
         variants.push(variant);
       };
 
-      let trimmedName = effectName.trim();
       addVariant(trimmedName);
       addVariant(trimmedName.replace(/\s+/g, " "));
       addVariant(trimmedName.replace(/\s*\/\s*/g, "-"));
       addVariant(trimmedName.replace(/\s*-\s*/g, "-"));
+      addVariant(trimmedName.replace(/\s+/g, "-"));
+      addVariant(trimmedName.replace(/\s+/g, "_"));
+      addVariant(trimmedName.replace(/\s+/g, ""));
+      addVariant(trimmedName.toLowerCase().replace(/\s+/g, "-"));
+      addVariant(trimmedName.toLowerCase().replace(/\s+/g, "_"));
+      addVariant(trimmedName.toLowerCase().replace(/\s+/g, ""));
+
+      if (normalized.length > 0) {
+        addVariant(normalized);
+        addVariant(normalized.replace(/\s+/g, "-"));
+        addVariant(normalized.replace(/\s+/g, "_"));
+        addVariant(normalized.replace(/\s+/g, ""));
+        addVariant(normalized.toLowerCase().replace(/\s+/g, "-"));
+        addVariant(normalized.toLowerCase().replace(/\s+/g, "_"));
+        addVariant(normalized.toLowerCase().replace(/\s+/g, ""));
+      }
 
       for (let variant of variants) {
-        let encoded = encodeURI(variant);
-        addCandidate(`/img/effects/${encoded}.png`);
+        let encoded = encodeURIComponent(variant);
         addCandidate(`img/effects/${encoded}.png`);
-        addCandidate(`./img/effects/${encoded}.png`);
-        addCandidate(`${encoded}.png`);
-        addCandidate(`./${encoded}.png`);
-        addCandidate(`/img/effects/${variant}.png`);
         addCandidate(`img/effects/${variant}.png`);
-        addCandidate(`./img/effects/${variant}.png`);
-        addCandidate(`${variant}.png`);
-        addCandidate(`./${variant}.png`);
       }
     }
 
-    this.effectImageCandidatesCache.set(cacheKey, candidates);
+    this.effectImageRelativeCandidatesCache.set(cacheKey, candidates);
     return candidates;
   }
 
@@ -1137,7 +1278,43 @@ export class ZoomPatchEditor
     effectImage.src = this.createFallbackPedalImage(effectFallback.textContent ?? "No Image");
   }
 
-  private tryNextEffectImage(effectImage: HTMLImageElement, effectFallback: HTMLDivElement): void
+  private async tryLoadEffectImageFromAppFiles(effectImage: HTMLImageElement, effectFallback: HTMLDivElement): Promise<boolean>
+  {
+    let api = window.zoomExplorerAPI;
+    if (api === undefined || api.readAppBinary === undefined)
+      return false;
+
+    let candidatesText = effectImage.dataset.imageRelativeCandidates;
+    if (candidatesText === undefined)
+      return false;
+
+    let candidates: string[] = [];
+    try {
+      candidates = JSON.parse(candidatesText) as string[];
+    }
+    catch {
+      return false;
+    }
+
+    for (let candidate of candidates) {
+      try {
+        let base64 = await api.readAppBinary(candidate);
+        if (base64.length === 0)
+          continue;
+        effectImage.classList.remove("missing");
+        effectFallback.classList.remove("visible");
+        effectImage.src = `data:image/png;base64,${base64}`;
+        return true;
+      }
+      catch {
+        // Try next candidate path.
+      }
+    }
+
+    return false;
+  }
+
+  private async tryNextEffectImage(effectImage: HTMLImageElement, effectFallback: HTMLDivElement): Promise<void>
   {
     let candidatesText = effectImage.dataset.imageCandidates;
     if (candidatesText === undefined) {
@@ -1159,11 +1336,15 @@ export class ZoomPatchEditor
       effectImage.src = candidates[nextIndex];
       return;
     }
+    let loadedFromApi = await this.tryLoadEffectImageFromAppFiles(effectImage, effectFallback);
+    if (loadedFromApi)
+      return;
     this.showFallbackPedalImage(effectImage, effectFallback);
   }
 
   private updateEffectImage(effectImage: HTMLImageElement, effectFallback: HTMLDivElement, effectName: string, effectImageNames: string[]): void {
     let candidates = this.getEffectImageCandidates(effectImageNames);
+    let relativeCandidates = this.getEffectImageRelativeCandidates(effectImageNames);
     effectFallback.textContent = effectName;
     if (candidates.length === 0) {
       this.showFallbackPedalImage(effectImage, effectFallback);
@@ -1171,10 +1352,12 @@ export class ZoomPatchEditor
     }
 
     let candidatesText = JSON.stringify(candidates);
+    let relativeCandidatesText = JSON.stringify(relativeCandidates);
     if (effectImage.dataset.imageCandidates !== candidatesText || effectImage.classList.contains("missing")) {
       effectImage.classList.remove("missing");
       effectFallback.classList.remove("visible");
       effectImage.dataset.imageCandidates = candidatesText;
+      effectImage.dataset.imageRelativeCandidates = relativeCandidatesText;
       effectImage.dataset.imageIndex = "0";
       effectImage.src = candidates[0];
     }
@@ -1555,18 +1738,24 @@ export class ZoomPatchEditor
       let fallbackName = displayParameters.length > 1 ? displayParameters[1].name : "Effect";
       let effectName = this.resolveEffectName(effectIDMap, effectID, fallbackName, pedalName);
       let isBlankEffect = this.isBlankEffectName(effectName) || this.isBlankEffectName(fallbackName);
+      let isThruEffect = this.isThruEffectName(effectName) || this.isThruEffectName(fallbackName);
       this.updateTextContentIfChanged(effectNameLabel, effectName);
       let effectImageNames = this.getEffectImageNames(pedalName, effectID, effectName, fallbackName);
       this.updateEffectImage(effectImage, effectFallback, effectName, effectImageNames);
-      effectTable.classList.toggle("blankEffect", isBlankEffect);
       effectTable.draggable = !isBlankEffect;
       effectOnOffButton.disabled = isBlankEffect;
       effectLedToggle.disabled = isBlankEffect;
+      effectAddLeftButton.disabled = effectAddLeftButton.disabled || isBlankEffect;
+      effectAddRightButton.disabled = effectAddRightButton.disabled || isBlankEffect;
       effectLed.classList.toggle("blank", isBlankEffect);
 
       let effectTableClass = "editEffectTable";
       if (this.selectedEffectSlot === effectSlot)
         effectTableClass += " editEffectSlot";
+      if (isBlankEffect)
+        effectTableClass += " blankEffect";
+      if (isThruEffect)
+        effectTableClass += " thruEffect";
       let effectIsEnabled = true;
       if (patch.effectSettings !== null && effectSlot < patch.effectSettings.length)
         effectIsEnabled = patch.effectSettings[effectSlot].enabled;
