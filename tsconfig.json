@@ -106,5 +106,5 @@
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
-  "exclude": ["dist", "electron", "electron-main.js", "forge.config.js", "node_modules", "src-tauri", "scripts"]
+  "exclude": ["dist", "node_modules", "src-tauri", "scripts"]
 }

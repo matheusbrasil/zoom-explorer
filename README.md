@@ -8,55 +8,20 @@ The user-friendly patch manager for the Zoom MS+ pedals is here: [sym.bios.is](h
 All numeric values listed below are in hexadecimal.
 
 
-## Electron desktop app (Windows-first)
+## Tauri 2.0 desktop app
 
-The Electron integration has been refactored to match the Electron Forge boilerplate layout:
-
-```
-/electron
-  main.js
-  preload.js
-/forge.config.js
-```
+Zoom Explorer is now a Tauri 2.0 application with a Rust backend and TypeScript frontend.
 
 ### Prerequisites
 
-* Windows 10/11
 * Node.js 20+
+* Rust toolchain (stable)
 * USB-MIDI capable Zoom pedal connected through USB
-
-### Install dependencies
-
-```
-npm install
-```
-
-### Run desktop app (Electron Forge)
-
-```
-npm run electron:start
-```
-
-### Build a Windows installer/package
-
-```
-npm run electron:make:win
-```
-
-### MIDI over USB in Electron
-
-The desktop app startup enables Chromium Web MIDI + Web MIDI SysEx and allows `midi` / `midiSysex` permissions in the Electron session, including MIDI device permission handling. This is required so Zoom Explorer can discover and control Zoom pedals through USB MIDI ports on Windows.
-
-If the pedal does not appear, close any other MIDI app that might lock the port, then reconnect the pedal USB cable.
-
-## Tauri 2.0 migration (incremental)
-
-The codebase now includes a Tauri 2.0 backend scaffold in parallel with the existing Electron app so migration can happen feature-by-feature.
 
 ### Current Tauri status
 
 * Rust command layer and app state are in `src-tauri`.
-* Frontend bridge (`window.zoomExplorerAPI`) auto-detects Tauri and reuses the same API shape currently used by Electron.
+* Frontend bridge (`window.zoomExplorerAPI`) uses Tauri commands/events for native integration.
 * Platform capability command is included to support desktop/mobile feature gating.
 * UI keeps the existing look-and-feel and now includes a mobile viewport meta tag for responsive behavior in mobile WebViews.
 
@@ -112,7 +77,7 @@ npm run tauri:ios:dev
   ...existing frontend code...
 ```
 
-The Electron path remains available during migration (`npm run electron:start`) until Tauri feature parity is completed.
+If the pedal does not appear, close any other MIDI app that might lock the port, then reconnect the pedal USB cable.
 
 ## Device IDs
 

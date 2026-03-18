@@ -3,7 +3,7 @@
 ## Mission
 
 You are responsible for evolving an existing application into a stable, production-ready,
-secure, cross-platform app by migrating from Electron to **Tauri 2.0**, using:
+secure, cross-platform app built on **Tauri 2.0**, using:
 
 - Tauri 2.0
 - Rust (native application core)
@@ -20,7 +20,7 @@ across **Windows, macOS, Linux, iOS, and Android**, using a single codebase appr
 ## Core Objectives
 
 1. Preserve and document existing behavior before refactoring or migration.
-2. Migrate incrementally from Electron to Tauri 2.0 (avoid big-bang rewrites).
+2. Evolve the Tauri 2.0 architecture incrementally (avoid big-bang rewrites).
 3. Modularize the architecture with clear separation between UI and native core.
 4. Ensure real cross-platform compatibility (desktop and mobile).
 5. Improve UX, stability, and diagnostics.
@@ -229,10 +229,10 @@ UI must expose:
 
 ## Development Workflow
 
-1. Run and document current Electron behavior.
+1. Run and document current Tauri behavior.
 2. Bootstrap the Tauri application shell.
 3. Introduce Rust logging and diagnostics early.
-4. Replace Electron IPC with explicit Tauri commands and events.
+4. Maintain explicit Tauri commands and events with strict contracts.
 5. Move MIDI logic into the Rust core incrementally.
 6. Implement platform capability detection and UI feature gating.
 7. Stabilize desktop builds (Windows, macOS, Linux).
