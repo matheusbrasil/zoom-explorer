@@ -1,5 +1,4 @@
 import { htmlToElement, supportsContentEditablePlaintextOnly } from "./htmltools.js";
-import { LogLevel, shouldLog } from "./Logger.js";
 import { EffectIDMap, EffectParameterMap, ZoomDevice } from "./ZoomDevice.js";
 import { ZoomPatch } from "./ZoomPatch.js";
 import { ZoomScreen, ZoomScreenCollection } from "./ZoomScreenInfo.js";
@@ -18,10 +17,10 @@ export type EditPatchEffectSlotAddListenerType = (effectSlot: number, direction:
 export type EditPatchEffectSlotSelectEffectListenerType = (effectSlot: number) => void;
 export type EditPatchEffectSlotSelectListenerType = (effectSlot: number) => void;
 
-let debugCounter = 0;
-
 export class ZoomPatchEditor
 {
+  private parameterSelectionPointerUpdatePending = false;
+  private parameterEditorHasVisibleParameters = false;
   private readonly maxEffectSlots = 6;
 
   private textEditedCallback: EditPatchTextEditedListenerType | undefined = undefined;
@@ -530,7 +529,14 @@ export class ZoomPatchEditor
 
   private scheduleParameterSelectionPointerPositionUpdate(): void
   {
-    requestAnimationFrame(() => this.updateParameterSelectionPointerPosition());
+    if (this.parameterSelectionPointerUpdatePending)
+      return;
+
+    this.parameterSelectionPointerUpdatePending = true;
+    requestAnimationFrame(() => {
+      this.parameterSelectionPointerUpdatePending = false;
+      this.updateParameterSelectionPointerPosition();
+    });
   }
 
   private updateParameterSelectionPointerPosition(): void
@@ -540,9 +546,7 @@ export class ZoomPatchEditor
       return;
     }
 
-    let hasVisibleParameters = Array.from(this.parameterTable.querySelectorAll(".editParameterValueCell"))
-      .some(cell => (cell as HTMLTableCellElement).id !== "");
-    if (this.parameterTable.style.display === "none" || !hasVisibleParameters) {
+    if (this.parameterTable.style.display === "none" || !this.parameterEditorHasVisibleParameters) {
       this.parameterSelectionPointer.classList.remove("visible");
       return;
     }
@@ -1141,6 +1145,7 @@ export class ZoomPatchEditor
   private setParameterEditorMessage(message: string): void {
     this.parameterSelectionPointer.classList.remove("visible");
     this.parameterTable.style.display = "table";
+    this.parameterEditorHasVisibleParameters = false;
     while (this.parameterTable.firstChild !== null)
       this.parameterTable.removeChild(this.parameterTable.firstChild);
     let row = document.createElement("tr");
@@ -1155,6 +1160,7 @@ export class ZoomPatchEditor
   {
     this.parameterSelectionPointer.classList.remove("visible");
     this.parameterTable.style.display = "none";
+    this.parameterEditorHasVisibleParameters = false;
     while (this.parameterTable.firstChild !== null)
       this.parameterTable.removeChild(this.parameterTable.firstChild);
   }
@@ -1250,6 +1256,7 @@ export class ZoomPatchEditor
       return;
     }
     this.parameterTable.style.display = "table";
+    this.parameterEditorHasVisibleParameters = true;
 
     let parameterContainer = this.patchEditorTable.querySelector(".editPatchParametersCell") as HTMLTableCellElement | null;
     let availableWidth = parameterContainer?.clientWidth ?? this.patchEditorTable.clientWidth;
@@ -1413,8 +1420,6 @@ export class ZoomPatchEditor
   public updateFromMap(pedalName: string, effectIDMap: EffectIDMap | undefined, numParametersPerPage: number, screenCollection: ZoomScreenCollection | undefined, patch: ZoomPatch | undefined,
     patchNumberText: string, previousScreenCollection: ZoomScreenCollection | undefined, previousPatch: ZoomPatch | undefined): void
   {
-    shouldLog(LogLevel.Info) && console.log(`ZoomPatchEditor.update() - ${debugCounter++}`);
-
     this.cachedPedalName = pedalName;
     this.cachedEffectIDMap = effectIDMap;
     this.cachedNumParametersPerPage = numParametersPerPage;
