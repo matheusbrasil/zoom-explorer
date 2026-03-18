@@ -274,3 +274,74 @@
 #sidebar.collapsed #fileBrowserContainer .file-browser-tree {
   display: none;
 }
+
+@media (orientation: landscape) and (max-width: 932px),
+       (orientation: landscape) and (max-height: 500px) {
+  #mainLayout {
+    display: grid !important;
+    grid-template-columns: clamp(44px, 6vw, 58px) minmax(0, 1fr) !important;
+    gap: 8px !important;
+    min-height: calc(100dvh - max(8px, env(safe-area-inset-bottom))) !important;
+    padding-left: max(4px, env(safe-area-inset-left)) !important;
+    padding-right: max(4px, env(safe-area-inset-right)) !important;
+    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    margin-top: 0 !important;
+  }
+
+  #sidebar {
+    position: sticky !important;
+    left: auto !important;
+    top: max(4px, env(safe-area-inset-top)) !important;
+    width: clamp(44px, 6vw, 58px) !important;
+    min-width: clamp(44px, 6vw, 58px) !important;
+    height: calc(100dvh - max(10px, env(safe-area-inset-top)) - max(10px, env(safe-area-inset-bottom))) !important;
+    border-right: 1px solid rgba(70, 95, 120, 0.42) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22) !important;
+    overflow: hidden !important;
+    z-index: 50 !important;
+  }
+
+  #fileBrowserSidebar {
+    background: rgba(12, 18, 25, 0.76) !important;
+  }
+
+  .sidebar-header {
+    justify-content: center !important;
+    padding: 4px 0 !important;
+  }
+
+  .sidebar-header > span:first-child,
+  #fileBrowserContainer .file-browser-container,
+  #fileBrowserContainer .file-browser-tree {
+    display: none !important;
+  }
+
+  #fileBrowserContainer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+
+  #fileBrowserContainer::before {
+    content: "Files";
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg) translateX(2px);
+    font-size: 12px;
+    font-weight: 600;
+    color: #a9bfd4;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .sidebar-toggle {
+    padding: 0 !important;
+  }
+
+  .sidebar-toggle span {
+    transform: rotate(180deg);
+    font-size: 1.1em !important;
+  }
+}
