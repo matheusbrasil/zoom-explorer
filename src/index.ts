@@ -1864,8 +1864,15 @@ function undoRedoStateChanged(undoRedoManager, undoAvailable, undoDescription, r
         redoButton.setAttribute("tooltip", redoDescription.length > 0 ? "Redo: " + redoDescription : "Nothing to redo");
     }
 }
+let patchActionButtonsCache = new Map();
 function getPatchActionButtons(buttonID) {
-    return Array.from(document.querySelectorAll(`button#${buttonID}`)).filter((button) => button instanceof HTMLButtonElement);
+    let cachedButtons = patchActionButtonsCache.get(buttonID);
+    if (cachedButtons !== undefined && cachedButtons.length > 0 && cachedButtons.every((button) => button.isConnected)) {
+        return cachedButtons;
+    }
+    let buttons = Array.from(document.querySelectorAll(`button#${buttonID}`)).filter((button) => button instanceof HTMLButtonElement);
+    patchActionButtonsCache.set(buttonID, buttons);
+    return buttons;
 }
 function convertPatchAndUpdateEditors(zoomDevice, patch) {
     // Update the main patch editor with the converted patch

@@ -4,6 +4,10 @@ import { EffectIDMap, EffectParameterMap, ZoomDevice } from "./ZoomDevice.js";
 import { ZoomPatch } from "./ZoomPatch.js";
 import { ZoomScreen, ZoomScreenCollection } from "./ZoomScreenInfo.js";
 import zoomEffectIDsMS60BPlus from "./zoom-effect-ids-ms60bp.js";
+import zoomEffectIDsMS50GPlus from "./zoom-effect-ids-ms50gp.js";
+import zoomEffectIDsMS70CDRPlus from "./zoom-effect-ids-ms70cdrp.js";
+import zoomEffectIDsG2FOUR from "./zoom-effect-ids-g2four.js";
+import zoomEffectIDsB2FOUR from "./zoom-effect-ids-b2four.js";
 
 export type EditPatchTextEditedListenerType = (event: Event, type: string, initialValueString: string) => boolean;
 export type EditPatchMouseEventListenerType = (cell: HTMLTableCellElement, initialValueString: string, x: number, y: number) => void;
@@ -57,6 +61,7 @@ export class ZoomPatchEditor
   private selectedEffectSlot: number | undefined = undefined;
   private lastPatchIdentity = "";
   private visibleEffectSlots: number[] = [];
+  private effectImageCandidatesCache = new Map<string, string[]>();
 
   private cachedPedalName = "";
   private cachedEffectIDMap: EffectIDMap | undefined = undefined;
@@ -420,18 +425,6 @@ export class ZoomPatchEditor
     return cell;
   }
 
-  private setCaret(target: HTMLElement, position = 0)
-  {
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.setStart(target.childNodes[0], position);
-    range.collapse(true);
-    if (sel !== null) {
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-  }
-
   private setupEventListenersForCell(cell: HTMLTableCellElement) {
     if (cell !== undefined) {
       cell.contentEditable = supportsContentEditablePlaintextOnly() ? "plaintext-only" : "true";
@@ -643,12 +636,6 @@ export class ZoomPatchEditor
     }
   }
 
-  private updateBackgroundImageIfChanged(cell: HTMLElement, backgroundImage: string) {
-    if (cell.style.backgroundImage !== backgroundImage) {
-      cell.style.backgroundImage = backgroundImage;
-    }
-  }
-
   private screenIsVisible(screen: ZoomScreen, screenNumber: number, patch: ZoomPatch | undefined) {
     return !(patch !== undefined && patch.effectSettings !== null && screenNumber >= patch.effectSettings.length);
   }
@@ -856,16 +843,42 @@ export class ZoomPatchEditor
       this.effectSlotSelectCallback(effectSlot);
   }
 
-  private resolveEffectName(effectIDMap: EffectIDMap | undefined, effectID: number, fallbackName: string): string {
+  private getFallbackCatalog(pedalName: string): Map<number, string> | undefined {
+    let normalized = pedalName.toUpperCase();
+    if (normalized.includes("MS-60B+"))
+      return zoomEffectIDsMS60BPlus;
+    if (normalized.includes("MS-50G+"))
+      return zoomEffectIDsMS50GPlus;
+    if (normalized.includes("MS-70CDR+"))
+      return zoomEffectIDsMS70CDRPlus;
+    if (normalized.includes("G2 FOUR") || normalized.includes("G2X FOUR"))
+      return zoomEffectIDsG2FOUR;
+    if (normalized.includes("B2 FOUR") || normalized.includes("B2X FOUR"))
+      return zoomEffectIDsB2FOUR;
+    return undefined;
+  }
+
+  private getCatalogEffectName(pedalName: string, effectID: number): string | undefined {
+    if (effectID === -1)
+      return undefined;
+
+    let catalog = this.getFallbackCatalog(pedalName);
+    if (catalog === undefined)
+      return undefined;
+
+    return catalog.get(effectID) ?? catalog.get(effectID & 0xFFFFFFF0);
+  }
+
+  private resolveEffectName(effectIDMap: EffectIDMap | undefined, effectID: number, fallbackName: string, pedalName: string): string {
     let effectMap = this.resolveEffectMap(effectIDMap, effectID);
     if (effectMap !== undefined && effectMap.name.trim().length > 0)
       return effectMap.name;
 
     let fallbackNormalized = fallbackName.trim().toLowerCase();
     if (fallbackNormalized.length === 0 || fallbackNormalized === "effect") {
-      let ms60Name = zoomEffectIDsMS60BPlus.get(effectID) ?? zoomEffectIDsMS60BPlus.get(effectID & 0xFFFFFFF0);
-      if (ms60Name !== undefined && ms60Name.trim().length > 0)
-        return ms60Name;
+      let catalogName = this.getCatalogEffectName(pedalName, effectID);
+      if (catalogName !== undefined && catalogName.trim().length > 0)
+        return catalogName;
     }
 
     return fallbackName;
@@ -970,7 +983,7 @@ export class ZoomPatchEditor
       lower.startsWith("blank");
   }
 
-  private getEffectImageNames(_pedalName: string, effectID: number, effectName: string, fallbackName: string): string[]
+  private getEffectImageNames(pedalName: string, effectID: number, effectName: string, fallbackName: string): string[]
   {
     let imageNames: string[] = [];
     let lowerCaseNames = new Set<string>();
@@ -993,8 +1006,7 @@ export class ZoomPatchEditor
     addName(effectName);
     addName(fallbackName);
     if (effectID !== -1) {
-      addName(zoomEffectIDsMS60BPlus.get(effectID));
-      addName(zoomEffectIDsMS60BPlus.get(effectID & 0xfffffff0));
+      addName(this.getCatalogEffectName(pedalName, effectID));
     }
 
     return imageNames;
@@ -1002,6 +1014,11 @@ export class ZoomPatchEditor
 
   private getEffectImageCandidates(effectNames: string[]): string[]
   {
+    let cacheKey = effectNames.map(name => name.trim().toLowerCase()).join("|");
+    let cached = this.effectImageCandidatesCache.get(cacheKey);
+    if (cached !== undefined)
+      return cached;
+
     let candidates: string[] = [];
     let seen = new Set<string>();
     let addCandidate = (candidate: string) => {
@@ -1044,6 +1061,7 @@ export class ZoomPatchEditor
       }
     }
 
+    this.effectImageCandidatesCache.set(cacheKey, candidates);
     return candidates;
   }
 
@@ -1216,7 +1234,7 @@ export class ZoomPatchEditor
 
     let displayParameters = this.getDisplayParameters(screen, patch, effectSlot, effectIDMap, effectID);
     let fallbackName = displayParameters.length > 1 ? displayParameters[1].name : "Effect";
-    let effectName = this.resolveEffectName(effectIDMap, effectID, fallbackName);
+    let effectName = this.resolveEffectName(effectIDMap, effectID, fallbackName, pedalName);
     this.parameterTitle.textContent = effectName;
 
     let visibleParameterNumbers: number[] = [];
@@ -1475,7 +1493,7 @@ export class ZoomPatchEditor
 
       let displayParameters = this.getDisplayParameters(screen, patch, effectSlot, effectIDMap, effectID);
       let fallbackName = displayParameters.length > 1 ? displayParameters[1].name : "Effect";
-      let effectName = this.resolveEffectName(effectIDMap, effectID, fallbackName);
+      let effectName = this.resolveEffectName(effectIDMap, effectID, fallbackName, pedalName);
       let isBlankEffect = this.isBlankEffectName(effectName) || this.isBlankEffectName(fallbackName);
       this.updateTextContentIfChanged(effectNameLabel, effectName);
       let effectImageNames = this.getEffectImageNames(pedalName, effectID, effectName, fallbackName);
