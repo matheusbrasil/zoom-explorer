@@ -1924,62 +1924,81 @@ body {
   }
 }
 
-@media (orientation: landscape) and (max-width: 932px),
-       (orientation: landscape) and (max-height: 500px) {
-  body {
-    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+/*
+  Mobile Landscape — safe scaling-only approach.
+  Strategy: DO NOT touch #mainLayout or #content layout/overflow.
+  Only scale down patch-editor elements via CSS custom properties and font sizes.
+  The sidebar keeps position:fixed and just collapses to its slim state.
+  This preserves all pointer-event areas and scroll contexts.
+*/
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Compact patch editor sizes */
+  #patchEditors {
+    --chain-pedal-width: clamp(88px, 13vw, 118px);
+    --chain-pedal-height: clamp(126px, 20vh, 172px);
+    --chain-gap: clamp(5px, 1vw, 9px);
+    --chain-area-height: clamp(160px, 38vh, 220px);
   }
 
-  #content {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) clamp(250px, 30vw, 340px) !important;
-    grid-auto-flow: row !important;
-    align-items: start !important;
-    gap: 8px !important;
-    min-height: calc(100dvh - max(8px, env(safe-area-inset-bottom))) !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
-    overflow: visible !important;
+  #patchEditors .topBarActionLabel {
+    display: none !important;
   }
 
-  #content > .collapsibleContainer:has(#patchEditorCollapsibleButton) {
-    grid-column: 1 !important;
-    margin: 0 !important;
-    width: 100% !important;
+  #patchEditors .topBarActionButton {
+    height: 30px !important;
+    min-width: 30px !important;
+    padding: 0 6px !important;
   }
 
-  #content > .collapsibleContainer:has(#patchListCollapsibleButton) {
-    grid-column: 2 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - max(14px, env(safe-area-inset-bottom))) !important;
-    overflow: auto !important;
-    align-self: stretch !important;
+  #patchEditors .topBarActionButton .material-symbols-outlined {
+    font-size: 18px !important;
   }
 
-  #patchListCollapsibleButton {
-    position: sticky !important;
-    top: max(4px, env(safe-area-inset-top)) !important;
-    z-index: 3 !important;
-  }
-
-  #patchLists,
-  #patchLists .patchListContainer {
-    max-height: calc(100dvh - max(40px, env(safe-area-inset-top)) - max(14px, env(safe-area-inset-bottom))) !important;
-    overflow: auto !important;
-  }
-
-  #patchLists .patchListHeader {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 2 !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
+  #patchEditors .topBarActions {
     gap: 4px !important;
-    justify-content: center !important;
-    padding: 4px !important;
-    background: rgba(12, 18, 26, 0.94) !important;
+    flex-wrap: wrap !important;
+  }
+
+  #patchEditors .editParameterTable {
+    --param-cell-size: clamp(64px, 9vw, 88px);
+  }
+
+  #patchEditors .parameterValueRow td {
+    font-size: clamp(12px, 1.4vw, 20px) !important;
+  }
+
+  #patchEditors .parameterNameRow td,
+  #patchEditors .editParameterNameCell {
+    font-size: clamp(10px, 1vw, 13px) !important;
+    line-height: 1.05 !important;
+  }
+
+  #patchEditors .parameterSwitchTrack {
+    width: min(66px, calc(var(--param-cell-size) - 14px)) !important;
+    height: 30px !important;
+    bottom: 8px !important;
+  }
+
+  #patchEditors .parameterSwitchThumb {
+    width: 20px !important;
+    height: 20px !important;
+    top: 5px !important;
+    left: 5px !important;
+  }
+
+  #patchEditors .editParameterValueCell.parameterSwitchCell.parameterSwitchOn .parameterSwitchThumb {
+    transform: translateX(36px) !important;
+  }
+
+  #patchEditors .effectLed {
+    width: 30px !important;
+    height: 30px !important;
+    margin: 0 auto 6px auto !important;
+  }
+
+  #patchEditors .effectSelectionIndicator {
+    height: 14px !important;
+    top: calc(100% + 1px) !important;
   }
 
   #patchesTable {
@@ -1989,320 +2008,5 @@ body {
   #patchesTable th,
   #patchesTable td {
     padding: 1px 3px !important;
-  }
-
-  #patchEditors {
-    padding-left: max(6px, env(safe-area-inset-left)) !important;
-    padding-right: max(6px, env(safe-area-inset-right)) !important;
-    --chain-pedal-width: clamp(96px, 14vw, 122px);
-    --chain-pedal-height: clamp(138px, 22vh, 184px);
-    --chain-gap: clamp(6px, 1.2vw, 10px);
-    --chain-area-height: clamp(176px, 44vh, 250px);
-  }
-
-  #patchEditors .editPatchTopRow th {
-    padding: 6px 6px !important;
-  }
-
-  #patchEditors .editPatchTableNumber {
-    width: auto !important;
-    min-width: 54px !important;
-    font-size: clamp(14px, 2vw, 20px) !important;
-    padding-left: 6px !important;
-  }
-
-  #patchEditors .editPatchNameText {
-    min-width: 0 !important;
-    max-width: clamp(140px, 30vw, 280px) !important;
-    font-size: clamp(14px, 1.8vw, 20px) !important;
-    padding: 4px 8px !important;
-  }
-
-  #patchEditors .patchSelectorButton {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-  }
-
-  #patchEditors .patchSelectorMenu {
-    min-width: 220px !important;
-    max-height: 46vh !important;
-  }
-
-  #patchEditors .topBarActions {
-    gap: 4px !important;
-    flex-wrap: wrap !important;
-  }
-
-  #patchEditors .topBarActionButton {
-    height: 30px !important;
-    min-width: 30px !important;
-    padding: 0 6px !important;
-  }
-
-  #patchEditors .topBarLabeledActionButton {
-    min-width: 30px !important;
-  }
-
-  #patchEditors .topBarActionButton .material-symbols-outlined {
-    font-size: 18px !important;
-  }
-
-  #patchEditors .topBarActionLabel {
-    display: none !important;
-  }
-
-  #patchEditors .patchActionButtons {
-    gap: 10px !important;
-    max-width: 100% !important;
-  }
-
-  #patchEditors .patchActionButton {
-    min-width: 98px !important;
-    min-height: 44px !important;
-    font-size: 14px !important;
-    padding: 2px 8px !important;
-  }
-
-  #patchEditors .patchActionButton span:first-child {
-    font-size: 20px !important;
-  }
-
-  #patchEditors .editPatchEffectsCell {
-    padding-top: 4px !important;
-    padding-bottom: 2px !important;
-  }
-
-  #patchEditors .editPatchTopRow {
-    contain: layout style !important;
-  }
-
-  #patchEditors .effectsChainViewport {
-    justify-content: center !important;
-    padding: 0 6px 6px 6px !important;
-  }
-
-  #patchEditors .effectLed {
-    width: 30px !important;
-    height: 30px !important;
-    margin: 0 auto 6px auto !important;
-  }
-
-  #patchEditors .effectSelectionIndicator {
-    height: 14px !important;
-    top: calc(100% + 1px) !important;
-  }
-
-  #patchEditors .editPatchParametersCell {
-    padding: 6px 6px 10px 6px !important;
-  }
-
-  #patchEditors .editParameterTable {
-    --param-cell-size: clamp(68px, 10vw, 92px);
-    width: max-content !important;
-    max-width: calc(100% - 4px) !important;
-  }
-
-  #patchEditors .editParameterTable tr {
-    gap: clamp(6px, 1vw, 10px) !important;
-    margin: 0 0 6px 0 !important;
-  }
-
-  #patchEditors .parameterValueRow td {
-    font-size: clamp(13px, 1.5vw, 22px) !important;
-  }
-
-  #patchEditors .parameterNameRow td,
-  #patchEditors .editParameterNameCell {
-    font-size: clamp(10px, 1.1vw, 14px) !important;
-    line-height: 1.05 !important;
-  }
-
-  #patchEditors .parameterSwitchCurrentValue {
-    top: 8px !important;
-    font-size: clamp(10px, 1.1vw, 14px) !important;
-  }
-
-  #patchEditors .parameterSwitchTrack {
-    width: min(66px, calc(var(--param-cell-size) - 14px)) !important;
-    height: 30px !important;
-    bottom: 8px !important;
-  }
-
-  #patchEditors .parameterSwitchThumb {
-    width: 20px !important;
-    height: 20px !important;
-    top: 5px !important;
-    left: 5px !important;
-  }
-
-  #patchEditors .editParameterValueCell.parameterSwitchCell.parameterSwitchOn .parameterSwitchThumb {
-    transform: translateX(36px) !important;
-  }
-}
-
-@media (orientation: landscape) and (min-aspect-ratio: 20/9) {
-  #content {
-    grid-template-columns: minmax(0, 1fr) clamp(280px, 24vw, 420px) !important;
-    gap: 12px !important;
-  }
-
-  #content > .collapsibleContainer:has(#patchEditorCollapsibleButton) {
-    justify-self: center !important;
-    width: min(1280px, 100%) !important;
-  }
-
-  #patchEditors .patchActionButtons,
-  #patchEditors .topBarActions {
-    justify-content: center !important;
-  }
-}
-
-/* Mobile landscape fit for iOS/Android WebViews without changing core interactions. */
-@media (orientation: landscape) and (max-width: 932px),
-       (orientation: landscape) and (max-height: 500px) {
-  #patchEditors {
-    padding-left: max(6px, env(safe-area-inset-left)) !important;
-    padding-right: max(6px, env(safe-area-inset-right)) !important;
-    --chain-pedal-width: clamp(96px, 14vw, 122px);
-    --chain-pedal-height: clamp(138px, 22vh, 184px);
-    --chain-gap: clamp(6px, 1.2vw, 10px);
-    --chain-area-height: clamp(176px, 44vh, 250px);
-  }
-
-  #patchEditors .editPatchTopRow th {
-    padding: 6px 6px !important;
-  }
-
-  #patchEditors .editPatchTableNumber {
-    width: auto !important;
-    min-width: 54px !important;
-    font-size: clamp(14px, 2vw, 20px) !important;
-    padding-left: 6px !important;
-  }
-
-  #patchEditors .editPatchNameText {
-    min-width: 0 !important;
-    max-width: clamp(140px, 30vw, 280px) !important;
-    font-size: clamp(14px, 1.8vw, 20px) !important;
-    padding: 4px 8px !important;
-  }
-
-  #patchEditors .patchSelectorButton {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-  }
-
-  #patchEditors .patchSelectorMenu {
-    min-width: 220px !important;
-    max-height: 46vh !important;
-  }
-
-  #patchEditors .topBarActions {
-    gap: 4px !important;
-    flex-wrap: wrap !important;
-  }
-
-  #patchEditors .topBarActionButton {
-    height: 30px !important;
-    min-width: 30px !important;
-    padding: 0 6px !important;
-  }
-
-  #patchEditors .topBarLabeledActionButton {
-    min-width: 30px !important;
-  }
-
-  #patchEditors .topBarActionButton .material-symbols-outlined {
-    font-size: 18px !important;
-  }
-
-  #patchEditors .topBarActionLabel {
-    display: none !important;
-  }
-
-  #patchEditors .patchActionButtons {
-    gap: 10px !important;
-    max-width: 100% !important;
-  }
-
-  #patchEditors .patchActionButton {
-    min-width: 98px !important;
-    min-height: 44px !important;
-    font-size: 14px !important;
-    padding: 2px 8px !important;
-  }
-
-  #patchEditors .patchActionButton span:first-child {
-    font-size: 20px !important;
-  }
-
-  #patchEditors .editPatchEffectsCell {
-    padding-top: 4px !important;
-    padding-bottom: 2px !important;
-  }
-
-  #patchEditors .effectsChainViewport {
-    justify-content: flex-start !important;
-    padding: 0 6px 6px 6px !important;
-  }
-
-  #patchEditors .effectLed {
-    width: 30px !important;
-    height: 30px !important;
-    margin: 0 auto 6px auto !important;
-  }
-
-  #patchEditors .effectSelectionIndicator {
-    height: 14px !important;
-    top: calc(100% + 1px) !important;
-  }
-
-  #patchEditors .editPatchParametersCell {
-    padding: 6px 6px 10px 6px !important;
-  }
-
-  #patchEditors .editParameterTable {
-    --param-cell-size: clamp(68px, 10vw, 92px);
-    width: max-content !important;
-    max-width: calc(100% - 4px) !important;
-  }
-
-  #patchEditors .editParameterTable tr {
-    gap: clamp(6px, 1vw, 10px) !important;
-    margin: 0 0 6px 0 !important;
-  }
-
-  #patchEditors .parameterValueRow td {
-    font-size: clamp(13px, 1.5vw, 22px) !important;
-  }
-
-  #patchEditors .parameterNameRow td,
-  #patchEditors .editParameterNameCell {
-    font-size: clamp(10px, 1.1vw, 14px) !important;
-    line-height: 1.05 !important;
-  }
-
-  #patchEditors .parameterSwitchCurrentValue {
-    top: 8px !important;
-    font-size: clamp(10px, 1.1vw, 14px) !important;
-  }
-
-  #patchEditors .parameterSwitchTrack {
-    width: min(66px, calc(var(--param-cell-size) - 14px)) !important;
-    height: 30px !important;
-    bottom: 8px !important;
-  }
-
-  #patchEditors .parameterSwitchThumb {
-    width: 20px !important;
-    height: 20px !important;
-    top: 5px !important;
-    left: 5px !important;
-  }
-
-  #patchEditors .editParameterValueCell.parameterSwitchCell.parameterSwitchOn .parameterSwitchThumb {
-    transform: translateX(36px) !important;
   }
 }
