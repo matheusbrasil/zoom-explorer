@@ -2861,9 +2861,9 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
   }
 
   body.mobile-ui-mode #patchEditors .editPatchTableNumber {
-    width: 44px !important;
-    min-width: 44px !important;
-    font-size: 34px !important;
+    width: 48px !important;
+    min-width: 48px !important;
+    font-size: 32px !important;
     text-align: left !important;
   }
 
@@ -2873,14 +2873,18 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
   }
 
   body.mobile-ui-mode #patchEditors .editPatchNameText {
-    max-width: 166px !important;
-    font-size: 13px !important;
+    max-width: 178px !important;
+    font-size: 14px !important;
     font-weight: 600 !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchTableTempoValue,
   body.mobile-ui-mode #patchEditors .editPatchTableDescription,
   body.mobile-ui-mode #patchEditors .editPatchTableButtons {
+    display: none !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .patchSelectorGroup {
     display: none !important;
   }
 
@@ -2891,14 +2895,15 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
 
   /* Keep only core actions in portrait top bar to match mobile app simplicity. */
   body.mobile-ui-mode #deleteCurrentPatchButton,
+  body.mobile-ui-mode #savePatchToDiskButton,
+  body.mobile-ui-mode #loadPatchFromDiskButton,
   body.mobile-ui-mode #loadPatchFromTextButton,
   body.mobile-ui-mode #undoEditPatchButton,
   body.mobile-ui-mode #redoEditPatchButton {
     display: none !important;
   }
 
-  body.mobile-ui-mode #savePatchToDiskButton,
-  body.mobile-ui-mode #loadPatchFromDiskButton,
+  body.mobile-ui-mode #mobileMenuButton,
   body.mobile-ui-mode #syncPatchToPedalButton {
     display: inline-flex !important;
   }
@@ -2917,6 +2922,19 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     height: 30px !important;
     padding: 0 !important;
     border-radius: 9px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors #syncPatchToPedalButton .material-symbols-outlined {
+    font-size: 19px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors #mobileMenuButton .material-symbols-outlined {
+    font-size: 19px !important;
+  }
+
+  /* In portrait, chain must be directly under header (no intermediate action row). */
+  body.mobile-ui-mode #patchEditors .editPatchActionRow {
+    display: none !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchActionRow td {
@@ -2942,7 +2960,7 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     min-height: var(--chain-area-height) !important;
     height: var(--chain-area-height) !important;
     max-height: var(--chain-area-height) !important;
-    padding: 2px 0 0 0 !important;
+    padding: 8px 0 0 0 !important;
     background: linear-gradient(180deg, #172637 0%, #1a2b3d 100%) !important;
   }
 

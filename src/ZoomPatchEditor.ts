@@ -292,6 +292,7 @@ export class ZoomPatchEditor
               <button id="undoEditPatchButton" class="topBarActionButton topBarIconOnly" disabled title="Undo Edit"><span class="material-symbols-outlined">undo</span></button>
               <button id="redoEditPatchButton" class="topBarActionButton topBarIconOnly" disabled title="Redo Edit"><span class="material-symbols-outlined">redo</span></button>
               <button id="syncPatchToPedalButton" class="topBarActionButton topBarLabeledActionButton" disabled title="Save to pedal"><span class="material-symbols-outlined">publish</span><span class="topBarActionLabel">Save</span></button>
+              <button id="mobileMenuButton" class="topBarActionButton topBarIconOnly" title="Patch menu"><span class="material-symbols-outlined">menu</span></button>
             </div>
           </th>
         </tr>

@@ -485,9 +485,20 @@ function alignPatchSelectorMenuToCurrentSelection() {
 }
 function initPatchSelectorUI() {
     let button = document.getElementById("patchSelectorButton");
+    let mobileMenuButton = document.getElementById("mobileMenuButton");
     let dialog = document.getElementById("patchSelectorMenu");
     if (!(button instanceof HTMLButtonElement) || !(dialog instanceof HTMLDialogElement))
         return;
+    let openPatchSelector = () => {
+        if (dialog.open) {
+            closePatchSelectorMenu();
+            return;
+        }
+        rebuildPatchSelectorMenu();
+        dialog.showModal();
+        button.setAttribute("aria-expanded", "true");
+        requestAnimationFrame(() => alignPatchSelectorMenuToCurrentSelection());
+    };
     // Wire close button inside the dialog
     let closeBtn = dialog.querySelector(".patchSelectorCloseButton");
     if (closeBtn instanceof HTMLButtonElement)
@@ -502,15 +513,16 @@ function initPatchSelectorUI() {
     button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        if (dialog.open) {
-            closePatchSelectorMenu();
-            return;
-        }
-        rebuildPatchSelectorMenu();
-        dialog.showModal();
-        button.setAttribute("aria-expanded", "true");
-        requestAnimationFrame(() => alignPatchSelectorMenuToCurrentSelection());
+        openPatchSelector();
     });
+    if (mobileMenuButton instanceof HTMLButtonElement) {
+        mobileMenuButton.onclick = null;
+        mobileMenuButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openPatchSelector();
+        });
+    }
     if (!patchSelectorUIInitialized)
         patchSelectorUIInitialized = true;
     rebuildPatchSelectorMenu();
@@ -3349,7 +3361,7 @@ patchList.addCurrentPatchUpdatedListener((patchList) => {
 });
 patchLists.appendChild(patchList.viewElement);
 initializeModernEditorLayout();
-const mobileUILayoutQuery = window.matchMedia("(max-width: 980px), (orientation: landscape) and (max-height: 560px)");
+const mobileUILayoutQuery = window.matchMedia("(orientation: portrait) and (max-width: 430px)");
 function applyAdaptiveUILayoutMode() {
     document.body.classList.toggle("mobile-ui-mode", mobileUILayoutQuery.matches);
 }
