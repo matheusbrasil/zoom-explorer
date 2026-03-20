@@ -1497,32 +1497,36 @@ export class ZoomPatchEditor
 
     let valueRows: HTMLTableRowElement[] = [];
     let nameRows: HTMLTableRowElement[] = [];
-    for (let rowPair = 0; rowPair < numRowPairs; rowPair++) {
-      let valueRow = document.createElement("tr") as HTMLTableRowElement;
-      valueRow.className = "parameterValueRow";
-      let nameRow = document.createElement("tr") as HTMLTableRowElement;
-      nameRow.className = "parameterNameRow";
-
-      for (let column = 0; column < numColumns; column++) {
-        let valueCell = document.createElement("td") as HTMLTableCellElement;
-        valueCell.className = "editParameterValueCell";
-        this.setupEventListenersForCell(valueCell);
-        valueRow.appendChild(valueCell);
-
-        let nameCell = document.createElement("td") as HTMLTableCellElement;
-        nameCell.className = "editParameterNameCell";
-        nameRow.appendChild(nameCell);
-      }
-
-      this.parameterTable.appendChild(valueRow);
-      this.parameterTable.appendChild(nameRow);
-      valueRows.push(valueRow);
-      nameRows.push(nameRow);
-    }
-
     let switchParameterNames = new Set<string>(["attack", "knee", "detect", "mode", "hidden", "type"]);
-    let numCellPairsToFill = numColumns * numRowPairs;
-    for (let cellPairNumber = 0; cellPairNumber < numCellPairsToFill; cellPairNumber++) {
+    
+    // Only create cells for parameters that actually exist (no empty placeholders)
+    for (let paramIndex = 0; paramIndex < numParameters; paramIndex++) {
+      let rowIndex = Math.floor(paramIndex / numColumns);
+      let columnIndex = paramIndex % numColumns;
+      
+      // Create row pairs only when needed
+      while (valueRows.length <= rowIndex) {
+        let valueRow = document.createElement("tr") as HTMLTableRowElement;
+        valueRow.className = "parameterValueRow";
+        let nameRow = document.createElement("tr") as HTMLTableRowElement;
+        nameRow.className = "parameterNameRow";
+        this.parameterTable.appendChild(valueRow);
+        this.parameterTable.appendChild(nameRow);
+        valueRows.push(valueRow);
+        nameRows.push(nameRow);
+      }
+      
+      let valueCell = document.createElement("td") as HTMLTableCellElement;
+      valueCell.className = "editParameterValueCell";
+      this.setupEventListenersForCell(valueCell);
+      valueRows[rowIndex].appendChild(valueCell);
+
+      let nameCell = document.createElement("td") as HTMLTableCellElement;
+      nameCell.className = "editParameterNameCell";
+      nameRows[rowIndex].appendChild(nameCell);
+    }
+    
+    for (let cellPairNumber = 0; cellPairNumber < numParameters; cellPairNumber++) {
       let rowPairNumber = Math.floor(cellPairNumber / numColumns);
       let columnNumber = cellPairNumber % numColumns;
       let paramValueRow = valueRows[rowPairNumber];
@@ -1532,8 +1536,7 @@ export class ZoomPatchEditor
       let valueCell = paramValueRow.children[columnNumber] as HTMLTableCellElement;
       valueCell.style.setProperty("--knob-color", "#1296ff");
 
-      if (cellPairNumber < visibleParameterNumbers.length) {
-        let parameterNumber = visibleParameterNumbers[cellPairNumber];
+      let parameterNumber = visibleParameterNumbers[cellPairNumber];
         let parameterName = displayParameters[parameterNumber].name;
         this.updateTextContentIfChanged(nameCell, parameterName);
         nameCell.classList.remove("parameterSwitchNameCell");
@@ -1627,23 +1630,6 @@ export class ZoomPatchEditor
             this.updateBackgroundSizeIfChanged(valueCell, "0%");
           }
         }
-      }
-      else {
-        this.updateTextContentIfChanged(nameCell, " ");
-        nameCell.classList.remove("parameterSwitchNameCell");
-        this.updateTextContentIfChanged(valueCell, " ");
-        valueCell.id = "";
-        valueCell.classList.remove("parameterSwitchCell");
-        valueCell.classList.remove("parameterSwitchOn");
-        delete valueCell.dataset.switchRaw;
-        delete valueCell.dataset.switchOffLabel;
-        delete valueCell.dataset.switchOnLabel;
-        valueCell.removeAttribute("tabindex");
-        valueCell.contentEditable = supportsContentEditablePlaintextOnly() ? "plaintext-only" : "true";
-        if (valueCell.childElementCount > 0)
-          valueCell.replaceChildren(document.createTextNode(" "));
-        this.updateBackgroundSizeIfChanged(valueCell, "0%");
-        this.updateFontWeightIfChanged(valueCell, "normal");
       }
     }
   }
