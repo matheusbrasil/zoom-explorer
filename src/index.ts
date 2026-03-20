@@ -363,7 +363,7 @@ function applyViewportFitScale() {
     }
     // On mobile/narrow screens we rely on responsive CSS, not transform scaling.
     // Scaling here shrinks the editor into a framed desktop-like rectangle.
-    let disableViewportFitScale = window.matchMedia("(max-width: 980px)").matches || window.matchMedia("(orientation: landscape) and (max-height: 560px)").matches;
+    let disableViewportFitScale = document.body.classList.contains("mobile-ui-mode") || window.matchMedia("(max-width: 980px)").matches || window.matchMedia("(orientation: landscape) and (max-height: 560px)").matches;
     if (disableViewportFitScale) {
         clearViewportFitState(container, table);
         return;
@@ -3349,6 +3349,15 @@ patchList.addCurrentPatchUpdatedListener((patchList) => {
 });
 patchLists.appendChild(patchList.viewElement);
 initializeModernEditorLayout();
+const mobileUILayoutQuery = window.matchMedia("(max-width: 980px), (orientation: landscape) and (max-height: 560px)");
+function applyAdaptiveUILayoutMode() {
+    document.body.classList.toggle("mobile-ui-mode", mobileUILayoutQuery.matches);
+}
+applyAdaptiveUILayoutMode();
+if (mobileUILayoutQuery.addEventListener !== undefined)
+    mobileUILayoutQuery.addEventListener("change", applyAdaptiveUILayoutMode);
+window.addEventListener("resize", applyAdaptiveUILayoutMode);
+window.addEventListener("orientationchange", applyAdaptiveUILayoutMode);
 window.addEventListener("resize", scheduleViewportFitScale);
 window.addEventListener("orientationchange", scheduleViewportFitScale);
 if (patchEditors !== null) {
