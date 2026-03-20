@@ -1626,9 +1626,6 @@ export class ZoomPatchEditor
             percentage = Math.max(0, Math.min(100, percentage));
             this.updateBackgroundSizeIfChanged(valueCell, percentage.toFixed(0).toString() + "%");
           }
-          else {
-            this.updateBackgroundSizeIfChanged(valueCell, "0%");
-          }
         }
       }
     }
