@@ -370,6 +370,29 @@ body {
 
 #patchEditors .patchSelectorMenu.open {
   display: block !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  min-width: min(90vw, 500px) !important;
+  max-width: min(90vw, 500px) !important;
+  max-height: 80vh !important;
+  z-index: 10000 !important;
+  border: 1px solid rgba(72, 96, 121, 0.52) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(180deg, rgba(16, 24, 34, 0.98), rgba(20, 30, 40, 0.98)) !important;
+  box-shadow: 0 26px 58px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Add backdrop overlay when patch selector is open */
+body.patchSelectorOpen::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 10, 16, 0.76);
+  backdrop-filter: blur(2px);
+  z-index: 9999;
+  pointer-events: auto;
 }
 
 #patchEditors .patchSelectorMenuItem {
@@ -2290,6 +2313,38 @@ body.viewport-fit-mode #patchEditors {
   flex-direction: column !important;
 }
 
+body.viewport-fit-mode #patchEditors .editPatchTable {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+}
+
+body.viewport-fit-mode #patchEditors .editPatchTopRow {
+  flex-shrink: 0 !important;
+}
+
+body.viewport-fit-mode #patchEditors .editPatchEffectsRow {
+  flex-shrink: 0 !important;
+}
+
+body.viewport-fit-mode #patchEditors .editPatchParametersRow {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+body.viewport-fit-mode #patchEditors .editPatchParametersCell {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+body.viewport-fit-mode #patchEditors .editParameterTable {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
 #patchEditors.viewport-fit-active {
   overflow: hidden !important;
 }
@@ -2297,3 +2352,6 @@ body.viewport-fit-mode #patchEditors {
 #patchEditors .editPatchTable.viewport-fit-target {
   will-change: transform;
 }
+
+/* Modal patch selector styling */
+/* (Moved to patchSelectorMenu.open styling above) */
