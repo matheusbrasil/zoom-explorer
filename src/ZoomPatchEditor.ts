@@ -1629,7 +1629,6 @@ export class ZoomPatchEditor
         }
       }
     }
-  }
 
   public update(device: ZoomDevice, screenCollection: ZoomScreenCollection | undefined, patch: ZoomPatch | undefined, patchNumberText: string,
     previousScreenCollection: ZoomScreenCollection | undefined, previousPatch: ZoomPatch | undefined): void
