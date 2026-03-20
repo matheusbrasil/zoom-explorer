@@ -73,6 +73,10 @@ export class ZoomPatchEditor
   private cachedPreviousScreenCollection: ZoomScreenCollection | undefined = undefined;
   private cachedPreviousPatch: ZoomPatch | undefined = undefined;
 
+  private isMobileUIMode(): boolean {
+    return document.body.classList.contains("mobile-ui-mode");
+  }
+
   constructor(patchEditorID?: string)
   {
     if (patchEditorID !== undefined) {
@@ -517,6 +521,8 @@ export class ZoomPatchEditor
           if (cell.classList.contains("editParameterValueCell")) {
             e.preventDefault();
             cell.focus();
+            if (this.isMobileUIMode())
+              return;
           }
           this.currentMouseMoveCell = cell;
           this.initialMouseMoveCellText = cell.innerText;
@@ -531,6 +537,11 @@ export class ZoomPatchEditor
         if (e.touches.length < 1)
           return;
         if (cell.classList.contains("parameterSwitchCell")) {
+          e.preventDefault();
+          cell.focus();
+          return;
+        }
+        if (cell.classList.contains("editParameterValueCell") && this.isMobileUIMode()) {
           e.preventDefault();
           cell.focus();
           return;
@@ -1450,6 +1461,55 @@ export class ZoomPatchEditor
     valueCell.classList.toggle("parameterSwitchOn", isOn);
   }
 
+  private renderMobileStepperCell(valueCell: HTMLTableCellElement, parameterName: string, currentValue: string): void
+  {
+    valueCell.replaceChildren();
+    valueCell.classList.add("mobileStepperCell");
+
+    let nameLabel = document.createElement("span");
+    nameLabel.className = "mobileStepperName";
+    nameLabel.textContent = parameterName;
+
+    let upButton = document.createElement("button");
+    upButton.type = "button";
+    upButton.className = "mobileStepperButton mobileStepperUp";
+    upButton.textContent = "+";
+
+    let valueLabel = document.createElement("span");
+    valueLabel.className = "mobileStepperValue";
+    valueLabel.textContent = currentValue;
+
+    let downButton = document.createElement("button");
+    downButton.type = "button";
+    downButton.className = "mobileStepperButton mobileStepperDown";
+    downButton.textContent = "-";
+
+    let triggerStep = (key: "ArrowUp" | "ArrowDown") => {
+      valueCell.focus();
+      let keyEvent = new KeyboardEvent("keydown", { key, bubbles: true });
+      valueCell.dispatchEvent(keyEvent);
+    };
+
+    upButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      triggerStep("ArrowUp");
+    });
+
+    downButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      triggerStep("ArrowDown");
+    });
+
+    valueCell.appendChild(nameLabel);
+    valueCell.appendChild(upButton);
+    valueCell.appendChild(valueLabel);
+    valueCell.appendChild(downButton);
+    valueCell.contentEditable = "false";
+    valueCell.tabIndex = 0;
+  }
+
   private renderParameterEditor(): void {
     let screenCollection = this.cachedScreenCollection;
     let patch = this.cachedPatch;
@@ -1515,6 +1575,7 @@ export class ZoomPatchEditor
     this.parameterTable.style.setProperty("--param-cell-size", `${fittedCellSize}px`);
 
     let numRowPairs = Math.max(Math.ceil(numParameters / numColumns), 1);
+    let mobileMode = this.isMobileUIMode();
 
     while (this.parameterTable.firstChild !== null)
       this.parameterTable.removeChild(this.parameterTable.firstChild);
@@ -1564,6 +1625,7 @@ export class ZoomPatchEditor
         let parameterName = displayParameters[parameterNumber].name;
         this.updateTextContentIfChanged(nameCell, parameterName);
         nameCell.classList.remove("parameterSwitchNameCell");
+      nameCell.classList.toggle("mobileHiddenParameterName", mobileMode);
 
         let valueString = displayParameters[parameterNumber].valueString;
         if (ZoomPatch.isNoteHtml(valueString)) {
@@ -1605,6 +1667,7 @@ export class ZoomPatchEditor
         let lowerParameterName = parameterName.trim().toLowerCase();
         let isSwitchParameter = maxValue === 1 || switchParameterNames.has(lowerParameterName) || lowerParameterName.startsWith("hidden");
         valueCell.classList.toggle("parameterSwitchCell", isSwitchParameter);
+        valueCell.classList.toggle("mobileStepperCell", mobileMode && !isSwitchParameter);
         if (isSwitchParameter) {
           let offLabel = "OFF";
           let onLabel = "ON";
@@ -1634,7 +1697,9 @@ export class ZoomPatchEditor
           valueCell.removeAttribute("tabindex");
           valueCell.contentEditable = supportsContentEditablePlaintextOnly() ? "plaintext-only" : "true";
           valueCell.classList.remove("parameterSwitchOn");
-          if (valueCell.childElementCount > 0)
+          if (mobileMode)
+            this.renderMobileStepperCell(valueCell, parameterName, valueString);
+          else if (valueCell.childElementCount > 0)
             valueCell.replaceChildren(document.createTextNode(valueString));
           if (effectID !== -1) {
             let percentage = 0;
@@ -1648,7 +1713,10 @@ export class ZoomPatchEditor
               }
             }
             percentage = Math.max(0, Math.min(100, percentage));
-            this.updateBackgroundSizeIfChanged(valueCell, percentage.toFixed(0).toString() + "%");
+            if (!mobileMode)
+              this.updateBackgroundSizeIfChanged(valueCell, percentage.toFixed(0).toString() + "%");
+            else
+              this.updateBackgroundSizeIfChanged(valueCell, "0%");
           }
         }
       }
