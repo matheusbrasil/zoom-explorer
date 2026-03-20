@@ -2443,8 +2443,8 @@ body.mobile-ui-mode #patchEditors {
   --mobile-side-padding: 6px;
   --chain-gap: clamp(3px, 0.7vw, 7px);
   --chain-pedal-width: calc((100vw - (2 * var(--mobile-side-padding)) - (5 * var(--chain-gap))) / 6);
-  --chain-pedal-height: clamp(82px, 14vh, 112px);
-  --chain-area-height: clamp(120px, 31vh, 160px);
+  --chain-pedal-height: clamp(72px, 12vh, 90px);
+  --chain-area-height: clamp(102px, 26vh, 124px);
   padding: 0 !important;
 }
 
@@ -2492,16 +2492,16 @@ body.mobile-ui-mode #patchEditors .patchSelectorButton {
 }
 
 body.mobile-ui-mode #patchEditors .editPatchActionRow td {
-  padding: 3px 8px 2px 8px !important;
+  padding: 2px 8px 1px 8px !important;
 }
 
 body.mobile-ui-mode #patchEditors .patchActionButtons {
-  gap: 8px !important;
+  gap: 6px !important;
 }
 
 body.mobile-ui-mode #patchEditors .patchActionButton {
   min-width: 40px !important;
-  min-height: 30px !important;
+  min-height: 28px !important;
   padding: 0 8px !important;
   gap: 0 !important;
 }
@@ -2525,13 +2525,23 @@ body.mobile-ui-mode #patchEditors .loadSaveButtons {
 }
 
 body.mobile-ui-mode #patchEditors .editPatchEffectsCell {
-  padding: 3px 0 2px 0 !important;
+  padding: 0 !important;
   min-height: var(--chain-area-height) !important;
   height: auto !important;
 }
 
+/* In mobile mode keep only one chain line and align it with the pedal center. */
+body.mobile-ui-mode #patchEditors .editPatchEffectsCell::before {
+  height: 6px !important;
+  top: calc(((var(--chain-area-height) - var(--chain-pedal-height)) / 2) + (var(--chain-pedal-height) * 0.56)) !important;
+}
+
+body.mobile-ui-mode #patchEditors .editPatchEffectsCell::after {
+  display: none !important;
+}
+
 body.mobile-ui-mode #patchEditors .effectsChainViewport {
-  padding: 0 var(--mobile-side-padding) 2px var(--mobile-side-padding) !important;
+  padding: 0 var(--mobile-side-padding) 0 var(--mobile-side-padding) !important;
   overflow: hidden !important;
 }
 
@@ -2570,8 +2580,8 @@ body.mobile-ui-mode #patchEditors .editEffectTable th {
 }
 
 body.mobile-ui-mode #patchEditors .editEffectTableTopBar {
-  min-height: 18px !important;
-  height: 18px !important;
+  min-height: 14px !important;
+  height: 14px !important;
 }
 
 body.mobile-ui-mode #patchEditors .editEffectTableEffectName {
@@ -2579,14 +2589,14 @@ body.mobile-ui-mode #patchEditors .editEffectTableEffectName {
 }
 
 body.mobile-ui-mode #patchEditors .effectLed {
-  width: clamp(16px, 2.6vh, 22px) !important;
-  height: clamp(16px, 2.6vh, 22px) !important;
-  margin: 0 auto 2px auto !important;
+  width: clamp(12px, 2vh, 16px) !important;
+  height: clamp(12px, 2vh, 16px) !important;
+  margin: 0 auto 1px auto !important;
 }
 
 body.mobile-ui-mode #patchEditors .editPatchParametersCell {
   display: table-cell !important;
-  padding: 2px 6px 6px 6px !important;
+  padding: 1px 6px 4px 6px !important;
 }
 
 body.mobile-ui-mode #patchEditors .editParameterTable {
@@ -2596,8 +2606,8 @@ body.mobile-ui-mode #patchEditors .editParameterTable {
 }
 
 body.mobile-ui-mode #patchEditors .editParameterTable tr {
-  gap: clamp(2px, 0.4vw, 6px) !important;
-  margin: 0 0 2px 0 !important;
+  gap: clamp(3px, 0.45vw, 7px) !important;
+  margin: 0 0 1px 0 !important;
 }
 
 body.mobile-ui-mode #patchEditors .parameterValueRow td,
@@ -2608,11 +2618,15 @@ body.mobile-ui-mode #patchEditors .parameterNameRow td {
 }
 
 body.mobile-ui-mode #patchEditors .parameterValueRow td {
-  height: clamp(30px, 5.2vh, 56px) !important;
-  font-size: clamp(9px, 1.3vh, 12px) !important;
+  height: clamp(34px, 5.7vh, 50px) !important;
+  font-size: clamp(9px, 1.35vh, 13px) !important;
 }
 
 body.mobile-ui-mode #patchEditors .parameterNameRow td,
 body.mobile-ui-mode #patchEditors .editParameterNameCell {
-  font-size: clamp(8px, 1.2vh, 11px) !important;
+  min-height: 24px !important;
+  font-size: clamp(10px, 1.45vh, 13px) !important;
+  line-height: 1.08 !important;
+  font-weight: 600 !important;
+  word-break: break-word !important;
 }
