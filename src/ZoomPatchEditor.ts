@@ -237,7 +237,6 @@ export class ZoomPatchEditor
     const patchSelectorHTML = includeControls ? `
             <div class="patchSelectorGroup">
               <button${patchSelectorButtonID} class="patchSelectorButton" type="button" aria-haspopup="dialog" aria-expanded="false" title="Select patch">
-                <span class="patchSelectorButtonLabelText">---</span>
                 <span class="material-symbols-outlined">expand_more</span>
               </button>
               <select${patchSelectorDropdownID} class="patchSelectorDropdown" tabindex="-1" aria-hidden="true">

@@ -356,6 +356,10 @@ body {
   font-size: 24px;
 }
 
+#patchEditors .patchSelectorButtonLabelText {
+  display: none !important;
+}
+
 #patchEditors .patchSelectorDropdown {
   display: none !important;
 }
@@ -2110,9 +2114,10 @@ body {
 
   /* Patch selector button: slightly larger touch target */
   #patchEditors .patchSelectorButton {
-    min-width: 40px !important;
-    width: auto !important;
-    padding: 4px 8px !important;
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 2px !important;
   }
 
   /* Patch selector menu items: bigger touch targets on mobile */
@@ -2328,6 +2333,39 @@ body {
 
   #patchEditors .editPatchEffectsCell {
     padding: 6px 0 4px 0 !important;
+  }
+
+  /* Distribute all 6 effect cards across full width in landscape mobile. */
+  #patchEditors .effectsChainViewport {
+    padding: 0 0 6px 0 !important;
+  }
+
+  #patchEditors .editEffectsChainTable {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #patchEditors .editEffectsChainTable tr {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    gap: clamp(2px, 0.6vw, 6px) !important;
+  }
+
+  #patchEditors .editEffectsChainTable td {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    justify-content: stretch !important;
+  }
+
+  #patchEditors .editEffectTable,
+  #patchEditors .effectPedalImageWrapper,
+  #patchEditors .emptyEffectSlotCell {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
   }
 
   /* Compress action-row buttons to icon-only so they take only ~36px */

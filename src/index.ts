@@ -361,6 +361,13 @@ function applyViewportFitScale() {
         clearViewportFitState(container, undefined);
         return;
     }
+    // On mobile/narrow screens we rely on responsive CSS, not transform scaling.
+    // Scaling here shrinks the editor into a framed desktop-like rectangle.
+    let disableViewportFitScale = window.matchMedia("(max-width: 980px)").matches || window.matchMedia("(orientation: landscape) and (max-height: 560px)").matches;
+    if (disableViewportFitScale) {
+        clearViewportFitState(container, table);
+        return;
+    }
     table.classList.remove("viewport-fit-target");
     table.style.transform = "none";
     table.style.transformOrigin = "top left";
@@ -428,21 +435,9 @@ function closePatchSelectorMenu() {
         button.setAttribute("aria-expanded", "false");
 }
 function updatePatchSelectorButtonLabel() {
-    let dropdown = document.getElementById("patchSelectorDropdown");
-    let label = document.querySelector(".patchSelectorButtonLabelText");
     let button = document.getElementById("patchSelectorButton");
-    if (!(dropdown instanceof HTMLSelectElement))
-        return;
-    let selectedOption = dropdown.selectedOptions.length > 0 ? dropdown.selectedOptions[0] : undefined;
-    let selectedName = selectedOption?.text ?? "Select patch";
-    let selectedMemorySlot = Number.parseInt(dropdown.value);
-    if (!Number.isNaN(selectedMemorySlot) && currentZoomPatch !== undefined && currentZoomDevice !== undefined && selectedMemorySlot === currentZoomDevice.currentMemorySlotNumber) {
-        selectedName = `${dropdown.value} ${currentZoomPatch.nameTrimmed}`;
-    }
-    if (label instanceof HTMLElement)
-        label.textContent = selectedName;
     if (button instanceof HTMLButtonElement)
-        button.title = selectedName;
+        button.title = "Select patch";
 }
 function rebuildPatchSelectorMenu() {
     let dropdown = document.getElementById("patchSelectorDropdown");
