@@ -1565,17 +1565,19 @@ export class ZoomPatchEditor
 
     let parameterContainer = this.patchEditorTable.querySelector(".editPatchParametersCell") as HTMLTableCellElement | null;
     let availableWidth = parameterContainer?.clientWidth ?? this.patchEditorTable.clientWidth;
-    let cellGap = 18;
-    let minCellSize = 96;
-    let maxCellSize = 138;
+    let mobileMode = this.isMobileUIMode();
+    let cellGap = mobileMode ? 8 : 18;
+    let minCellSize = mobileMode ? 64 : 96;
+    let maxCellSize = mobileMode ? 82 : 138;
     let maxColumnsFromWidth = Math.max(1, Math.floor((availableWidth + cellGap) / (minCellSize + cellGap)));
     let numColumns = Math.max(1, Math.min(numParameters, maxColumnsFromWidth));
+    if (mobileMode)
+      numColumns = Math.min(Math.max(numColumns, 4), numParameters);
     let fittedCellSize = Math.floor((availableWidth - ((numColumns - 1) * cellGap) - 24) / numColumns);
     fittedCellSize = Math.max(minCellSize, Math.min(maxCellSize, fittedCellSize));
     this.parameterTable.style.setProperty("--param-cell-size", `${fittedCellSize}px`);
 
     let numRowPairs = Math.max(Math.ceil(numParameters / numColumns), 1);
-    let mobileMode = this.isMobileUIMode();
 
     while (this.parameterTable.firstChild !== null)
       this.parameterTable.removeChild(this.parameterTable.firstChild);
