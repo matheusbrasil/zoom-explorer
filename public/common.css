@@ -2678,3 +2678,139 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
   text-overflow: ellipsis !important;
   max-width: 100% !important;
 }
+
+/* Deterministic compact profile for short landscape mobile viewports (e.g. 852x393). */
+@media (orientation: landscape) and (max-height: 430px) and (max-width: 900px) {
+  body.mobile-ui-mode #patchEditors {
+    --mobile-side-padding: 8px;
+    --chain-gap: 8px;
+    --chain-pedal-width: 68px;
+    --chain-pedal-height: 74px;
+    --chain-area-height: 108px;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchTopRow th {
+    padding: 4px 6px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .topBarActions {
+    margin-left: auto !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 3px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .topBarActionButton,
+  body.mobile-ui-mode #patchEditors .topBarLabeledActionButton,
+  body.mobile-ui-mode #patchEditors .patchSelectorButton {
+    min-width: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 4px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchActionRow td {
+    padding: 1px 8px 0 8px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .patchActionButtons {
+    gap: 6px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .patchActionButton {
+    min-width: 34px !important;
+    min-height: 24px !important;
+    font-size: 15px !important;
+    padding: 0 6px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchEffectsCell {
+    min-height: var(--chain-area-height) !important;
+    max-height: var(--chain-area-height) !important;
+    height: var(--chain-area-height) !important;
+    padding: 0 !important;
+  }
+
+  /* Anchor the chain line from bottom so it always crosses pedal centers. */
+  body.mobile-ui-mode #patchEditors .editPatchEffectsCell::before {
+    top: auto !important;
+    bottom: calc((var(--chain-pedal-height) * 0.42) + 2px) !important;
+    height: 5px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .effectsChainViewport {
+    padding: 2px var(--mobile-side-padding) 0 var(--mobile-side-padding) !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editEffectsChainTable {
+    width: auto !important;
+    min-width: max-content !important;
+    margin: 0 auto !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editEffectsChainTable tr {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    gap: var(--chain-gap) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editEffectTable,
+  body.mobile-ui-mode #patchEditors .effectPedalImageWrapper,
+  body.mobile-ui-mode #patchEditors .emptyEffectSlotCell {
+    width: var(--chain-pedal-width) !important;
+    min-width: var(--chain-pedal-width) !important;
+    max-width: var(--chain-pedal-width) !important;
+    height: var(--chain-pedal-height) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .effectLed {
+    width: 12px !important;
+    height: 12px !important;
+    margin: 0 auto 1px auto !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchParametersCell {
+    padding: 1px 6px 3px 6px !important;
+    overflow: hidden !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editParameterTable {
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editParameterTable tr {
+    gap: 4px !important;
+    margin: 0 0 1px 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .parameterValueRow td {
+    height: 80px !important;
+    min-height: 80px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editParameterValueCell.mobileStepperCell {
+    grid-template-rows: auto 16px 1fr 16px !important;
+    gap: 1px !important;
+    padding: 2px 3px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileStepperName {
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+    font-weight: 700 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileStepperButton {
+    min-height: 14px !important;
+    font-size: 10px !important;
+    padding: 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileStepperValue {
+    font-size: 11px !important;
+    line-height: 1 !important;
+  }
+}
