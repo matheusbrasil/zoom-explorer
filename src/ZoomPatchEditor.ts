@@ -236,14 +236,27 @@ export class ZoomPatchEditor
     const fullColSpan = includeControls ? 5 : 4;
     const patchSelectorHTML = includeControls ? `
             <div class="patchSelectorGroup">
-              <button${patchSelectorButtonID} class="patchSelectorButton" type="button" aria-haspopup="listbox" aria-expanded="false" title="Loading patches...">
+              <button${patchSelectorButtonID} class="patchSelectorButton" type="button" aria-haspopup="dialog" aria-expanded="false" title="Select patch">
+                <span class="patchSelectorButtonLabelText">---</span>
                 <span class="material-symbols-outlined">expand_more</span>
               </button>
-              <div${patchSelectorMenuID} class="patchSelectorMenu" role="listbox"></div>
               <select${patchSelectorDropdownID} class="patchSelectorDropdown" tabindex="-1" aria-hidden="true">
                 <option value="">Loading patches...</option>
               </select>
             </div>` : "";
+    const patchSelectorDialogHTML = includeControls ? `
+      <dialog${patchSelectorMenuID} class="patchSelectorDialog" aria-label="Select patch">
+        <div class="patchSelectorPanel">
+          <header class="patchSelectorHeader">
+            <button type="button" class="patchSelectorCloseButton">
+              <span class="material-symbols-outlined">arrow_back_ios_new</span>
+              <span>Back</span>
+            </button>
+            <h2 class="patchSelectorTitle">Select Patch</h2>
+          </header>
+          <div class="patchSelectorList" role="listbox" aria-label="Patches"></div>
+        </div>
+      </dialog>` : "";
     const actionRowHTML = includeControls ? `
         <tr class="editPatchActionRow">
           <td colspan="${fullColSpan}" class="editPatchActionCell">
@@ -307,9 +320,21 @@ export class ZoomPatchEditor
           </td>
         </tr>
       </table>
+    ${patchSelectorDialogHTML}
     `;
 
-    return htmlToElement(html) as HTMLTableElement;
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html.trim();
+    const table = wrapper.querySelector("table.editPatchTable") as HTMLTableElement;
+    const dialog = wrapper.querySelector("dialog.patchSelectorDialog") as HTMLDialogElement | null;
+    if (dialog !== null) {
+      // Remove any pre-existing dialog to avoid duplicate IDs on re-initialization
+      const stale = document.getElementById("patchSelectorMenu");
+      if (stale !== null)
+        stale.remove();
+      document.body.appendChild(dialog);
+    }
+    return table;
   }
 
   public get htmlElement(): HTMLTableElement

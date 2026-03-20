@@ -360,26 +360,107 @@ body {
   display: none !important;
 }
 
-#patchEditors .patchSelectorMenu {
-  position: absolute !important;
-  top: calc(100% + 4px) !important;
-  left: 0 !important;
-  right: auto !important;
-  min-width: 280px !important;
-  max-height: 60vh !important;
-  overflow-y: auto !important;
-  border: 1px solid var(--zx-border) !important;
-  border-radius: 10px !important;
-  background: linear-gradient(180deg, rgba(15, 23, 31, 0.98), rgba(20, 30, 40, 0.98)) !important;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45) !important;
-  padding: 4px !important;
-  display: none !important;
-  z-index: 2000 !important;
+/* Patch selector dialog — styled like Change Effect modal */
+.patchSelectorDialog {
+  border: 0;
+  padding: 0;
+  margin: auto;
+  width: min(980px, 95vw);
+  max-width: 980px;
+  max-height: 88vh;
+  background: transparent;
+  color: #eef4fb;
 }
 
-#patchEditors .patchSelectorMenu.open {
-  display: block !important;
+.patchSelectorDialog::backdrop {
+  background: rgba(5, 10, 16, 0.76);
+  backdrop-filter: blur(2px);
 }
+
+.patchSelectorPanel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: min(440px, 80vh);
+  max-height: 84vh;
+  border-radius: 16px;
+  border: 1px solid rgba(72, 96, 121, 0.52);
+  background: #101822;
+  box-shadow: 0 26px 58px rgba(0, 0, 0, 0.5);
+}
+
+.patchSelectorHeader {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 22px;
+  background: #080d14;
+  border-bottom: 1px solid rgba(65, 88, 112, 0.36);
+  flex-shrink: 0;
+}
+
+.patchSelectorTitle {
+  margin: 0;
+  text-align: center;
+  color: #f2f6fb;
+  font-size: clamp(20px, 2.5vw, 36px);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.patchSelectorCloseButton {
+  border: 0;
+  background: transparent;
+  color: #1296ff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0;
+  font-size: clamp(16px, 2vw, 24px);
+  cursor: pointer;
+}
+
+.patchSelectorList {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0;
+  background: #1c252e;
+}
+
+.patchSelectorMenuItem {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgba(84, 106, 129, 0.28);
+  background: #1f2733;
+  color: #f2f6fb;
+  display: flex;
+  align-items: center;
+  min-height: clamp(52px, 7vh, 72px);
+  padding: 0 26px;
+  text-align: left;
+  font-size: clamp(16px, 2vw, 24px);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.patchSelectorMenuItem:hover {
+  filter: brightness(1.1);
+}
+
+.patchSelectorMenuItem.selected {
+  background: linear-gradient(90deg, rgba(74, 103, 136, 0.54), rgba(36, 49, 65, 0.96));
+  color: #ffffff;
+}
+
+/* Old div-based menu — kept for non-dialog fallback but hidden */
+#patchEditors .patchSelectorMenu {
+  display: none !important;
+}
+
+/* Patch selector button */
 
 #patchEditors .patchSelectorMenuItem {
   width: 100%;
@@ -2233,6 +2314,72 @@ body {
   #patchEditors .parameterNameRow td,
   #patchEditors .editParameterNameCell {
     font-size: clamp(9px, 1vw, 12px) !important;
+  }
+}
+
+/* Landscape compact: use vh-based sizing so layout fits without transform scaling.
+   Must come AFTER the combined query above to override variables for landscape-only. */
+@media (orientation: landscape) and (max-height: 560px) {
+  #patchEditors {
+    /* Shrink chain to ~44vh so it fits a 393px viewport without overflow */
+    --chain-pedal-height: min(40vh, 148px);
+    --chain-area-height: min(44vh, 270px);
+  }
+
+  #patchEditors .editPatchEffectsCell {
+    padding: 6px 0 4px 0 !important;
+  }
+
+  /* Compress action-row buttons to icon-only so they take only ~36px */
+  #patchEditors .editPatchActionRow td {
+    padding: 6px 10px 4px 10px !important;
+  }
+
+  #patchEditors .editPatchActionRow .patchActionButton {
+    min-height: 36px !important;
+    min-width: 44px !important;
+    font-size: 18px !important;
+    padding: 0 10px !important;
+    gap: 0 !important;
+  }
+
+  #patchEditors .editPatchActionRow .patchActionButton > span:not(.material-symbols-outlined) {
+    display: none !important;
+  }
+
+  /* Parameter table: fill full width via flex */
+  #patchEditors .editParameterTable {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #patchEditors .editParameterTable tr {
+    gap: clamp(4px, 0.5vw, 8px) !important;
+    margin: 0 0 4px 0 !important;
+  }
+
+  /* Parameter cells: grow to fill row width, height responsive to vh */
+  #patchEditors .parameterValueRow td,
+  #patchEditors .parameterNameRow td {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+  }
+
+  #patchEditors .parameterValueRow td {
+    height: clamp(42px, 7vh, 84px) !important;
+    min-height: 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    font-size: clamp(9px, 1.5vh, 14px) !important;
+  }
+
+  #patchEditors .parameterNameRow td,
+  #patchEditors .editParameterNameCell {
+    font-size: clamp(7px, 1.2vh, 11px) !important;
+  }
+
+  #patchEditors .editPatchParametersCell {
+    padding: 4px 6px 6px 6px !important;
   }
 }
 

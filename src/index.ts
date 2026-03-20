@@ -402,7 +402,9 @@ function applyViewportFitScale() {
     container.classList.add("viewport-fit-active");
     document.body.classList.add("viewport-fit-mode");
     table.classList.add("viewport-fit-target");
-    table.style.transformOrigin = "top left";
+    // Center the scaled content horizontally so empty space is distributed equally on both sides
+    // rather than accumulating on the right (which would look like a "left-side rectangle").
+    table.style.transformOrigin = "top center";
     table.style.transform = `scale(${scale})`;
     let fittedHeight = Math.ceil(naturalHeight * scale);
     container.style.height = `${fittedHeight}px`;
@@ -418,37 +420,38 @@ function scheduleViewportFitScale() {
     });
 }
 function closePatchSelectorMenu() {
-    let menu = document.getElementById("patchSelectorMenu");
+    let dialog = document.getElementById("patchSelectorMenu");
     let button = document.getElementById("patchSelectorButton");
-    if (menu instanceof HTMLDivElement)
-        menu.classList.remove("open");
+    if (dialog instanceof HTMLDialogElement && dialog.open)
+        dialog.close();
     if (button instanceof HTMLButtonElement)
         button.setAttribute("aria-expanded", "false");
 }
 function updatePatchSelectorButtonLabel() {
     let dropdown = document.getElementById("patchSelectorDropdown");
-    let label = document.getElementById("patchSelectorButtonLabel");
+    let label = document.querySelector(".patchSelectorButtonLabelText");
     let button = document.getElementById("patchSelectorButton");
     if (!(dropdown instanceof HTMLSelectElement))
         return;
     let selectedOption = dropdown.selectedOptions.length > 0 ? dropdown.selectedOptions[0] : undefined;
-    let selectedName = selectedOption?.dataset.patchName ?? selectedOption?.text ?? "Select patch";
+    let selectedName = selectedOption?.text ?? "Select patch";
     let selectedMemorySlot = Number.parseInt(dropdown.value);
     if (!Number.isNaN(selectedMemorySlot) && currentZoomPatch !== undefined && currentZoomDevice !== undefined && selectedMemorySlot === currentZoomDevice.currentMemorySlotNumber) {
-        selectedName = currentZoomPatch.nameTrimmed;
+        selectedName = `${dropdown.value} ${currentZoomPatch.nameTrimmed}`;
     }
-    if (label instanceof HTMLSpanElement)
+    if (label instanceof HTMLElement)
         label.textContent = selectedName;
     if (button instanceof HTMLButtonElement)
         button.title = selectedName;
 }
 function rebuildPatchSelectorMenu() {
     let dropdown = document.getElementById("patchSelectorDropdown");
-    let menu = document.getElementById("patchSelectorMenu");
-    if (!(dropdown instanceof HTMLSelectElement) || !(menu instanceof HTMLDivElement))
+    let dialog = document.getElementById("patchSelectorMenu");
+    let list = dialog instanceof HTMLDialogElement ? dialog.querySelector(".patchSelectorList") : null;
+    if (!(dropdown instanceof HTMLSelectElement) || !(list instanceof HTMLElement))
         return;
-    while (menu.firstChild !== null)
-        menu.removeChild(menu.firstChild);
+    while (list.firstChild !== null)
+        list.removeChild(list.firstChild);
     for (let i = 0; i < dropdown.options.length; i++) {
         let option = dropdown.options[i];
         let itemButton = document.createElement("button");
@@ -463,16 +466,17 @@ function rebuildPatchSelectorMenu() {
             dropdown.dispatchEvent(new Event("change"));
             closePatchSelectorMenu();
         });
-        menu.appendChild(itemButton);
+        list.appendChild(itemButton);
     }
 }
 function alignPatchSelectorMenuToCurrentSelection() {
     let dropdown = document.getElementById("patchSelectorDropdown");
-    let menu = document.getElementById("patchSelectorMenu");
-    if (!(dropdown instanceof HTMLSelectElement) || !(menu instanceof HTMLDivElement))
+    let dialog = document.getElementById("patchSelectorMenu");
+    let list = dialog instanceof HTMLDialogElement ? dialog.querySelector(".patchSelectorList") : null;
+    if (!(dropdown instanceof HTMLSelectElement) || !(list instanceof HTMLElement))
         return;
-    let selectedItem = undefined;
-    let menuItems = menu.querySelectorAll(".patchSelectorMenuItem");
+    let selectedItem: HTMLButtonElement | undefined = undefined;
+    let menuItems = list.querySelectorAll(".patchSelectorMenuItem");
     for (let item of menuItems) {
         if (!(item instanceof HTMLButtonElement))
             continue;
@@ -486,50 +490,34 @@ function alignPatchSelectorMenuToCurrentSelection() {
 }
 function initPatchSelectorUI() {
     let button = document.getElementById("patchSelectorButton");
-    let menu = document.getElementById("patchSelectorMenu");
-    if (!(button instanceof HTMLButtonElement) || !(menu instanceof HTMLDivElement))
+    let dialog = document.getElementById("patchSelectorMenu");
+    if (!(button instanceof HTMLButtonElement) || !(dialog instanceof HTMLDialogElement))
         return;
+    // Wire close button inside the dialog
+    let closeBtn = dialog.querySelector(".patchSelectorCloseButton");
+    if (closeBtn instanceof HTMLButtonElement)
+        closeBtn.addEventListener("click", () => closePatchSelectorMenu());
+    // Close when clicking the backdrop (outside the panel)
+    dialog.addEventListener("click", (event) => {
+        if (event.target === dialog)
+            closePatchSelectorMenu();
+    });
+    dialog.addEventListener("cancel", () => closePatchSelectorMenu());
     button.onclick = null;
     button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        rebuildPatchSelectorMenu();
-        let willOpen = !menu.classList.contains("open");
-        closePatchSelectorMenu();
-        if (willOpen) {
-            if (menu.childElementCount === 0) {
-                let emptyItem = document.createElement("button");
-                emptyItem.className = "patchSelectorMenuItem";
-                emptyItem.type = "button";
-                emptyItem.disabled = true;
-                emptyItem.textContent = "No patches available";
-                menu.appendChild(emptyItem);
-            }
-            menu.classList.add("open");
-            button.setAttribute("aria-expanded", "true");
-            requestAnimationFrame(() => alignPatchSelectorMenuToCurrentSelection());
-        }
-        else {
-            button.setAttribute("aria-expanded", "false");
-        }
-    });
-    if (!patchSelectorUIInitialized) {
-        document.addEventListener("click", (event) => {
-            let target = event.target;
-            if (!(target instanceof Node))
-                return;
-            let currentButton = document.getElementById("patchSelectorButton");
-            let currentMenu = document.getElementById("patchSelectorMenu");
-            if (!(currentButton instanceof HTMLButtonElement) || !(currentMenu instanceof HTMLDivElement)) {
-                closePatchSelectorMenu();
-                return;
-            }
-            if (currentButton.contains(target) || currentMenu.contains(target))
-                return;
+        if (dialog.open) {
             closePatchSelectorMenu();
-        });
+            return;
+        }
+        rebuildPatchSelectorMenu();
+        dialog.showModal();
+        button.setAttribute("aria-expanded", "true");
+        requestAnimationFrame(() => alignPatchSelectorMenuToCurrentSelection());
+    });
+    if (!patchSelectorUIInitialized)
         patchSelectorUIInitialized = true;
-    }
     rebuildPatchSelectorMenu();
     alignPatchSelectorMenuToCurrentSelection();
     updatePatchSelectorButtonLabel();
