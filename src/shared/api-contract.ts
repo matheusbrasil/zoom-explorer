@@ -21,6 +21,9 @@ export type ZoomExplorerAPI = {
   sendMidiMessage: (params: { outPortId: string; message: number[] }) => Promise<boolean>;
   sendSysex: (params: { outPortId: string; sysex: number[] }) => Promise<boolean>;
   onMidiMessage: (callback: (payload: MidiMessageEventDTO) => void) => () => void;
+  /** Subscribe to port hot-plug events emitted by Rust when the OS port list changes.
+   *  Returns an unsubscribe function. Prefer this over client-side polling. */
+  onMidiPortsChanged: (callback: () => void) => () => void;
   getSettings: () => Promise<Record<string, unknown>>;
   setSettings: (settings: Record<string, unknown>) => Promise<Record<string, unknown>>;
   readAppFile: (relativePath: string) => Promise<string>;

@@ -20,6 +20,9 @@ export class MIDIProxyForIPC extends MIDIProxy {
   private midiMessageListenerMap = new Map<DeviceID, ListenerType[]>();
   private connectionStateChangeListeners = new Array<ConnectionListenerType>();
   private unsubscribeMidi: (() => void) | undefined;
+  /** Unsubscribe from the Rust-emitted "midi_ports_changed" hot-plug event. */
+  private unsubscribePortChange: (() => void) | undefined;
+  /** Fallback polling interval — used only when the Rust event is unavailable. */
   private portRefreshInterval: ReturnType<typeof setInterval> | undefined;
   private isRefreshingPorts = false;
 
@@ -49,6 +52,16 @@ export class MIDIProxyForIPC extends MIDIProxy {
       });
     }
 
+    // Prefer the Rust-emitted port-change event over client-side polling.
+    // The event fires within 2 s of a device plug/unplug from the OS.
+    if (!this.unsubscribePortChange) {
+      this.unsubscribePortChange = this.api.onMidiPortsChanged(() => {
+        void this.refreshPortsFromMain();
+      });
+    }
+
+    // Polling is a 30-second fallback for environments where the Rust event
+    // cannot be delivered (e.g., early startup race, mobile stub).
     this.startPortRefreshPolling();
     this.enabled = true;
     return true;
@@ -63,6 +76,11 @@ export class MIDIProxyForIPC extends MIDIProxy {
     if (this.unsubscribeMidi) {
       this.unsubscribeMidi();
       this.unsubscribeMidi = undefined;
+    }
+
+    if (this.unsubscribePortChange) {
+      this.unsubscribePortChange();
+      this.unsubscribePortChange = undefined;
     }
 
     try {
@@ -142,7 +160,9 @@ export class MIDIProxyForIPC extends MIDIProxy {
   }
 
   send(deviceHandle: DeviceID, data: number[] | Uint8Array): void {
-    void this.api.sendMidiMessage({ outPortId: deviceHandle, message: Array.from(data) });
+    this.api.sendMidiMessage({ outPortId: deviceHandle, message: Array.from(data) }).catch((error: unknown) => {
+      shouldLog(LogLevel.Error) && console.error(`MIDIProxyForIPC.send() failed for "${deviceHandle}":`, error);
+    });
   }
 
   addListener(deviceHandle: DeviceID, listener: ListenerType): void {
@@ -229,9 +249,11 @@ export class MIDIProxyForIPC extends MIDIProxy {
       return;
     }
 
+    // 30-second fallback poll — the Rust "midi_ports_changed" event handles
+    // timely detection; this only catches cases where the event is missed.
     this.portRefreshInterval = setInterval(() => {
       void this.refreshPortsFromMain();
-    }, 1000);
+    }, 30_000);
   }
 
   private async refreshPortsFromMain(): Promise<void> {

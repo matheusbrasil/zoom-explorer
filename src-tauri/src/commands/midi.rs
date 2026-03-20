@@ -7,7 +7,7 @@ use crate::{
 
 #[tauri::command]
 pub fn list_midi_ports(state: State<'_, AppState>) -> Result<MidiPortsDto, CommandError> {
-    let midi = state
+    let mut midi = state
         .midi
         .lock()
         .map_err(|_| CommandError::new("MUTEX_POISONED", "MIDI state lock poisoned"))?;

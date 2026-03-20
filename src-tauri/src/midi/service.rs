@@ -10,6 +10,19 @@ use tauri::{AppHandle, Emitter};
 
 use crate::models::{CommandError, DeviceInfoDto, MidiMessageEventDto, MidiPortsDto};
 
+/// Maximum SysEx payload size (bytes, excluding F0/F7 envelope).
+/// Zoom full-bank SysEx dumps can reach ~22 KB; 65535 provides ample headroom.
+const SYSEX_MAX_BYTES: usize = 65535;
+
+/// Maximum regular MIDI message size (bytes).
+const MIDI_MSG_MAX_BYTES: usize = 8192;
+
+/// Returns a snapshot of current (input_names, output_names) for hot-plug detection.
+/// Safe to call from a background thread — opens/closes its own temporary MIDI context.
+pub fn list_port_names_snapshot() -> (Vec<String>, Vec<String>) {
+    list_ports_platform()
+}
+
 pub struct MidiService {
     open_inputs: HashSet<String>,
     open_outputs: HashSet<String>,
@@ -31,14 +44,17 @@ impl MidiService {
         }
     }
 
-    pub fn list_midi_ports(&self) -> Result<MidiPortsDto, CommandError> {
+    pub fn list_midi_ports(&mut self) -> Result<MidiPortsDto, CommandError> {
         let (inputs, outputs) = list_ports_platform();
 
+        self.prune_stale_open_ports(&inputs, &outputs);
+
+        // Port IDs are name-based ("in:{port_name}", "out:{port_name}") so they
+        // remain stable across USB reconnections even when enumeration order changes.
         let inputs = inputs
             .into_iter()
-            .enumerate()
-            .map(|(index, name)| {
-                let id = format!("in:{index}");
+            .map(|name| {
+                let id = format!("in:{name}");
                 DeviceInfoDto {
                     id: id.clone(),
                     name,
@@ -54,9 +70,8 @@ impl MidiService {
 
         let outputs = outputs
             .into_iter()
-            .enumerate()
-            .map(|(index, name)| {
-                let id = format!("out:{index}");
+            .map(|name| {
+                let id = format!("out:{name}");
                 DeviceInfoDto {
                     id: id.clone(),
                     name,
@@ -73,8 +88,22 @@ impl MidiService {
         Ok(MidiPortsDto { inputs, outputs })
     }
 
+    fn prune_stale_open_ports(&mut self, input_names: &[String], output_names: &[String]) {
+        let valid_input_ids: HashSet<String> = input_names.iter().map(|name| format!("in:{name}")).collect();
+        let valid_output_ids: HashSet<String> = output_names.iter().map(|name| format!("out:{name}")).collect();
+
+        self.open_inputs.retain(|id| valid_input_ids.contains(id));
+        self.open_outputs.retain(|id| valid_output_ids.contains(id));
+
+        #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
+        {
+            self.input_connections.retain(|id, _| valid_input_ids.contains(id));
+            self.output_connections.retain(|id, _| valid_output_ids.contains(id));
+        }
+    }
+
     pub fn open_input(&mut self, in_port_id: &str, app_handle: &AppHandle) -> Result<String, CommandError> {
-        validate_port_id(in_port_id, "in")?;
+        let port_name = validate_port_id(in_port_id, "in")?;
         #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
         {
             if self.input_connections.contains_key(in_port_id) {
@@ -82,16 +111,17 @@ impl MidiService {
                 return Ok(in_port_id.to_string());
             }
 
-            let port_index = parse_port_index(in_port_id)?;
             let mut midi_in = MidiInput::new("zoom-explorer").map_err(|error| {
                 CommandError::new("MIDI_INIT_FAILED", format!("Failed to initialize MIDI input: {error}"))
             })?;
             midi_in.ignore(Ignore::None);
 
             let ports = midi_in.ports();
+            // Find port by name; stable across reconnections even if enumeration index shifts.
             let port = ports
-                .get(port_index)
-                .ok_or_else(|| CommandError::new("INVALID_PORT_ID", format!("Invalid input port id: {in_port_id}")))?
+                .iter()
+                .find(|p| midi_in.port_name(p).ok().as_deref() == Some(&port_name))
+                .ok_or_else(|| CommandError::new("INVALID_PORT_ID", format!("No input port named: {port_name}")))?
                 .clone();
 
             let input_id = in_port_id.to_string();
@@ -134,7 +164,7 @@ impl MidiService {
     }
 
     pub fn open_output(&mut self, out_port_id: &str) -> Result<String, CommandError> {
-        validate_port_id(out_port_id, "out")?;
+        let port_name = validate_port_id(out_port_id, "out")?;
         #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
         {
             if self.output_connections.contains_key(out_port_id) {
@@ -142,15 +172,16 @@ impl MidiService {
                 return Ok(out_port_id.to_string());
             }
 
-            let port_index = parse_port_index(out_port_id)?;
             let midi_out = MidiOutput::new("zoom-explorer").map_err(|error| {
                 CommandError::new("MIDI_INIT_FAILED", format!("Failed to initialize MIDI output: {error}"))
             })?;
 
             let ports = midi_out.ports();
+            // Find port by name; stable across reconnections even if enumeration index shifts.
             let port = ports
-                .get(port_index)
-                .ok_or_else(|| CommandError::new("INVALID_PORT_ID", format!("Invalid output port id: {out_port_id}")))?
+                .iter()
+                .find(|p| midi_out.port_name(p).ok().as_deref() == Some(&port_name))
+                .ok_or_else(|| CommandError::new("INVALID_PORT_ID", format!("No output port named: {port_name}")))?
                 .clone();
 
             let conn = midi_out.connect(&port, "zoom-explorer-output").map_err(|error| {
@@ -185,7 +216,7 @@ impl MidiService {
 
     pub fn send_midi_message(&mut self, out_port_id: &str, message: &[u8]) -> Result<bool, CommandError> {
         validate_port_id(out_port_id, "out")?;
-        if message.is_empty() || message.len() > 8192 {
+        if message.is_empty() || message.len() > MIDI_MSG_MAX_BYTES {
             return Err(CommandError::new("INVALID_MIDI_MESSAGE", "MIDI message size is invalid"));
         }
         if !self.open_outputs.contains(out_port_id) {
@@ -205,7 +236,7 @@ impl MidiService {
 
     pub fn send_sysex(&mut self, out_port_id: &str, sysex: &[u8]) -> Result<bool, CommandError> {
         validate_port_id(out_port_id, "out")?;
-        if sysex.is_empty() || sysex.len() > 8192 {
+        if sysex.is_empty() || sysex.len() > SYSEX_MAX_BYTES {
             return Err(CommandError::new("INVALID_SYSEX", "SysEx payload size is invalid"));
         }
         if sysex.iter().any(|value| *value > 0x7f) {
@@ -235,30 +266,16 @@ impl MidiService {
     }
 }
 
-fn validate_port_id(value: &str, expected_prefix: &str) -> Result<(), CommandError> {
-    let mut parts = value.split(':');
-    let prefix = parts.next();
-    let index = parts.next();
-    let extra = parts.next();
-    let index_ok = index.and_then(|v| v.parse::<usize>().ok()).is_some();
-
-    if prefix != Some(expected_prefix) || !index_ok || extra.is_some() {
-        return Err(CommandError::new(
+/// Validates a port ID of the form "{prefix}:{port_name}" and returns the port name.
+/// Port IDs are name-based so they survive USB reconnections without index drift.
+fn validate_port_id(value: &str, expected_prefix: &str) -> Result<String, CommandError> {
+    match value.split_once(':') {
+        Some((prefix, name)) if prefix == expected_prefix && !name.is_empty() => Ok(name.to_string()),
+        _ => Err(CommandError::new(
             "INVALID_PORT_ID",
-            format!("Invalid {expected_prefix} port id: {value}"),
-        ));
+            format!("Invalid port id '{value}': expected '{expected_prefix}:{{port_name}}'"),
+        )),
     }
-
-    Ok(())
-}
-
-fn parse_port_index(value: &str) -> Result<usize, CommandError> {
-    let (_, index_part) = value.split_once(':').ok_or_else(|| {
-        CommandError::new("INVALID_PORT_ID", format!("Invalid port id: {value}"))
-    })?;
-    index_part.parse::<usize>().map_err(|_| {
-        CommandError::new("INVALID_PORT_ID", format!("Invalid port id: {value}"))
-    })
 }
 
 #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]

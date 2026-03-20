@@ -7,7 +7,7 @@ mod persistence;
 
 use std::sync::Mutex;
 
-use midi::MidiService;
+use midi::{MidiService, list_port_names_snapshot};
 use persistence::SettingsStore;
 
 pub struct AppState {
@@ -23,6 +23,25 @@ pub fn run() {
         .manage(AppState {
             midi: Mutex::new(MidiService::new()),
             settings: Mutex::new(SettingsStore::new()),
+        })
+        .setup(|app| {
+            // Background thread: emit "midi_ports_changed" whenever the OS port list
+            // changes (device plugged/unplugged). The TypeScript side subscribes to
+            // this event and refreshes the port list on demand instead of polling.
+            let app_handle = app.handle().clone();
+            std::thread::spawn(move || {
+                use tauri::Emitter;
+                let mut prev = list_port_names_snapshot();
+                loop {
+                    std::thread::sleep(std::time::Duration::from_millis(2000));
+                    let current = list_port_names_snapshot();
+                    if current != prev {
+                        let _ = app_handle.emit("midi_ports_changed", ());
+                        prev = current;
+                    }
+                }
+            });
+            Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::midi::list_midi_ports,
