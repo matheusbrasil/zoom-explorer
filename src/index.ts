@@ -485,20 +485,9 @@ function alignPatchSelectorMenuToCurrentSelection() {
 }
 function initPatchSelectorUI() {
     let button = document.getElementById("patchSelectorButton");
-    let mobileMenuButton = document.getElementById("mobileMenuButton");
     let dialog = document.getElementById("patchSelectorMenu");
     if (!(button instanceof HTMLButtonElement) || !(dialog instanceof HTMLDialogElement))
         return;
-    let openPatchSelector = () => {
-        if (dialog.open) {
-            closePatchSelectorMenu();
-            return;
-        }
-        rebuildPatchSelectorMenu();
-        dialog.showModal();
-        button.setAttribute("aria-expanded", "true");
-        requestAnimationFrame(() => alignPatchSelectorMenuToCurrentSelection());
-    };
     // Wire close button inside the dialog
     let closeBtn = dialog.querySelector(".patchSelectorCloseButton");
     if (closeBtn instanceof HTMLButtonElement)
@@ -513,21 +502,34 @@ function initPatchSelectorUI() {
     button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        openPatchSelector();
+        if (dialog.open) {
+            closePatchSelectorMenu();
+            return;
+        }
+        rebuildPatchSelectorMenu();
+        dialog.showModal();
+        button.setAttribute("aria-expanded", "true");
+        requestAnimationFrame(() => alignPatchSelectorMenuToCurrentSelection());
     });
-    if (mobileMenuButton instanceof HTMLButtonElement) {
-        mobileMenuButton.onclick = null;
-        mobileMenuButton.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            openPatchSelector();
-        });
-    }
     if (!patchSelectorUIInitialized)
         patchSelectorUIInitialized = true;
     rebuildPatchSelectorMenu();
     alignPatchSelectorMenuToCurrentSelection();
     updatePatchSelectorButtonLabel();
+}
+function initMobileEffectSelectorButton() {
+    let button = document.querySelector("#editPatchTableID .mobileEffectSelectorButton");
+    if (!(button instanceof HTMLButtonElement))
+        return;
+    button.onclick = null;
+    button.addEventListener("click", () => {
+        if (currentZoomPatch === undefined || currentZoomDevice === undefined)
+            return;
+        let effectSlot = Number.isInteger(currentZoomPatch.currentEffectSlot) ? currentZoomPatch.currentEffectSlot : 0;
+        if (effectSlot < 0)
+            effectSlot = 0;
+        handleEffectSlotSelectEffect(currentZoomPatch, currentZoomDevice, currentZoomDevice.effectIDMap, effectSlot);
+    });
 }
 function updatePatchSelectorOptions(zoomDevice) {
     let dropdown = document.getElementById("patchSelectorDropdown");
@@ -1256,6 +1258,33 @@ function handlePatchEdited(zoomPatch, zoomDevice, effectIDMap, event, type, init
             }
             let effectID = -1;
             effectID = zoomPatch.effectSettings[effectSlot].id;
+            if (type === "mobile-set-raw" && event instanceof CustomEvent) {
+                let parameterIndex = parameterNumber - 2;
+                if (parameterIndex < 0 || parameterIndex >= zoomPatch.effectSettings[effectSlot].parameters.length)
+                    return false;
+                let requestedRaw = Number.parseInt(`${event.detail?.rawValue ?? ""}`);
+                if (Number.isNaN(requestedRaw))
+                    return false;
+                let currentRaw = zoomPatch.effectSettings[effectSlot].parameters[parameterIndex];
+                let currentValueString = ZoomDevice.getStringFromRawParameterValueAndMap(effectIDMap, effectID, parameterNumber, currentRaw);
+                let [_currentMappedRaw, maxValueForParameter] = ZoomDevice.getRawParameterValueFromStringAndMap(effectIDMap, effectID, parameterNumber, currentValueString);
+                let maxRaw = maxValueForParameter >= 0 ? maxValueForParameter : Math.max(1, currentRaw, requestedRaw);
+                let rawValue = Math.max(0, Math.min(maxRaw, requestedRaw));
+                if (zoomPatch.currentEffectSlot !== effectSlot) {
+                    zoomPatch.currentEffectSlot = effectSlot;
+                    if (patchAndDeviceMatches)
+                        zoomDevice?.setCurrentEffectSlot(effectSlot);
+                    patchEditor.updateEffectSlotFrame(effectSlot);
+                }
+                if (rawValue !== zoomPatch.effectSettings[effectSlot].parameters[parameterIndex]) {
+                    let mappedValueString = ZoomDevice.getStringFromRawParameterValueAndMap(effectIDMap, effectID, parameterNumber, rawValue);
+                    setPatchEffectParameter(zoomDevice, zoomPatch, effectSlot, parameterNumber, rawValue);
+                    if (mappedValueString.length > 0)
+                        cell.innerHTML = mappedValueString;
+                    updateDirtyState(true);
+                }
+                return true;
+            }
             let valueString = cell.innerText;
             let [rawValue, maxValue] = ZoomDevice.getRawParameterValueFromStringAndMap(effectIDMap, effectID, parameterNumber, valueString);
             if (maxValue === -1 || rawValue < 0 || rawValue > maxValue) {
@@ -3361,6 +3390,7 @@ patchList.addCurrentPatchUpdatedListener((patchList) => {
 });
 patchLists.appendChild(patchList.viewElement);
 initializeModernEditorLayout();
+initMobileEffectSelectorButton();
 const mobileUILayoutQuery = window.matchMedia("(orientation: portrait) and (max-width: 430px)");
 function applyAdaptiveUILayoutMode() {
     document.body.classList.toggle("mobile-ui-mode", mobileUILayoutQuery.matches);

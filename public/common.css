@@ -2815,16 +2815,15 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
   }
 }
 
-/* Valeton-like portrait mobile UI: vertical flow with compact tiles and parameter cards. */
+/* Valeton-inspired portrait mobile UI with strict vertical section order. */
 @media (orientation: portrait) and (max-width: 430px) {
   body.mobile-ui-mode {
-    background: #262626 !important;
+    background: #252526 !important;
   }
 
   body.mobile-ui-mode #mainLayout,
   body.mobile-ui-mode #content {
-    background: transparent !important;
-    padding: 10px 8px 14px 8px !important;
+    padding: 12px 8px !important;
     overflow: hidden !important;
   }
 
@@ -2832,150 +2831,120 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     max-width: 396px !important;
     margin: 0 auto !important;
     border-radius: 10px !important;
-    background: linear-gradient(180deg, #1f2a3b 0%, #1c2735 100%) !important;
-    border: 1px solid rgba(83, 103, 126, 0.28) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(82, 103, 126, 0.35) !important;
+    background: linear-gradient(180deg, #222f40 0%, #1c2735 100%) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35) !important;
     overflow: hidden !important;
   }
 
   body.mobile-ui-mode #patchEditors {
-    --mobile-side-padding: 8px;
-    --chain-gap: 8px;
+    --mobile-side-padding: 10px;
+    --chain-gap: 9px;
     --chain-pedal-width: 56px;
-    --chain-pedal-height: 76px;
-    --chain-area-height: 176px;
+    --chain-pedal-height: 74px;
+    --chain-area-height: 168px;
     padding: 0 !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchTable {
     table-layout: fixed !important;
+    width: 100% !important;
   }
 
-  body.mobile-ui-mode #patchEditors .editPatchTopRow {
-    background: #050b14 !important;
-  }
-
+  /* Top header: patch id + name + save + hamburger */
   body.mobile-ui-mode #patchEditors .editPatchTopRow th {
-    padding: 6px 4px !important;
-    border-bottom: 1px solid rgba(65, 84, 105, 0.36) !important;
+    padding: 7px 4px !important;
+    border-bottom: 1px solid rgba(79, 98, 121, 0.4) !important;
+    background: #07101a !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchTableNumber {
     width: 48px !important;
     min-width: 48px !important;
-    font-size: 32px !important;
+    font-size: 35px !important;
     text-align: left !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchTableName {
     min-width: 0 !important;
-    max-width: none !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchNameText {
-    max-width: 178px !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
+    max-width: 168px !important;
     font-weight: 600 !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchTableTempoValue,
   body.mobile-ui-mode #patchEditors .editPatchTableDescription,
-  body.mobile-ui-mode #patchEditors .editPatchTableButtons {
-    display: none !important;
-  }
-
-  body.mobile-ui-mode #patchEditors .patchSelectorGroup {
+  body.mobile-ui-mode #patchEditors .editPatchTableButtons,
+  body.mobile-ui-mode #patchEditors .editPatchActionRow {
     display: none !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchTableStatus {
     width: auto !important;
-    padding-right: 4px !important;
   }
 
-  /* Keep only core actions in portrait top bar to match mobile app simplicity. */
   body.mobile-ui-mode #deleteCurrentPatchButton,
-  body.mobile-ui-mode #savePatchToDiskButton,
   body.mobile-ui-mode #loadPatchFromDiskButton,
   body.mobile-ui-mode #loadPatchFromTextButton,
   body.mobile-ui-mode #undoEditPatchButton,
-  body.mobile-ui-mode #redoEditPatchButton {
+  body.mobile-ui-mode #redoEditPatchButton,
+  body.mobile-ui-mode #savePatchToDiskButton {
     display: none !important;
   }
 
-  body.mobile-ui-mode #mobileMenuButton,
-  body.mobile-ui-mode #syncPatchToPedalButton {
+  body.mobile-ui-mode #syncPatchToPedalButton,
+  body.mobile-ui-mode #patchSelectorButton {
     display: inline-flex !important;
   }
 
   body.mobile-ui-mode #patchEditors .topBarActions {
     justify-content: flex-end !important;
-    gap: 5px !important;
+    gap: 6px !important;
     overflow: hidden !important;
   }
 
   body.mobile-ui-mode #patchEditors .topBarActionButton,
-  body.mobile-ui-mode #patchEditors .topBarLabeledActionButton,
   body.mobile-ui-mode #patchEditors .patchSelectorButton {
-    width: 30px !important;
-    min-width: 30px !important;
-    height: 30px !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    border-radius: 10px !important;
     padding: 0 !important;
-    border-radius: 9px !important;
-  }
-
-  body.mobile-ui-mode #patchEditors #syncPatchToPedalButton .material-symbols-outlined {
-    font-size: 19px !important;
-  }
-
-  body.mobile-ui-mode #patchEditors #mobileMenuButton .material-symbols-outlined {
-    font-size: 19px !important;
-  }
-
-  /* In portrait, chain must be directly under header (no intermediate action row). */
-  body.mobile-ui-mode #patchEditors .editPatchActionRow {
-    display: none !important;
-  }
-
-  body.mobile-ui-mode #patchEditors .editPatchActionRow td {
-    padding: 4px 8px 2px 8px !important;
-    border-bottom: 0 !important;
-    background: #102033 !important;
-  }
-
-  body.mobile-ui-mode #patchEditors .patchActionButtons {
-    justify-content: center !important;
-    gap: 12px !important;
-  }
-
-  body.mobile-ui-mode #patchEditors .patchActionButton {
-    min-width: 34px !important;
-    min-height: 28px !important;
-    border-radius: 8px !important;
-    background: rgba(24, 40, 58, 0.95) !important;
-    border: 1px solid rgba(66, 92, 118, 0.4) !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchEffectsCell {
     min-height: var(--chain-area-height) !important;
     height: var(--chain-area-height) !important;
     max-height: var(--chain-area-height) !important;
-    padding: 8px 0 0 0 !important;
-    background: linear-gradient(180deg, #172637 0%, #1a2b3d 100%) !important;
+    padding: 4px 0 0 0 !important;
+    background: linear-gradient(180deg, #182a3c 0%, #1b2e42 100%) !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchEffectsCell::before {
     height: 5px !important;
     top: auto !important;
-    bottom: 58px !important;
-    background: rgba(217, 229, 241, 0.76) !important;
+    bottom: 57px !important;
+    background: rgba(220, 231, 242, 0.75) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchEffectsCell::after {
+    display: none !important;
   }
 
   body.mobile-ui-mode #patchEditors .effectsChainViewport {
     padding: 6px var(--mobile-side-padding) 0 var(--mobile-side-padding) !important;
-    align-items: flex-start !important;
     justify-content: center !important;
+    align-items: flex-start !important;
     overflow: hidden !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editEffectsChainTable {
+    width: auto !important;
+    min-width: max-content !important;
+    margin: 0 auto !important;
   }
 
   body.mobile-ui-mode #patchEditors .editEffectsChainTable tr {
@@ -2994,67 +2963,164 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
   }
 
   body.mobile-ui-mode #patchEditors .effectLed {
-    width: 14px !important;
-    height: 14px !important;
-    margin: 0 auto 3px auto !important;
+    width: 13px !important;
+    height: 13px !important;
+    margin: 0 auto 2px auto !important;
   }
 
-  body.mobile-ui-mode #patchEditors .editPatchParametersCell {
-    padding: 6px 8px 8px 8px !important;
-    background: #1e2a3a !important;
-    overflow: hidden !important;
+  /* Effect name + selector strip below chain */
+  body.mobile-ui-mode #patchEditors .parameterEditorHeader {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    align-items: center !important;
+    gap: 8px !important;
+    margin: 0 0 8px 0 !important;
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+    background: rgba(44, 57, 74, 0.9) !important;
+    border: 1px solid rgba(84, 106, 130, 0.36) !important;
   }
 
-  body.mobile-ui-mode #patchEditors .editParameterTable {
-    width: 100% !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-  }
-
-  body.mobile-ui-mode #patchEditors .editParameterTable tr {
-    gap: 6px !important;
-    margin: 0 0 6px 0 !important;
-    justify-content: center !important;
-  }
-
-  body.mobile-ui-mode #patchEditors .parameterValueRow td {
-    height: 86px !important;
-    min-height: 86px !important;
-  }
-
-  body.mobile-ui-mode #patchEditors .parameterNameRow td.mobileHiddenParameterName {
+  body.mobile-ui-mode #patchEditors .parameterEditorTitle {
     display: none !important;
   }
 
-  body.mobile-ui-mode #patchEditors .editParameterValueCell.mobileStepperCell {
-    border-radius: 12px !important;
-    background: linear-gradient(180deg, rgba(55, 71, 93, 0.95), rgba(45, 61, 81, 0.95)) !important;
-    border: 1px solid rgba(91, 111, 138, 0.5) !important;
-    grid-template-rows: auto 18px 1fr 18px !important;
-    padding: 3px 4px !important;
-    gap: 2px !important;
+  body.mobile-ui-mode #patchEditors .parameterEditorEffectName {
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    color: #f1f6fb !important;
+    text-align: left !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
   }
 
-  body.mobile-ui-mode #patchEditors .mobileStepperName {
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    line-height: 1.05 !important;
-    color: #dbe8f6 !important;
+  body.mobile-ui-mode #patchEditors .mobileEffectSelectorButton {
+    border: 1px solid rgba(90, 117, 145, 0.45) !important;
+    border-radius: 9px !important;
+    background: #2869d2 !important;
+    color: #f7fbff !important;
+    min-height: 32px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
   }
 
-  body.mobile-ui-mode #patchEditors .mobileStepperButton {
-    min-height: 16px !important;
-    border-radius: 7px !important;
-    border-color: rgba(123, 151, 184, 0.52) !important;
-    background: #1a2b3e !important;
-    color: #f4fbff !important;
-    font-size: 11px !important;
+  body.mobile-ui-mode #patchEditors .editPatchParametersCell {
+    padding: 8px !important;
+    background: #1d2a3a !important;
+    height: 390px !important;
+    max-height: 390px !important;
+    overflow: hidden !important;
   }
 
-  body.mobile-ui-mode #patchEditors .mobileStepperValue {
-    font-size: 12px !important;
+  /* Parameters list: vertical scroll allowed */
+  body.mobile-ui-mode #patchEditors .editParameterTable {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 300px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 2px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editParameterTable tr {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    margin: 0 0 8px 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .parameterNameRow td.mobileHiddenParameterName,
+  body.mobile-ui-mode #patchEditors .parameterNameRow {
+    display: none !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .parameterValueRow td {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editParameterValueCell.mobileControlCell {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "name value"
+      "control control";
+    align-items: center !important;
+    gap: 6px 10px !important;
+    padding: 10px !important;
+    border-radius: 11px !important;
+    background: linear-gradient(180deg, rgba(55, 71, 93, 0.94), rgba(45, 61, 81, 0.94)) !important;
+    border: 1px solid rgba(91, 111, 138, 0.44) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlName {
+    grid-area: name;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #e6f0f8 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlValue {
+    grid-area: value;
+    font-size: 16px !important;
     font-weight: 700 !important;
     color: #ffffff !important;
+    text-align: right !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSlider {
+    grid-area: control;
+    width: 100% !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSwitch {
+    grid-area: control;
+    justify-self: start;
+    position: relative;
+    width: 56px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSwitch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSwitchTrack {
+    position: absolute;
+    inset: 0;
+    border-radius: 30px;
+    background: #3e4d60;
+    transition: background-color 120ms ease;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSwitchTrack::before {
+    content: "";
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    left: 3px;
+    top: 3px;
+    border-radius: 50%;
+    background: #f3f7fb;
+    transition: transform 120ms ease;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSwitch input:checked + .mobileControlSwitchTrack {
+    background: #2f85ff;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSwitch input:checked + .mobileControlSwitchTrack::before {
+    transform: translateX(26px);
   }
 }

@@ -77,6 +77,10 @@ export class ZoomPatchEditor
     return document.body.classList.contains("mobile-ui-mode");
   }
 
+  private isPortraitMobileUIMode(): boolean {
+    return this.isMobileUIMode() && window.matchMedia("(orientation: portrait) and (max-width: 430px)").matches;
+  }
+
   constructor(patchEditorID?: string)
   {
     if (patchEditorID !== undefined) {
@@ -241,7 +245,7 @@ export class ZoomPatchEditor
     const patchSelectorHTML = includeControls ? `
             <div class="patchSelectorGroup">
               <button${patchSelectorButtonID} class="patchSelectorButton" type="button" aria-haspopup="dialog" aria-expanded="false" title="Select patch">
-                <span class="material-symbols-outlined">expand_more</span>
+                <span class="material-symbols-outlined">menu</span>
               </button>
               <select${patchSelectorDropdownID} class="patchSelectorDropdown" tabindex="-1" aria-hidden="true">
                 <option value="">Loading patches...</option>
@@ -292,7 +296,6 @@ export class ZoomPatchEditor
               <button id="undoEditPatchButton" class="topBarActionButton topBarIconOnly" disabled title="Undo Edit"><span class="material-symbols-outlined">undo</span></button>
               <button id="redoEditPatchButton" class="topBarActionButton topBarIconOnly" disabled title="Redo Edit"><span class="material-symbols-outlined">redo</span></button>
               <button id="syncPatchToPedalButton" class="topBarActionButton topBarLabeledActionButton" disabled title="Save to pedal"><span class="material-symbols-outlined">publish</span><span class="topBarActionLabel">Save</span></button>
-              <button id="mobileMenuButton" class="topBarActionButton topBarIconOnly" title="Patch menu"><span class="material-symbols-outlined">menu</span></button>
             </div>
           </th>
         </tr>
@@ -313,8 +316,8 @@ export class ZoomPatchEditor
           <td colspan="${fullColSpan}" class="editPatchParametersCell">
             <div class="parameterSelectionPointer"></div>
             <div class="parameterEditorHeader">
-              <span class="parameterEditorTitle">Parameter Editor</span>
               <span class="parameterEditorEffectName">No effect selected</span>
+              <button type="button" class="mobileEffectSelectorButton">Change</button>
             </div>
             <table class="editParameterTable">
               <tr>
@@ -567,6 +570,11 @@ export class ZoomPatchEditor
         cell.focus();
         let keyEvent = new KeyboardEvent("keydown", { key: toggleKey, bubbles: true });
         cell.dispatchEvent(keyEvent);
+      });
+
+      cell.addEventListener("mobile-set-raw", (e) => {
+        if (this.textEditedCallback !== undefined)
+          this.textEditedCallback(e as Event, "mobile-set-raw", this.undoOnEscape);
       });
     }
   }
@@ -1462,51 +1470,60 @@ export class ZoomPatchEditor
     valueCell.classList.toggle("parameterSwitchOn", isOn);
   }
 
-  private renderMobileStepperCell(valueCell: HTMLTableCellElement, parameterName: string, currentValue: string): void
+  private renderMobileControlCell(
+    valueCell: HTMLTableCellElement,
+    parameterName: string,
+    currentValue: string,
+    rawValue: number,
+    maxValue: number,
+    isSwitchParameter: boolean): void
   {
     valueCell.replaceChildren();
-    valueCell.classList.add("mobileStepperCell");
+    valueCell.classList.add("mobileControlCell");
 
     let nameLabel = document.createElement("span");
-    nameLabel.className = "mobileStepperName";
+    nameLabel.className = "mobileControlName";
     nameLabel.textContent = parameterName;
 
-    let upButton = document.createElement("button");
-    upButton.type = "button";
-    upButton.className = "mobileStepperButton mobileStepperUp";
-    upButton.textContent = "+";
-
     let valueLabel = document.createElement("span");
-    valueLabel.className = "mobileStepperValue";
+    valueLabel.className = "mobileControlValue";
     valueLabel.textContent = currentValue;
 
-    let downButton = document.createElement("button");
-    downButton.type = "button";
-    downButton.className = "mobileStepperButton mobileStepperDown";
-    downButton.textContent = "-";
-
-    let triggerStep = (key: "ArrowUp" | "ArrowDown") => {
-      valueCell.focus();
-      let keyEvent = new KeyboardEvent("keydown", { key, bubbles: true });
-      valueCell.dispatchEvent(keyEvent);
-    };
-
-    upButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      triggerStep("ArrowUp");
-    });
-
-    downButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      triggerStep("ArrowDown");
-    });
-
     valueCell.appendChild(nameLabel);
-    valueCell.appendChild(upButton);
-    valueCell.appendChild(valueLabel);
-    valueCell.appendChild(downButton);
+
+    if (isSwitchParameter) {
+      let switchWrap = document.createElement("label");
+      switchWrap.className = "mobileControlSwitch";
+      let switchInput = document.createElement("input");
+      switchInput.type = "checkbox";
+      switchInput.checked = rawValue > 0;
+      let switchTrack = document.createElement("span");
+      switchTrack.className = "mobileControlSwitchTrack";
+      switchWrap.appendChild(switchInput);
+      switchWrap.appendChild(switchTrack);
+      switchInput.addEventListener("change", () => {
+        let nextRaw = switchInput.checked ? 1 : 0;
+        valueCell.dispatchEvent(new CustomEvent("mobile-set-raw", { bubbles: true, detail: { rawValue: nextRaw } }));
+      });
+      valueCell.appendChild(switchWrap);
+      valueCell.appendChild(valueLabel);
+    }
+    else {
+      let slider = document.createElement("input");
+      slider.type = "range";
+      slider.className = "mobileControlSlider";
+      slider.min = "0";
+      slider.max = Math.max(1, maxValue).toString();
+      slider.step = "1";
+      slider.value = Math.max(0, Math.min(maxValue, rawValue)).toString();
+      slider.addEventListener("input", () => {
+        let nextRaw = Number.parseInt(slider.value);
+        valueCell.dispatchEvent(new CustomEvent("mobile-set-raw", { bubbles: true, detail: { rawValue: nextRaw } }));
+      });
+      valueCell.appendChild(slider);
+      valueCell.appendChild(valueLabel);
+    }
+
     valueCell.contentEditable = "false";
     valueCell.tabIndex = 0;
   }
@@ -1567,12 +1584,15 @@ export class ZoomPatchEditor
     let parameterContainer = this.patchEditorTable.querySelector(".editPatchParametersCell") as HTMLTableCellElement | null;
     let availableWidth = parameterContainer?.clientWidth ?? this.patchEditorTable.clientWidth;
     let mobileMode = this.isMobileUIMode();
+    let portraitMobileMode = this.isPortraitMobileUIMode();
     let cellGap = mobileMode ? 8 : 18;
     let minCellSize = mobileMode ? 64 : 96;
     let maxCellSize = mobileMode ? 82 : 138;
     let maxColumnsFromWidth = Math.max(1, Math.floor((availableWidth + cellGap) / (minCellSize + cellGap)));
     let numColumns = Math.max(1, Math.min(numParameters, maxColumnsFromWidth));
-    if (mobileMode)
+    if (portraitMobileMode)
+      numColumns = 1;
+    else if (mobileMode)
       numColumns = Math.min(Math.max(numColumns, 4), numParameters);
     let fittedCellSize = Math.floor((availableWidth - ((numColumns - 1) * cellGap) - 24) / numColumns);
     fittedCellSize = Math.max(minCellSize, Math.min(maxCellSize, fittedCellSize));
@@ -1628,7 +1648,7 @@ export class ZoomPatchEditor
         let parameterName = displayParameters[parameterNumber].name;
         this.updateTextContentIfChanged(nameCell, parameterName);
         nameCell.classList.remove("parameterSwitchNameCell");
-      nameCell.classList.toggle("mobileHiddenParameterName", mobileMode);
+      nameCell.classList.toggle("mobileHiddenParameterName", portraitMobileMode);
 
         let valueString = displayParameters[parameterNumber].valueString;
         if (ZoomPatch.isNoteHtml(valueString)) {
@@ -1670,7 +1690,7 @@ export class ZoomPatchEditor
         let lowerParameterName = parameterName.trim().toLowerCase();
         let isSwitchParameter = maxValue === 1 || switchParameterNames.has(lowerParameterName) || lowerParameterName.startsWith("hidden");
         valueCell.classList.toggle("parameterSwitchCell", isSwitchParameter);
-        valueCell.classList.toggle("mobileStepperCell", mobileMode && !isSwitchParameter);
+        valueCell.classList.toggle("mobileControlCell", portraitMobileMode);
         if (isSwitchParameter) {
           let offLabel = "OFF";
           let onLabel = "ON";
@@ -1691,6 +1711,8 @@ export class ZoomPatchEditor
           valueCell.dataset.switchOnLabel = onLabel;
           valueCell.contentEditable = "false";
           valueCell.tabIndex = 0;
+          if (portraitMobileMode)
+            this.renderMobileControlCell(valueCell, parameterName, currentLabel, rawValue, 1, true);
           this.updateBackgroundSizeIfChanged(valueCell, "0%");
         }
         else {
@@ -1700,8 +1722,8 @@ export class ZoomPatchEditor
           valueCell.removeAttribute("tabindex");
           valueCell.contentEditable = supportsContentEditablePlaintextOnly() ? "plaintext-only" : "true";
           valueCell.classList.remove("parameterSwitchOn");
-          if (mobileMode)
-            this.renderMobileStepperCell(valueCell, parameterName, valueString);
+          if (portraitMobileMode)
+            this.renderMobileControlCell(valueCell, parameterName, valueString, rawValue, Math.max(1, maxValue), false);
           else if (valueCell.childElementCount > 0)
             valueCell.replaceChildren(document.createTextNode(valueString));
           if (effectID !== -1) {
@@ -1716,7 +1738,7 @@ export class ZoomPatchEditor
               }
             }
             percentage = Math.max(0, Math.min(100, percentage));
-            if (!mobileMode)
+            if (!portraitMobileMode)
               this.updateBackgroundSizeIfChanged(valueCell, percentage.toFixed(0).toString() + "%");
             else
               this.updateBackgroundSizeIfChanged(valueCell, "0%");
