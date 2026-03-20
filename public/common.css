@@ -231,6 +231,8 @@ body {
   background: transparent !important;
   white-space: nowrap !important;
   width: 1px !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
 }
 
 #patchEditors .topBarActions {
@@ -239,6 +241,13 @@ body {
   align-items: center !important;
   gap: 8px !important;
   justify-content: flex-end !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+}
+
+#patchEditors .topBarActions::-webkit-scrollbar {
+  display: none !important;
 }
 
 #patchEditors .topBarActionButton {
@@ -357,7 +366,7 @@ body {
   left: 0 !important;
   right: auto !important;
   min-width: 280px !important;
-  max-height: 400px !important;
+  max-height: 60vh !important;
   overflow-y: auto !important;
   border: 1px solid var(--zx-border) !important;
   border-radius: 10px !important;
@@ -365,34 +374,11 @@ body {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45) !important;
   padding: 4px !important;
   display: none !important;
-  z-index: 1000 !important;
+  z-index: 2000 !important;
 }
 
 #patchEditors .patchSelectorMenu.open {
   display: block !important;
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  min-width: min(90vw, 500px) !important;
-  max-width: min(90vw, 500px) !important;
-  max-height: 80vh !important;
-  z-index: 10000 !important;
-  border: 1px solid rgba(72, 96, 121, 0.52) !important;
-  border-radius: 16px !important;
-  background: linear-gradient(180deg, rgba(16, 24, 34, 0.98), rgba(20, 30, 40, 0.98)) !important;
-  box-shadow: 0 26px 58px rgba(0, 0, 0, 0.5) !important;
-}
-
-/* Add backdrop overlay when patch selector is open */
-body.patchSelectorOpen::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: rgba(5, 10, 16, 0.76);
-  backdrop-filter: blur(2px);
-  z-index: 9999;
-  pointer-events: auto;
 }
 
 #patchEditors .patchSelectorMenuItem {

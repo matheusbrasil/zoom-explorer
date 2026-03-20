@@ -283,52 +283,13 @@
 }
 
 @media (max-width: 980px) {
+  /* On mobile, completely hide the sidebar and use full viewport width */
   #sidebar {
-    width: 30px !important;
-    min-width: 30px !important;
-  }
-
-  #sidebar .sidebar-header > span:first-child,
-  #sidebar #fileBrowserContainer .file-browser-container,
-  #sidebar #fileBrowserContainer .file-browser-tree {
     display: none !important;
-  }
-
-  #sidebar .sidebar-header {
-    justify-content: center !important;
-    padding: 8px 4px !important;
   }
 
   #content {
-    margin-left: 36px !important;
-    width: calc(100% - 36px) !important;
-  }
-}
-
-/* In mobile landscape the sidebar auto-collapses to its narrow state                  */
-/* without touching #mainLayout or #content layout — no grid, no position change.       */
-@media (orientation: landscape) and (max-height: 500px) {
-  #sidebar {
-    width: 30px !important;
-    min-width: 30px !important;
-  }
-
-  #sidebar .sidebar-header > span:first-child,
-  #sidebar #fileBrowserContainer .file-browser-container,
-  #sidebar #fileBrowserContainer .file-browser-tree {
-    display: none !important;
-  }
-
-  #sidebar .sidebar-header {
-    justify-content: center !important;
-    padding: 12px 8px !important;
-  }
-
-  #sidebar .sidebar-toggle {
-    margin: 0 auto !important;
-  }
-
-  #sidebar .sidebar-toggle span {
-    transform: rotate(180deg);
+    margin-left: 0 !important;
+    width: 100% !important;
   }
 }

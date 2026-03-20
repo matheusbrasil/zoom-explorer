@@ -424,7 +424,6 @@ function closePatchSelectorMenu() {
         menu.classList.remove("open");
     if (button instanceof HTMLButtonElement)
         button.setAttribute("aria-expanded", "false");
-    document.body.classList.remove("patchSelectorOpen");
 }
 function updatePatchSelectorButtonLabel() {
     let dropdown = document.getElementById("patchSelectorDropdown");
@@ -507,7 +506,6 @@ function initPatchSelectorUI() {
                 menu.appendChild(emptyItem);
             }
             menu.classList.add("open");
-            document.body.classList.add("patchSelectorOpen");
             button.setAttribute("aria-expanded", "true");
             requestAnimationFrame(() => alignPatchSelectorMenuToCurrentSelection());
         }
