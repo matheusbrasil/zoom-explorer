@@ -90,6 +90,35 @@ export function installTauriBridge(): void {
         }
       };
     },
+    onMidiPortsChanged: (callback: () => void): (() => void) => {
+      if (typeof listen !== "function") {
+        return () => undefined;
+      }
+
+      let disposed = false;
+      let removeListener: UnlistenFn | undefined;
+
+      void listen("midi_ports_changed", () => {
+        callback();
+      })
+        .then((unlisten) => {
+          if (disposed) {
+            unlisten();
+            return;
+          }
+          removeListener = unlisten;
+        })
+        .catch((error) => {
+          console.warn(`Unable to subscribe to midi_ports_changed: ${String(error)}`);
+        });
+
+      return () => {
+        disposed = true;
+        if (removeListener !== undefined) {
+          removeListener();
+        }
+      };
+    },
     getSettings: () => invoke("get_settings"),
     setSettings: (settings: Record<string, unknown>) => invoke("set_settings", { settings }),
     readAppFile: (relativePath: string) => invoke("read_app_file", { relativePath }),
