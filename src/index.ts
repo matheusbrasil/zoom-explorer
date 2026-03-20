@@ -327,6 +327,96 @@ function initializeModernEditorLayout() {
     if (patchEditorHeader !== null)
         patchEditorHeader.style.display = "none";
 }
+function getVisibleEditPatchTable(container: HTMLElement): HTMLTableElement | undefined {
+    let tables = container.querySelectorAll(".editPatchTable");
+    for (let table of tables) {
+        if (!(table instanceof HTMLTableElement))
+            continue;
+        if (table.getClientRects().length === 0)
+            continue;
+        let style = window.getComputedStyle(table);
+        if (style.display === "none" || style.visibility === "hidden")
+            continue;
+        return table;
+    }
+    return undefined;
+}
+function clearViewportFitState(container: HTMLElement, table: HTMLTableElement | undefined) {
+    document.body.classList.remove("viewport-fit-mode");
+    container.classList.remove("viewport-fit-active");
+    container.style.height = "";
+    container.style.minHeight = "";
+    if (table !== undefined) {
+        table.classList.remove("viewport-fit-target");
+        table.style.transform = "";
+        table.style.transformOrigin = "";
+    }
+}
+function applyViewportFitScale() {
+    let container = document.getElementById("patchEditors");
+    if (!(container instanceof HTMLElement))
+        return;
+    let table = getVisibleEditPatchTable(container);
+    if (table === undefined) {
+        clearViewportFitState(container, undefined);
+        return;
+    }
+    table.classList.remove("viewport-fit-target");
+    table.style.transform = "none";
+    table.style.transformOrigin = "top left";
+    
+    // Force no-wrap on parameter rows to measure natural (unwrapped) width
+    let parameterRows = table.querySelectorAll(".parameterValueRow, .parameterNameRow");
+    let originalFlexWraps = new Map<Element, string>();
+    for (let row of parameterRows) {
+        if (row instanceof HTMLElement) {
+            originalFlexWraps.set(row, row.style.flexWrap);
+            row.style.flexWrap = "nowrap";
+        }
+    }
+    
+    let containerRect = container.getBoundingClientRect();
+    let naturalWidth = Math.max(table.scrollWidth, Math.round(table.getBoundingClientRect().width));
+    let naturalHeight = Math.max(table.scrollHeight, Math.round(table.getBoundingClientRect().height));
+    
+    // Restore original flex-wrap
+    for (let [row, originalWrap] of originalFlexWraps) {
+        if (row instanceof HTMLElement) {
+            row.style.flexWrap = originalWrap;
+        }
+    }
+    
+    if (naturalWidth <= 0 || naturalHeight <= 0) {
+        clearViewportFitState(container, table);
+        return;
+    }
+    let availableWidth = Math.max(320, window.innerWidth - 10);
+    let availableHeight = Math.max(220, window.innerHeight - Math.max(0, Math.floor(containerRect.top)) - 8);
+    let scaleX = availableWidth / naturalWidth;
+    let scaleY = availableHeight / naturalHeight;
+    let scale = Math.min(1, scaleX, scaleY);
+    if (scale >= 0.995) {
+        clearViewportFitState(container, table);
+        return;
+    }
+    container.classList.add("viewport-fit-active");
+    document.body.classList.add("viewport-fit-mode");
+    table.classList.add("viewport-fit-target");
+    table.style.transformOrigin = "top left";
+    table.style.transform = `scale(${scale})`;
+    let fittedHeight = Math.ceil(naturalHeight * scale);
+    container.style.height = `${fittedHeight}px`;
+    container.style.minHeight = `${fittedHeight}px`;
+}
+let scheduleViewportFitScaleHandle = 0;
+function scheduleViewportFitScale() {
+    if (scheduleViewportFitScaleHandle !== 0)
+        cancelAnimationFrame(scheduleViewportFitScaleHandle);
+    scheduleViewportFitScaleHandle = requestAnimationFrame(() => {
+        scheduleViewportFitScaleHandle = 0;
+        applyViewportFitScale();
+    });
+}
 function closePatchSelectorMenu() {
     let menu = document.getElementById("patchSelectorMenu");
     let button = document.getElementById("patchSelectorButton");
@@ -3276,6 +3366,18 @@ patchList.addCurrentPatchUpdatedListener((patchList) => {
 });
 patchLists.appendChild(patchList.viewElement);
 initializeModernEditorLayout();
+window.addEventListener("resize", scheduleViewportFitScale);
+window.addEventListener("orientationchange", scheduleViewportFitScale);
+if (patchEditors !== null) {
+    let fitObserver = new MutationObserver(() => scheduleViewportFitScale());
+    fitObserver.observe(patchEditors, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        characterData: true,
+    });
+}
+scheduleViewportFitScale();
 let patchIsDirty = false;
 const PATCH_STATUS_HIDE_DELAY_MS = 7000;
 let patchStatusHideTimer: ReturnType<typeof setTimeout> | undefined = undefined;

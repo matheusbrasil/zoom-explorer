@@ -2010,3 +2010,233 @@ body {
     padding: 1px 3px !important;
   }
 }
+
+/* Narrow-window/mobile fallback: keep all controls reachable without changing JS behavior. */
+@media (max-width: 980px) {
+  #content {
+    overflow-x: auto !important;
+  }
+
+  #patchEditors .editPatchTable {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  #patchEditors .editPatchTableTopRow th {
+    padding: 10px 8px !important;
+  }
+
+  #patchEditors .editPatchTableNumber {
+    width: auto !important;
+    min-width: 52px !important;
+    font-size: clamp(16px, 4.5vw, 26px) !important;
+    padding-left: 8px !important;
+  }
+
+  #patchEditors .editPatchNameText {
+    min-width: 0 !important;
+    max-width: clamp(140px, 42vw, 320px) !important;
+    font-size: clamp(14px, 3.2vw, 24px) !important;
+  }
+
+  #patchEditors .editPatchTableStatus {
+    width: auto !important;
+    max-width: 48vw !important;
+    padding: 6px 6px 6px 6px !important;
+  }
+
+  #patchEditors .topBarActions {
+    justify-content: flex-start !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 6px !important;
+    max-width: 100% !important;
+    padding-bottom: 2px !important;
+  }
+
+  #patchEditors .topBarActionButton {
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 8px !important;
+  }
+
+  #patchEditors .topBarLabeledActionButton {
+    min-width: 36px !important;
+  }
+
+  #patchEditors .topBarActionLabel {
+    display: none !important;
+  }
+
+  #patchEditors {
+    --chain-pedal-width: clamp(120px, 22vw, 162px);
+    --chain-pedal-height: clamp(170px, 33vw, 226px);
+    --chain-gap: clamp(8px, 1.6vw, 12px);
+    --chain-area-height: clamp(320px, 58vw, 430px);
+  }
+
+  #patchEditors .editPatchEffectsCell {
+    height: auto !important;
+    min-height: clamp(300px, 52vw, 420px) !important;
+    max-height: none !important;
+  }
+
+  #patchEditors .editEffectTable,
+  #patchEditors .effectPedalImageWrapper {
+    width: var(--chain-pedal-width) !important;
+    min-width: var(--chain-pedal-width) !important;
+    height: var(--chain-pedal-height) !important;
+  }
+
+  #patchEditors .parameterValueRow td,
+  #patchEditors .parameterNameRow td {
+    flex: 0 0 clamp(88px, 16vw, 110px) !important;
+  }
+
+  #patchEditors .parameterValueRow td {
+    width: clamp(88px, 16vw, 110px) !important;
+    min-width: clamp(88px, 16vw, 110px) !important;
+    height: clamp(88px, 16vw, 110px) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  #patchEditors .editPatchTableButtons {
+    width: 72px !important;
+    min-width: 72px !important;
+    padding-right: 4px !important;
+  }
+
+  #patchEditors .loadSaveButtons {
+    min-width: 42px !important;
+    font-size: 0.62rem !important;
+    margin: 1px !important;
+  }
+
+  #patchEditors .patchActionButtons {
+    gap: 10px !important;
+  }
+
+  #patchEditors .patchActionButton {
+    min-width: 112px !important;
+    min-height: 56px !important;
+    font-size: 18px !important;
+  }
+}
+
+/* Compact desktop-like layout for mobile/narrow windows: keep all effect cards visible. */
+@media (orientation: landscape) and (max-height: 560px), (max-width: 980px) {
+  #patchEditors {
+    --chain-pedal-width: clamp(82px, 11vw, 108px);
+    --chain-pedal-height: clamp(118px, 18vh, 154px);
+    --chain-gap: clamp(4px, 0.8vw, 8px);
+    --chain-area-height: clamp(220px, 36vh, 300px);
+  }
+
+  #patchEditors .editPatchEffectsCell {
+    height: auto !important;
+    min-height: var(--chain-area-height) !important;
+    max-height: none !important;
+    padding: 10px 0 8px 0 !important;
+  }
+
+  #patchEditors .effectsChainViewport {
+    overflow-x: hidden !important;
+    padding: 0 6px 8px 6px !important;
+  }
+
+  #patchEditors .editEffectsChainTable {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #patchEditors .editEffectsChainTable tr {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    gap: var(--chain-gap) !important;
+  }
+
+  #patchEditors .editEffectsChainTable td {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  #patchEditors .editEffectTable {
+    width: var(--chain-pedal-width) !important;
+    min-width: 0 !important;
+    max-width: var(--chain-pedal-width) !important;
+  }
+
+  #patchEditors .effectPedalImageWrapper {
+    width: var(--chain-pedal-width) !important;
+    height: var(--chain-pedal-height) !important;
+  }
+
+  #patchEditors .effectLed {
+    width: clamp(28px, 4vw, 36px) !important;
+    height: clamp(28px, 4vw, 36px) !important;
+    margin: 0 auto 6px auto !important;
+  }
+
+  #patchEditors .editPatchParametersCell {
+    padding: 8px 8px 12px 8px !important;
+  }
+
+  #patchEditors .editParameterTable tr {
+    gap: clamp(6px, 0.9vw, 10px) !important;
+  }
+
+  #patchEditors .parameterValueRow td,
+  #patchEditors .parameterNameRow td {
+    flex: 0 0 clamp(74px, 10.5vw, 94px) !important;
+  }
+
+  #patchEditors .parameterValueRow td {
+    width: clamp(74px, 10.5vw, 94px) !important;
+    min-width: clamp(74px, 10.5vw, 94px) !important;
+    height: clamp(74px, 10.5vw, 94px) !important;
+    font-size: clamp(11px, 1.4vw, 16px) !important;
+  }
+
+  #patchEditors .parameterNameRow td,
+  #patchEditors .editParameterNameCell {
+    font-size: clamp(9px, 1vw, 12px) !important;
+  }
+}
+
+/* Runtime-applied fit mode: keep entire editor visible without viewport scroll. */
+body.viewport-fit-mode,
+body.viewport-fit-mode #content,
+body.viewport-fit-mode #mainLayout {
+  overflow: hidden !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body.viewport-fit-mode .collapsibleContainer {
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+body.viewport-fit-mode #patchEditors {
+  width: 100% !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#patchEditors.viewport-fit-active {
+  overflow: hidden !important;
+}
+
+#patchEditors .editPatchTable.viewport-fit-target {
+  will-change: transform;
+}

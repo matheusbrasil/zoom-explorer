@@ -275,6 +275,36 @@
   display: none;
 }
 
+/* Keep editor area clear from the fixed sidebar in desktop and narrow windows. */
+#content {
+  margin-left: 40px;
+  width: calc(100% - 40px);
+  box-sizing: border-box;
+}
+
+@media (max-width: 980px) {
+  #sidebar {
+    width: 30px !important;
+    min-width: 30px !important;
+  }
+
+  #sidebar .sidebar-header > span:first-child,
+  #sidebar #fileBrowserContainer .file-browser-container,
+  #sidebar #fileBrowserContainer .file-browser-tree {
+    display: none !important;
+  }
+
+  #sidebar .sidebar-header {
+    justify-content: center !important;
+    padding: 8px 4px !important;
+  }
+
+  #content {
+    margin-left: 36px !important;
+    width: calc(100% - 36px) !important;
+  }
+}
+
 /* In mobile landscape the sidebar auto-collapses to its narrow state                  */
 /* without touching #mainLayout or #content layout — no grid, no position change.       */
 @media (orientation: landscape) and (max-height: 500px) {
