@@ -530,6 +530,18 @@ function initMobileEffectSelectorButton() {
             effectSlot = 0;
         handleEffectSlotSelectEffect(currentZoomPatch, currentZoomDevice, currentZoomDevice.effectIDMap, effectSlot);
     });
+    // Wire effect on/off toggle
+    let toggle = document.querySelector("#editPatchTableID .mobileEffectToggleInput");
+    if (toggle instanceof HTMLInputElement) {
+        toggle.addEventListener("change", () => {
+            if (currentZoomPatch === undefined || currentZoomDevice === undefined)
+                return;
+            let effectSlot = Number.isInteger(currentZoomPatch.currentEffectSlot) ? currentZoomPatch.currentEffectSlot : 0;
+            if (effectSlot < 0)
+                effectSlot = 0;
+            handleEffectSlotOnOff(currentZoomPatch, currentZoomDevice, currentZoomDevice.effectIDMap, effectSlot, toggle.checked);
+        });
+    }
 }
 function initMobileOverflowMenu() {
     let menuButton = document.getElementById("mobileOverflowMenuButton");

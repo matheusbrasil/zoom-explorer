@@ -299,6 +299,7 @@ export class ZoomPatchEditor
               <div class="mobileOverflowMenuWrapper">
                 <button id="mobileOverflowMenuButton" class="topBarActionButton" type="button" title="More actions"><span class="material-symbols-outlined">more_vert</span></button>
                 <div id="mobileOverflowMenu" class="mobileOverflowMenu">
+                  <button class="mobileOverflowMenuItem" data-target="patchSelectorButton">Select Patch</button>
                   <button class="mobileOverflowMenuItem" data-target="deleteCurrentPatchButton">Delete Patch</button>
                   <button class="mobileOverflowMenuItem" data-target="savePatchToDiskButton">Export Patch</button>
                   <button class="mobileOverflowMenuItem" data-target="loadPatchFromDiskButton">Import Patch</button>
@@ -325,6 +326,10 @@ export class ZoomPatchEditor
           <td colspan="${fullColSpan}" class="editPatchParametersCell">
             <div class="parameterSelectionPointer"></div>
             <div class="parameterEditorHeader">
+              <label class="mobileEffectToggle">
+                <input type="checkbox" class="mobileEffectToggleInput" />
+                <span class="mobileEffectToggleTrack"></span>
+              </label>
               <span class="parameterEditorEffectName">No effect selected</span>
               <button type="button" class="mobileEffectSelectorButton">Change</button>
             </div>
@@ -1485,7 +1490,8 @@ export class ZoomPatchEditor
     currentValue: string,
     rawValue: number,
     maxValue: number,
-    isSwitchParameter: boolean): void
+    isSwitchParameter: boolean,
+    valueLabels?: string[]): void
   {
     valueCell.replaceChildren();
     valueCell.classList.add("mobileControlCell");
@@ -1501,6 +1507,7 @@ export class ZoomPatchEditor
     valueCell.appendChild(nameLabel);
 
     if (isSwitchParameter) {
+      // Toggle switch for ON/OFF parameters (2 values)
       let switchWrap = document.createElement("label");
       switchWrap.className = "mobileControlSwitch";
       let switchInput = document.createElement("input");
@@ -1517,7 +1524,26 @@ export class ZoomPatchEditor
       valueCell.appendChild(switchWrap);
       valueCell.appendChild(valueLabel);
     }
+    else if (valueLabels !== undefined && valueLabels.length >= 3 && valueLabels.length <= 30 && !valueLabels.some((v, i) => v === i.toString())) {
+      // Dropdown for parameters with 3+ distinct named values
+      let select = document.createElement("select");
+      select.className = "mobileControlDropdown";
+      for (let i = 0; i < valueLabels.length; i++) {
+        let option = document.createElement("option");
+        option.value = i.toString();
+        option.textContent = valueLabels[i];
+        if (i === rawValue) option.selected = true;
+        select.appendChild(option);
+      }
+      select.addEventListener("change", () => {
+        let nextRaw = Number.parseInt(select.value);
+        valueCell.dispatchEvent(new CustomEvent("mobile-set-raw", { bubbles: true, detail: { rawValue: nextRaw } }));
+      });
+      valueCell.appendChild(select);
+      valueCell.appendChild(valueLabel);
+    }
     else {
+      // Slider for numeric/continuous parameters
       let slider = document.createElement("input");
       slider.type = "range";
       slider.className = "mobileControlSlider";
@@ -1574,6 +1600,13 @@ export class ZoomPatchEditor
     let fallbackName = displayParameters.length > 1 ? displayParameters[1].name : "Effect";
     let effectName = this.resolveEffectName(effectIDMap, effectID, fallbackName, pedalName);
     this.parameterTitle.textContent = effectName;
+
+    // Update mobile effect on/off toggle
+    let effectToggle = this.patchEditorTable.querySelector(".mobileEffectToggleInput") as HTMLInputElement | null;
+    if (effectToggle !== null && patch.effectSettings !== null && effectSlot < patch.effectSettings.length) {
+      let isEffectOn = patch.effectSettings[effectSlot].enabled;
+      effectToggle.checked = isEffectOn;
+    }
 
     let visibleParameterNumbers: number[] = [];
     for (let parameterNumber = 2; parameterNumber < displayParameters.length; parameterNumber++) {
@@ -1731,8 +1764,20 @@ export class ZoomPatchEditor
           valueCell.removeAttribute("tabindex");
           valueCell.contentEditable = supportsContentEditablePlaintextOnly() ? "plaintext-only" : "true";
           valueCell.classList.remove("parameterSwitchOn");
-          if (portraitMobileMode)
-            this.renderMobileControlCell(valueCell, parameterName, valueString, rawValue, Math.max(1, maxValue), false);
+          if (portraitMobileMode) {
+            let paramValueLabels: string[] | undefined = undefined;
+            let paramIndex = parameterNumber - 2;
+            let resolvedID = mappedEffectID ?? effectID;
+            if (resolvedID !== -1 && effectIDMap !== undefined) {
+              let effectMap = effectIDMap.get(resolvedID);
+              if (effectMap !== undefined && paramIndex >= 0 && paramIndex < effectMap.parameters.length) {
+                let pvm = effectMap.parameters[paramIndex];
+                if (pvm.maxNumerical === undefined && pvm.values.length >= 3)
+                  paramValueLabels = pvm.values;
+              }
+            }
+            this.renderMobileControlCell(valueCell, parameterName, valueString, rawValue, Math.max(1, maxValue), false, paramValueLabels);
+          }
           else if (valueCell.childElementCount > 0)
             valueCell.replaceChildren(document.createTextNode(valueString));
           if (effectID !== -1) {

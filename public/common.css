@@ -516,6 +516,11 @@ body {
   display: none !important;
 }
 
+/* Effect toggle is portrait-mobile only */
+.mobileEffectToggle {
+  display: none !important;
+}
+
 #patchEditors .editPatchTableButtons {
   width: 1px;
   white-space: nowrap;
@@ -2827,7 +2832,7 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
 
 /* Valeton-inspired portrait mobile UI with strict vertical section order. */
 @media (orientation: portrait) and (max-width: 430px) {
-  /* ── Fullscreen shell ── */
+  /* -- Fullscreen shell -- */
   body.mobile-ui-mode {
     background: #1a2233 !important;
     margin: 0 !important;
@@ -2838,9 +2843,11 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
   body.mobile-ui-mode #content {
     padding: 0 !important;
     margin: 0 !important;
-    overflow: hidden !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     width: 100vw !important;
     max-width: 100vw !important;
+    height: 100vh !important;
   }
 
   body.mobile-ui-mode .collapsibleContainer {
@@ -2851,18 +2858,19 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     border: none !important;
     background: #1a2233 !important;
     box-shadow: none !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
   body.mobile-ui-mode #patchEditors {
     --mobile-side-padding: 10px;
-    --chain-gap: 9px;
-    --chain-pedal-width: 56px;
-    --chain-pedal-height: 74px;
-    --chain-area-height: 168px;
+    --chain-gap: 6px;
+    --chain-pedal-width: 52px;
+    --chain-pedal-height: 64px;
+    --chain-area-height: 96px;
     padding: 0 !important;
     width: 100% !important;
     border-radius: 0 !important;
+    overflow: visible !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchTable {
@@ -2870,16 +2878,16 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     width: 100% !important;
     border-radius: 0 !important;
     border: none !important;
+    overflow: visible !important;
   }
 
-  /* ── Header: Valeton-style top bar ── */
+  /* -- Header: Valeton-style top bar -- */
   body.mobile-ui-mode #patchEditors .editPatchTopRow th {
     padding: 0 !important;
     border-bottom: none !important;
     background: #1a2233 !important;
   }
 
-  /* Make the top row a flex container spanning the full width */
   body.mobile-ui-mode #patchEditors .editPatchTopRow {
     display: flex !important;
     align-items: center !important;
@@ -2888,7 +2896,6 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     background: #1a2233 !important;
   }
 
-  /* Patch number cell: sits inside the visual pill */
   body.mobile-ui-mode #patchEditors .editPatchTableNumber {
     display: flex !important;
     align-items: center !important;
@@ -2907,22 +2914,18 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     white-space: nowrap !important;
   }
 
-  /* Separator pipe after the number — done via ::after */
   body.mobile-ui-mode #patchEditors .editPatchTableNumber::after {
     content: "|";
     margin-left: 10px;
-    margin-right: 0;
     color: rgba(208, 218, 230, 0.4);
     font-size: 15px;
     font-weight: 400;
   }
 
-  /* Hide the dirty indicator text in portrait mode */
   body.mobile-ui-mode #patchEditors .patchDirtyIndicator {
     display: none !important;
   }
 
-  /* Patch name cell: right half of the pill */
   body.mobile-ui-mode #patchEditors .editPatchTableName {
     display: flex !important;
     align-items: center !important;
@@ -2949,12 +2952,10 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     outline: none !important;
   }
 
-  /* Hide patch selector group (hamburger moved to topBarActions) */
   body.mobile-ui-mode #patchEditors .patchSelectorGroup {
     display: none !important;
   }
 
-  /* Modified state: color patch ID + name in portrait */
   body.mobile-ui-mode .editPatchTopRow.portrait-modified .editPatchTableNumberText,
   body.mobile-ui-mode .editPatchTopRow.portrait-modified .editPatchNameText {
     color: #ffd26e !important;
@@ -2964,7 +2965,6 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     color: rgba(255, 210, 110, 0.4) !important;
   }
 
-  /* Hide tempo, description, action row, buttons row */
   body.mobile-ui-mode #patchEditors .editPatchTableTempoValue,
   body.mobile-ui-mode #patchEditors .editPatchTableDescription,
   body.mobile-ui-mode #patchEditors .editPatchTableButtons,
@@ -2972,7 +2972,6 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     display: none !important;
   }
 
-  /* Status cell: holds topBarActions */
   body.mobile-ui-mode #patchEditors .editPatchTableStatus {
     display: flex !important;
     align-items: center !important;
@@ -2982,7 +2981,6 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     flex-shrink: 0 !important;
   }
 
-  /* Hide all desktop action buttons in portrait */
   body.mobile-ui-mode #deleteCurrentPatchButton,
   body.mobile-ui-mode #loadPatchFromDiskButton,
   body.mobile-ui-mode #loadPatchFromTextButton,
@@ -3000,7 +2998,6 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     flex-wrap: nowrap !important;
   }
 
-  /* Save button (syncPatchToPedal) */
   body.mobile-ui-mode #syncPatchToPedalButton {
     display: inline-flex !important;
     width: 38px !important;
@@ -3023,7 +3020,6 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     display: none !important;
   }
 
-  /* Overflow menu button (three dots) */
   body.mobile-ui-mode .mobileOverflowMenuWrapper {
     position: relative !important;
     display: inline-flex !important;
@@ -3048,15 +3044,13 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     color: #d0dae6 !important;
   }
 
-  /* Overflow dropdown menu */
   body.mobile-ui-mode .mobileOverflowMenu {
     display: none;
-    position: absolute !important;
-    top: 100% !important;
-    right: 0 !important;
-    z-index: 1000 !important;
-    min-width: 200px !important;
-    margin-top: 4px !important;
+    position: fixed !important;
+    top: 52px !important;
+    right: 12px !important;
+    z-index: 10000 !important;
+    min-width: 220px !important;
     padding: 6px 0 !important;
     background: #2a374a !important;
     border-radius: 10px !important;
@@ -3085,13 +3079,14 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     background: rgba(255, 255, 255, 0.08) !important;
   }
 
-  /* ── Effects chain area ── */
+  /* -- Effects chain: flat row of pedal images -- */
   body.mobile-ui-mode #patchEditors .editPatchEffectsCell {
     min-height: var(--chain-area-height) !important;
     height: var(--chain-area-height) !important;
     max-height: var(--chain-area-height) !important;
-    padding: 4px 0 0 0 !important;
-    background: linear-gradient(180deg, #1d2d41 0%, #1f3044 100%) !important;
+    padding: 8px 0 !important;
+    background: #1a2233 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
   }
 
   body.mobile-ui-mode #patchEditors .editPatchEffectsCell::before,
@@ -3100,10 +3095,11 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
   }
 
   body.mobile-ui-mode #patchEditors .effectsChainViewport {
-    padding: 10px var(--mobile-side-padding) 0 var(--mobile-side-padding) !important;
+    padding: 0 var(--mobile-side-padding) !important;
     justify-content: center !important;
-    align-items: flex-start !important;
+    align-items: center !important;
     overflow: hidden !important;
+    height: 100% !important;
   }
 
   body.mobile-ui-mode #patchEditors .editEffectsChainTable {
@@ -3114,7 +3110,7 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
 
   body.mobile-ui-mode #patchEditors .editEffectsChainTable tr {
     justify-content: center !important;
-    align-items: flex-start !important;
+    align-items: center !important;
     gap: var(--chain-gap) !important;
   }
 
@@ -3128,26 +3124,41 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
   }
 
   body.mobile-ui-mode #patchEditors .editEffectTable {
-    border-radius: 8px !important;
+    border-radius: 6px !important;
     overflow: hidden !important;
-    background: rgba(34, 48, 66, 0.72) !important;
-    box-shadow: inset 0 0 0 1px rgba(99, 122, 148, 0.25) !important;
+    background: transparent !important;
+    border: 2px solid transparent !important;
+    box-shadow: none !important;
+    transition: border-color 150ms ease, box-shadow 150ms ease !important;
   }
 
-  body.mobile-ui-mode #patchEditors .effectLed {
-    width: 13px !important;
-    height: 13px !important;
-    margin: 0 auto 2px auto !important;
+  body.mobile-ui-mode #patchEditors .effectLed,
+  body.mobile-ui-mode #patchEditors .effectLedToggle,
+  body.mobile-ui-mode #patchEditors .editEffectTableTopBar,
+  body.mobile-ui-mode #patchEditors .editEffectTableButtons,
+  body.mobile-ui-mode #patchEditors .effectCardBottomRow,
+  body.mobile-ui-mode #patchEditors .effectSelectionIndicator {
+    display: none !important;
   }
 
-  /* ── Effect name + selector strip ── */
+  body.mobile-ui-mode #patchEditors .editEffectTable.editEffectSlot {
+    border-color: #3680ea !important;
+    box-shadow: 0 0 12px 2px rgba(54, 128, 234, 0.5) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editEffectTable.editEffectOff .effectPedalImageWrapper {
+    opacity: 0.4 !important;
+    filter: saturate(0.4) !important;
+  }
+
+  /* -- Effect toggle strip: switch + name + change button -- */
   body.mobile-ui-mode #patchEditors .parameterEditorHeader {
     display: grid !important;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto 1fr auto;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 10px !important;
     margin: 0 !important;
-    padding: 8px 12px !important;
+    padding: 10px 12px !important;
     border-radius: 0 !important;
     background: #1e2b3d !important;
     border: none !important;
@@ -3156,6 +3167,50 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
 
   body.mobile-ui-mode #patchEditors .parameterEditorTitle {
     display: none !important;
+  }
+
+  body.mobile-ui-mode .mobileEffectToggle {
+    display: inline-flex !important;
+    position: relative;
+    width: 44px;
+    height: 26px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  body.mobile-ui-mode .mobileEffectToggleInput {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  body.mobile-ui-mode .mobileEffectToggleTrack {
+    position: absolute;
+    inset: 0;
+    border-radius: 26px;
+    background: #3e4d60;
+    transition: background-color 120ms ease;
+  }
+
+  body.mobile-ui-mode .mobileEffectToggleTrack::before {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    left: 3px;
+    top: 3px;
+    border-radius: 50%;
+    background: #f3f7fb;
+    transition: transform 120ms ease;
+  }
+
+  body.mobile-ui-mode .mobileEffectToggleInput:checked + .mobileEffectToggleTrack {
+    background: #34d058;
+  }
+
+  body.mobile-ui-mode .mobileEffectToggleInput:checked + .mobileEffectToggleTrack::before {
+    transform: translateX(18px);
   }
 
   body.mobile-ui-mode #patchEditors .parameterEditorEffectName {
@@ -3181,23 +3236,23 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     cursor: pointer !important;
   }
 
-  /* ── Parameter list ── */
+  /* -- Parameter list -- */
   body.mobile-ui-mode #patchEditors .editPatchParametersCell {
     padding: 0 !important;
     background: #1a2233 !important;
     height: auto !important;
     max-height: none !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
   body.mobile-ui-mode #patchEditors .editParameterTable {
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
-    max-height: calc(100vh - 300px) !important;
+    max-height: calc(100vh - 240px) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    padding: 8px 12px !important;
+    padding: 6px 12px 12px 12px !important;
   }
 
   body.mobile-ui-mode #patchEditors .editParameterTable tr {
@@ -3253,6 +3308,21 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
     grid-area: control;
     width: 100% !important;
     accent-color: #2f85ff;
+    height: 6px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlDropdown {
+    grid-area: control;
+    width: 100% !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #e4ecf4 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    appearance: auto !important;
+    cursor: pointer !important;
   }
 
   body.mobile-ui-mode #patchEditors .mobileControlSwitch {
@@ -3298,6 +3368,4 @@ body.mobile-ui-mode #patchEditors .mobileStepperValue {
   body.mobile-ui-mode #patchEditors .mobileControlSwitch input:checked + .mobileControlSwitchTrack::before {
     transform: translateX(26px);
   }
-
-  /* Hide overflow menu on desktop (it's only for portrait mobile) */
 }
