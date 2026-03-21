@@ -531,6 +531,31 @@ function initMobileEffectSelectorButton() {
         handleEffectSlotSelectEffect(currentZoomPatch, currentZoomDevice, currentZoomDevice.effectIDMap, effectSlot);
     });
 }
+function initMobileOverflowMenu() {
+    let menuButton = document.getElementById("mobileOverflowMenuButton");
+    let menu = document.getElementById("mobileOverflowMenu");
+    if (!(menuButton instanceof HTMLButtonElement) || !(menu instanceof HTMLDivElement))
+        return;
+    menuButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.classList.toggle("open");
+    });
+    document.addEventListener("click", () => {
+        menu.classList.remove("open");
+    });
+    menu.addEventListener("click", (e) => {
+        let item = (e.target as HTMLElement).closest(".mobileOverflowMenuItem");
+        if (!(item instanceof HTMLButtonElement))
+            return;
+        let targetId = item.dataset.target;
+        if (targetId) {
+            let target = document.getElementById(targetId);
+            if (target instanceof HTMLButtonElement)
+                target.click();
+        }
+        menu.classList.remove("open");
+    });
+}
 function updatePatchSelectorOptions(zoomDevice) {
     let dropdown = document.getElementById("patchSelectorDropdown");
     if (!(dropdown instanceof HTMLSelectElement))
@@ -2064,6 +2089,9 @@ function hidePatchStatusIndicator() {
         indicator.textContent = "";
         indicator.classList.remove("visible-saved", "visible-modified");
     }
+    let topRow = document.querySelector("#editPatchTableID .editPatchTopRow");
+    if (topRow !== null)
+        topRow.classList.remove("portrait-modified");
 }
 function showPatchStatusIndicator(text: string, modified: boolean, autoHide = false) {
     let indicator = document.getElementById("patchDirtyIndicator");
@@ -2072,6 +2100,9 @@ function showPatchStatusIndicator(text: string, modified: boolean, autoHide = fa
     indicator.textContent = text;
     indicator.classList.remove("visible-saved", "visible-modified");
     indicator.classList.add(modified ? "visible-modified" : "visible-saved");
+    let topRow = document.querySelector("#editPatchTableID .editPatchTopRow");
+    if (topRow !== null)
+        topRow.classList.toggle("portrait-modified", modified);
     if (patchStatusHideTimer !== undefined) {
         clearTimeout(patchStatusHideTimer);
         patchStatusHideTimer = undefined;
@@ -3391,6 +3422,7 @@ patchList.addCurrentPatchUpdatedListener((patchList) => {
 patchLists.appendChild(patchList.viewElement);
 initializeModernEditorLayout();
 initMobileEffectSelectorButton();
+initMobileOverflowMenu();
 const mobileUILayoutQuery = window.matchMedia("(orientation: portrait) and (max-width: 430px)");
 function applyAdaptiveUILayoutMode() {
     document.body.classList.toggle("mobile-ui-mode", mobileUILayoutQuery.matches);
