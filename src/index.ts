@@ -63,6 +63,97 @@ installTauriBridge();
 
 let patchSelectorSyncing = false;
 let patchSelectorUIInitialized = false;
+let effectImageWarmupStarted = false;
+let effectImageWarmupCompleted = false;
+
+function collectEffectImageWarmupURLs() {
+    let urls = new Set();
+    let addEffectID = (effectID) => {
+        if (!Number.isInteger(effectID) || effectID < 0)
+            return;
+        let lower = effectID.toString(16).padStart(8, "0").toLowerCase();
+        let masked = (effectID & 0xFFFFFFF0).toString(16).padStart(8, "0").toLowerCase();
+        urls.add(`/img/effects/${lower}.png`);
+        urls.add(`/img/effects/${masked}.png`);
+    };
+    let addFromMap = (effectMap) => {
+        if (effectMap === undefined)
+            return;
+        for (let effectID of effectMap.keys())
+            addEffectID(effectID);
+    };
+
+    addFromMap(mapForMSOG);
+    addFromMap(mapForMS50GPlusAndMS70CDRPlus);
+    addFromMap(ZoomDevice.getEffectIDMap("MS-60B+"));
+    addFromMap(ZoomDevice.getEffectIDMap("MS-200D+"));
+    addFromMap(ZoomDevice.getEffectIDMap("G2/G2X FOUR"));
+    addFromMap(ZoomDevice.getEffectIDMap("B2 FOUR"));
+    urls.add("/img/effects/blank.png");
+
+    return [...urls];
+}
+
+function warmupSingleImage(url) {
+    return new Promise((resolve) => {
+        let image = new Image();
+        image.decoding = "async";
+        image.loading = "eager";
+        image.onload = () => resolve();
+        image.onerror = () => resolve();
+        image.src = url;
+    });
+}
+
+async function warmupEffectImages(urls, concurrency = 4) {
+    if (urls.length === 0)
+        return;
+
+    let queue = urls.slice();
+    let workers = [];
+    let workerCount = Math.max(1, Math.min(concurrency, 8));
+
+    for (let worker = 0; worker < workerCount; worker++) {
+        workers.push((async () => {
+            while (queue.length > 0) {
+                let url = queue.shift();
+                if (url === undefined)
+                    return;
+                await warmupSingleImage(url);
+            }
+        })());
+    }
+
+    await Promise.all(workers);
+}
+
+function queueEffectImageWarmup() {
+    if (effectImageWarmupStarted || effectImageWarmupCompleted)
+        return;
+    effectImageWarmupStarted = true;
+
+    let runWarmup = async () => {
+        let start = performance.now();
+        try {
+            let urls = collectEffectImageWarmupURLs();
+            shouldLog(LogLevel.Info) && console.log(`Warming up effect image cache with ${urls.length} candidates`);
+            await warmupEffectImages(urls, 4);
+            effectImageWarmupCompleted = true;
+            shouldLog(LogLevel.Info) && console.log(`Effect image warmup finished in ${((performance.now() - start) / 1000).toFixed(2)} seconds`);
+        }
+        catch (error) {
+            let errorString = getExceptionErrorString(error);
+            shouldLog(LogLevel.Warning) && console.warn(`Effect image warmup failed: ${errorString}`);
+        }
+    };
+
+    let requestIdle = window.requestIdleCallback;
+    if (requestIdle !== undefined)
+        requestIdle(() => void runWarmup(), { timeout: 1200 });
+    else
+        window.setTimeout(() => void runWarmup(), 350);
+}
+
 async function downloadJSONResource(filename) {
     if (filename.toLowerCase().endsWith(".json") && window.zoomExplorerAPI !== undefined && window.zoomExplorerAPI.readAppFile !== undefined) {
         try {
@@ -3216,6 +3307,7 @@ function updatePerformanceMode() {
 async function start(reconnectTimeoutMilliseconds) {
     setStartupLoadingState("Loading", "Loading effect maps...");
     await downloadEffectMaps();
+    queueEffectImageWarmup();
     if (window.zoomExplorerAPI === undefined) {
         setStartupLoadingState("Loading", "Loading local demo presets...");
         await downoadDemoRackPresets();
