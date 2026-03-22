@@ -343,7 +343,7 @@ export class ZoomPatchEditor
               <button${loadPatchFromTextButtonID} class="topBarActionButton topBarLabeledActionButton" title="Import patch from text"><span class="material-symbols-outlined">article_shortcut</span><span class="topBarActionLabel">Import Patch From Text</span></button>
               <button${undoEditPatchButtonID} class="topBarActionButton topBarIconOnly" disabled title="Undo Edit"><span class="material-symbols-outlined">undo</span></button>
               <button${redoEditPatchButtonID} class="topBarActionButton topBarIconOnly" disabled title="Redo Edit"><span class="material-symbols-outlined">redo</span></button>
-              <button${syncPatchToPedalButtonID} class="topBarActionButton topBarLabeledActionButton" disabled title="Save to pedal"><span class="material-symbols-outlined">publish</span><span class="topBarActionLabel">Save</span></button>
+              <button${syncPatchToPedalButtonID} class="topBarActionButton topBarLabeledActionButton" disabled title="Save to pedal"><span class="material-symbols-outlined">save</span><span class="topBarActionLabel">Save</span></button>
               <div class="mobileOverflowMenuWrapper">
                 <button${mobileOverflowMenuButtonID} class="topBarActionButton" type="button" title="More actions"><span class="material-symbols-outlined">more_vert</span></button>
                 <div${mobileOverflowMenuID} class="mobileOverflowMenu">
