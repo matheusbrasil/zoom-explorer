@@ -1909,8 +1909,12 @@ export class ZoomPatchEditor
         let nextRaw = Number.parseInt(slider.value);
         let percent = ((nextRaw - minVal) / range) * 100;
         valueCell.style.setProperty("--slider-fill", `${percent}%`);
-        // Update value label immediately for live feedback during drag
-        valueLabel.textContent = nextRaw.toString();
+        // Update value label immediately for live feedback during drag.
+        // For mapped/discrete parameters, show the mapped label instead of the raw index.
+        if (valueLabels !== undefined && nextRaw >= 0 && nextRaw < valueLabels.length)
+          valueLabel.textContent = valueLabels[nextRaw];
+        else
+          valueLabel.textContent = nextRaw.toString();
       });
       slider.addEventListener("change", () => {
         let nextRaw = Number.parseInt(slider.value);
@@ -2141,7 +2145,7 @@ export class ZoomPatchEditor
               let effectMap = effectIDMap.get(resolvedID);
               if (effectMap !== undefined && paramIndex >= 0 && paramIndex < effectMap.parameters.length) {
                 let pvm = effectMap.parameters[paramIndex];
-                if (pvm.maxNumerical === undefined && pvm.values.length >= 3)
+                if (pvm.values.length > 0)
                   paramValueLabels = pvm.values;
               }
             }
