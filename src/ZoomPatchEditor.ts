@@ -73,6 +73,8 @@ export class ZoomPatchEditor
   private visibleEffectSlots: number[] = [];
   private effectImageCandidatesCache = new Map<string, string[]>();
   private effectImageRelativeCandidatesCache = new Map<string, string[]>();
+  private resolvedEffectImageSrcCache = new Map<string, string>();
+  private missingEffectImageCandidates = new Set<string>();
 
   private cachedPedalName = "";
   private cachedEffectIDMap: EffectIDMap | undefined = undefined;
@@ -889,10 +891,13 @@ export class ZoomPatchEditor
 
     let effectImage = effectTable.querySelector(".effectPedalImage") as HTMLImageElement;
     let effectFallback = effectTable.querySelector(".effectPedalFallback") as HTMLDivElement;
+    effectImage.decoding = "async";
+    effectImage.loading = "eager";
     effectImage.addEventListener("error", () => {
       void this.tryNextEffectImage(effectImage, effectFallback);
     });
     effectImage.addEventListener("load", () => {
+      this.rememberResolvedEffectImageSource(effectImage);
       effectImage.classList.remove("missing");
       effectFallback.classList.remove("visible");
       this.scheduleParameterSelectionPointerPositionUpdate();
@@ -1607,6 +1612,20 @@ export class ZoomPatchEditor
     effectImage.src = this.createFallbackPedalImage(effectFallback.textContent ?? "No Image");
   }
 
+  private rememberResolvedEffectImageSource(effectImage: HTMLImageElement): void
+  {
+    let cacheKey = effectImage.dataset.imageCandidates;
+    if (cacheKey === undefined)
+      return;
+    let src = effectImage.currentSrc || effectImage.src;
+    if (src.length === 0)
+      return;
+    if (src.startsWith("data:image/svg+xml"))
+      return;
+    this.missingEffectImageCandidates.delete(cacheKey);
+    this.resolvedEffectImageSrcCache.set(cacheKey, src);
+  }
+
   private async tryLoadEffectImageFromAppFiles(effectImage: HTMLImageElement, effectFallback: HTMLDivElement): Promise<boolean>
   {
     let api = window.zoomExplorerAPI;
@@ -1668,6 +1687,7 @@ export class ZoomPatchEditor
     let loadedFromApi = await this.tryLoadEffectImageFromAppFiles(effectImage, effectFallback);
     if (loadedFromApi)
       return;
+    this.missingEffectImageCandidates.add(candidatesText);
     this.showFallbackPedalImage(effectImage, effectFallback);
   }
 
@@ -1682,6 +1702,26 @@ export class ZoomPatchEditor
 
     let candidatesText = JSON.stringify(candidates);
     let relativeCandidatesText = JSON.stringify(relativeCandidates);
+    if (this.missingEffectImageCandidates.has(candidatesText)) {
+      effectImage.dataset.imageCandidates = candidatesText;
+      effectImage.dataset.imageRelativeCandidates = relativeCandidatesText;
+      effectImage.dataset.imageIndex = (candidates.length - 1).toString();
+      this.showFallbackPedalImage(effectImage, effectFallback);
+      return;
+    }
+
+    let resolvedSrc = this.resolvedEffectImageSrcCache.get(candidatesText);
+    if (resolvedSrc !== undefined) {
+      effectImage.classList.remove("missing");
+      effectFallback.classList.remove("visible");
+      effectImage.dataset.imageCandidates = candidatesText;
+      effectImage.dataset.imageRelativeCandidates = relativeCandidatesText;
+      effectImage.dataset.imageIndex = "0";
+      if (effectImage.src !== resolvedSrc)
+        effectImage.src = resolvedSrc;
+      return;
+    }
+
     if (effectImage.dataset.imageCandidates !== candidatesText || effectImage.classList.contains("missing")) {
       effectImage.classList.remove("missing");
       effectFallback.classList.remove("visible");
