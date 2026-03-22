@@ -19,15 +19,16 @@ let getMIDIDeviceListIsRunning: boolean = false;
  * @returns 
  */
 export async function getMIDIDeviceList(midi: IMIDIProxy, inputs: Map<DeviceID, DeviceInfo>, outputs: Map<DeviceID, DeviceInfo>, 
-                                  timeoutMilliseconds: number = 100, logging: boolean = false) : Promise<MIDIDeviceDescription[]>
+                                  timeoutMilliseconds: number = 250, logging: boolean = false) : Promise<MIDIDeviceDescription[]>
 {
   if (getMIDIDeviceListIsRunning) {
     shouldLog(LogLevel.Error) && console.error(`getMIDIDeviceList() is already running. Last call was with inputs: ${inputs.size}, outputs: ${outputs.size}`);
   }
 
   getMIDIDeviceListIsRunning = true;
-  return new Promise<MIDIDeviceDescription[]>(async resolve =>
+  return new Promise<MIDIDeviceDescription[]>(async (resolve, reject) =>
   {
+    try {
     let currentOutput: DeviceInfo | undefined;
 
     let timeoutId : ReturnType<typeof setTimeout>;
@@ -38,8 +39,8 @@ export async function getMIDIDeviceList(midi: IMIDIProxy, inputs: Map<DeviceID, 
     let midiDevices: MIDIDeviceDescription[] = [];
     // TODO: Consider if byte 2 (SysEx channel) should be considered, see http://midi.teragonaudio.com/tech/midispec/identity.htm
     
-    for (let [id, input] of inputs)
-    {
+      for (let [id, input] of inputs)
+      {
       if (input.connection !== "open")
       {
         let inputHandle : DeviceID;
@@ -56,43 +57,10 @@ export async function getMIDIDeviceList(midi: IMIDIProxy, inputs: Map<DeviceID, 
       }
       let handleSysex = (deviceHandle: DeviceID, data: Uint8Array) =>
       {
-        if (currentOutput !== undefined && data.length >= 15 && data[0] == 0xF0 && data[1] == 0x7E && data[3] == 0x06 && data[4] == 0x02 && 
-           ( (data[5] !== 0 && data.length == 15 && data[14] == 0xF7) || (data[5] == 0 && data.length == 17 && data[16] == 0xF7) ) )
+        if (currentOutput !== undefined && isMIDIIdentityResponse(data))
         {
           // We got a valid ID response message
-          let identityResponse = data;
-          let dataOffset: number = data[5] != 0 ? 0 : 2; // if manufacturer ID is 3 bytes instead of just 1, data after that is offset with 2 bytes.
-
-          let inputID: string = input.id;
-          let inputName: string = input.name; 
-          let outputID: string = currentOutput.id;
-          let outputName: string = currentOutput.name;
-          let isInput: boolean = true;
-          let isOutput: boolean = true;
-          let manufacturerID: [number] | [number, number, number] = data[5] != 0 ? [ data[5] ] : [ data[5], data[6], data[7] ];
-          let manufacturerName: string = MIDIManufacturerIDToName[bytesToHexString(manufacturerID, " ")] ?? 
-            (data[5] != 0 ? data[5].toString().padStart(2, "0") : `${data[5].toString().padStart(2, "0")} ${data[6].toString().padStart(2, "0")} ${data[7].toString().padStart(2, "0")}`);
-          let familyCode: [number, number] = [ data[6+dataOffset], data[7+dataOffset]];
-          let modelNumber: [number, number] = [data[8+dataOffset], data[9+dataOffset]];
-          let deviceName: string = getDeviceName(manufacturerID, familyCode, modelNumber);
-          let versionNumber: [number, number, number, number] = [data[10+dataOffset], data[11+dataOffset], data[12+dataOffset], data[13+dataOffset]];
-
-          let description = new MIDIDeviceDescription({ 
-            inputID: inputID,
-            inputName: inputName,
-            outputID: outputID,
-            outputName: outputName,
-            isInput: isInput,
-            isOutput: isOutput,
-            manufacturerID: manufacturerID,
-            manufacturerName: manufacturerName,
-            familyCode: familyCode,
-            modelNumber: modelNumber,
-            deviceName: deviceName,
-            deviceNameUnique: deviceName,
-            versionNumber: versionNumber,
-            identityResponse: identityResponse,
-          });
+          let description = createMIDIDeviceDescriptionFromIdentityResponse(data, input.id, input.name, currentOutput.id, currentOutput.name);
 
           if (logging) shouldLog(LogLevel.Info) && console.log(`      Received sysex ID reply ${bytesToHexString(data, " ")} -> ${JSON.stringify(description)}`);
   
@@ -140,8 +108,15 @@ export async function getMIDIDeviceList(midi: IMIDIProxy, inputs: Map<DeviceID, 
 
         let currentOutputID = currentOutput.id;
         let currentOutputName = currentOutput.name;
-        let outputHandle = await midi.openOutput(currentOutput.id);
-        openedOutputs.push(outputHandle);
+        let outputHandle: DeviceID;
+        try {
+          outputHandle = await midi.openOutput(currentOutput.id);
+          openedOutputs.push(outputHandle);
+        } catch (err) {
+          shouldLog(LogLevel.Warning) && console.warn("ERROR: " + getExceptionErrorString(err, `Trying to open output device "${currentOutput.id}"`));
+          sendAndSetTimeout();
+          return;
+        }
         midi.send(currentOutput.id, new Uint8Array([0xf0,0x7e,0x7f,0x06,0x01,0xf7]));
         let localTimeoutId = setTimeout( () =>
         {
@@ -249,6 +224,10 @@ export async function getMIDIDeviceList(midi: IMIDIProxy, inputs: Map<DeviceID, 
         if (outputIndex != -1) 
         { // We found an input and an output with the same name
           let output = unpairedOutputs[outputIndex];
+          let matchedByNameLooksLikeZoom = (input.name + output.name).toUpperCase().includes("ZOOM");
+          if (matchedByNameLooksLikeZoom) {
+            shouldLog(LogLevel.Warning) && console.warn(`Paired "${input.name}" <-> "${output.name}" by name only (no MIDI Identity response). Zoom-specific detection may fail if SysEx identity request timed out or port access was blocked.`);
+          }
           let description = new MIDIDeviceDescription({ 
             inputID: input.id,
             inputName: input.name,
@@ -277,6 +256,10 @@ export async function getMIDIDeviceList(midi: IMIDIProxy, inputs: Map<DeviceID, 
           { // We found an input and an output with a similar name
             shouldLog(LogLevel.Info) && console.log(`Found input and output with similar names (Levenshtein index = ${similarity}): ${input.name} <--> ${unpairedOutputs[outputIndex].name}`);
             let output = unpairedOutputs[outputIndex];
+            let matchedByNameLooksLikeZoom = (input.name + output.name).toUpperCase().includes("ZOOM");
+            if (matchedByNameLooksLikeZoom) {
+              shouldLog(LogLevel.Warning) && console.warn(`Paired "${input.name}" <-> "${output.name}" by similar name only (no MIDI Identity response). Zoom-specific detection may fail if SysEx identity request timed out or port access was blocked.`);
+            }
             let description = new MIDIDeviceDescription({ 
               inputID: input.id,
               inputName: input.name,
@@ -295,16 +278,125 @@ export async function getMIDIDeviceList(midi: IMIDIProxy, inputs: Map<DeviceID, 
 
       }
   
+      await enrichIdentityForPairedDevicesWithoutIdentity(midiDevices, midi, inputs, outputs, timeoutMilliseconds, logging);
+
       // add output devices with no inputs
       // add input devices with no outputs
-      // 
+      //
 
       getMIDIDeviceListIsRunning = false;
       resolve(midiDevices);
     }
-  
+
+    } catch (err) {
+      getMIDIDeviceListIsRunning = false;
+      reject(err);
+    }
   });
 }   
+
+function createMIDIDeviceDescriptionFromIdentityResponse(identityResponse: Uint8Array, inputID: string, inputName: string, outputID: string, outputName: string): MIDIDeviceDescription
+{
+  let dataOffset: number = identityResponse[5] != 0 ? 0 : 2; // if manufacturer ID is 3 bytes instead of just 1, data after that is offset with 2 bytes.
+  let manufacturerID: [number] | [number, number, number] = identityResponse[5] != 0 ? [ identityResponse[5] ] : [ identityResponse[5], identityResponse[6], identityResponse[7] ];
+  let manufacturerName: string = MIDIManufacturerIDToName[bytesToHexString(manufacturerID, " ")] ??
+    (identityResponse[5] != 0
+      ? identityResponse[5].toString().padStart(2, "0")
+      : `${identityResponse[5].toString().padStart(2, "0")} ${identityResponse[6].toString().padStart(2, "0")} ${identityResponse[7].toString().padStart(2, "0")}`);
+  let familyCode: [number, number] = [ identityResponse[6+dataOffset], identityResponse[7+dataOffset]];
+  let modelNumber: [number, number] = [identityResponse[8+dataOffset], identityResponse[9+dataOffset]];
+  let deviceName: string = getDeviceName(manufacturerID, familyCode, modelNumber);
+  let versionNumber: [number, number, number, number] = [identityResponse[10+dataOffset], identityResponse[11+dataOffset], identityResponse[12+dataOffset], identityResponse[13+dataOffset]];
+
+  return new MIDIDeviceDescription({
+    inputID: inputID,
+    inputName: inputName,
+    outputID: outputID,
+    outputName: outputName,
+    isInput: true,
+    isOutput: true,
+    manufacturerID: manufacturerID,
+    manufacturerName: manufacturerName,
+    familyCode: familyCode,
+    modelNumber: modelNumber,
+    deviceName: deviceName,
+    deviceNameUnique: deviceName,
+    versionNumber: versionNumber,
+    identityResponse: identityResponse,
+  });
+}
+
+async function enrichIdentityForPairedDevicesWithoutIdentity(
+  midiDevices: MIDIDeviceDescription[],
+  midi: IMIDIProxy,
+  inputs: Map<DeviceID, DeviceInfo>,
+  outputs: Map<DeviceID, DeviceInfo>,
+  timeoutMilliseconds: number,
+  logging: boolean,
+): Promise<void>
+{
+  const identityRequest = new Uint8Array([0xf0, 0x7e, 0x7f, 0x06, 0x01, 0xf7]);
+  const replyTimeout = Math.max(timeoutMilliseconds, 300);
+
+  for (let index = 0; index < midiDevices.length; index++) {
+    const device = midiDevices[index];
+    const hasIdentity = !(device.manufacturerID.length === 1 && device.manufacturerID[0] === 0);
+    if (hasIdentity) {
+      continue;
+    }
+
+    let openedInput = false;
+    let openedOutput = false;
+    let gotIdentity = false;
+    try {
+      const inputInfo = inputs.get(device.inputID);
+      const outputInfo = outputs.get(device.outputID);
+
+      if (inputInfo?.connection !== "open") {
+        await midi.openInput(device.inputID);
+        openedInput = true;
+      }
+      if (outputInfo?.connection !== "open") {
+        await midi.openOutput(device.outputID);
+        openedOutput = true;
+      }
+
+      for (let attempt = 0; attempt < 3; attempt++) {
+        let reply = await midi.sendAndGetReply(
+          device.outputID,
+          identityRequest,
+          device.inputID,
+          (data: Uint8Array) => isMIDIIdentityResponse(data),
+          replyTimeout,
+        );
+        if (reply !== undefined && isMIDIIdentityResponse(reply)) {
+          let enriched = createMIDIDeviceDescriptionFromIdentityResponse(reply, device.inputID, device.inputName, device.outputID, device.outputName);
+          enriched.deviceNameUnique = device.deviceNameUnique;
+          midiDevices[index] = enriched;
+          gotIdentity = true;
+          if (logging) shouldLog(LogLevel.Info) && console.log(`Enriched MIDI identity for "${device.inputName}" <-> "${device.outputName}"`);
+          break;
+        }
+      }
+    } catch (err) {
+      if (logging) shouldLog(LogLevel.Warning) && console.warn(`Failed to enrich identity for "${device.inputName}" <-> "${device.outputName}": ${getExceptionErrorString(err)}`);
+    } finally {
+      if (openedInput) {
+        await midi.closeInput(device.inputID).catch(() => {});
+      }
+      if (openedOutput) {
+        await midi.closeOutput(device.outputID).catch(() => {});
+      }
+    }
+
+    if (!gotIdentity) {
+      let looksLikeZoom = (device.inputName + " " + device.outputName + " " + device.deviceName).toUpperCase().includes("ZOOM");
+      if (looksLikeZoom) {
+        shouldLog(LogLevel.Warning) && console.warn(`Could not retrieve MIDI Identity for Zoom-like device "${device.inputName}" <-> "${device.outputName}". The pedal may not be recognized as a Zoom profile until SysEx identity replies are available.`);
+      }
+    }
+  }
+}
 
 // function sendMIDIMessage(device: Output, data: Uint8Array) : void
 // {
@@ -355,7 +447,7 @@ function manufacturerIDsAreEqual(id1: [number] | [number, number, number], id2: 
  * @returns name of the device based on manufacturerID, familyCode and modelNumber
  * @see https://github.com/jazz-soft/JZZ-midi-Gear/blob/master/data/models.txt
  */
-function getDeviceName(manufacturerID: [number] | [number, number, number], familyCode: [number, number], modelNumber: [number, number]) : string
+export function getDeviceName(manufacturerID: [number] | [number, number, number], familyCode: [number, number], modelNumber: [number, number]) : string
 {
   let hexString = bytesToHexString([...manufacturerID, ...familyCode, ...modelNumber], " ");
   

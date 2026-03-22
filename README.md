@@ -1,11 +1,117 @@
 # zoom-explorer
 Zoom Explorer is a web-based tool for exploring the Zoom MS Plus series effect pedals, and this Readme contains my findings regarding MIDI-communication with these pedals.
 
+## Fork and project direction
+
+This repository is forked from the original project at [thammer/zoom-explorer](https://github.com/thammer/zoom-explorer) and is now maintained at [matheusbrasil/zoom-explorer](https://github.com/matheusbrasil/zoom-explorer).
+
+The fork goal is to evolve Zoom Explorer into a more user-friendly application that supports:
+
+* desktop web browsers
+* mobile web browsers
+* native desktop/mobile runtimes through Tauri 2.0
+
+The project has been migrated to use Tauri 2.0 and is also prepared for browser deployment on Netlify.
+
 The Zoom Explorer webpage is here: [www.waveformer.net/zoom-explorer](https://www.waveformer.net/zoom-explorer/).
 
 The user-friendly patch manager for the Zoom MS+ pedals is here: [sym.bios.is](https://sym.bios.is/)
 
 All numeric values listed below are in hexadecimal.
+
+
+## Tauri 2.0 desktop app
+
+Zoom Explorer is now a Tauri 2.0 application with a Rust backend and TypeScript frontend.
+
+### Prerequisites
+
+* Node.js 20+
+* Rust toolchain (stable)
+* USB-MIDI capable Zoom pedal connected through USB
+
+### Current Tauri status
+
+* Rust command layer and app state are in `src-tauri`.
+* Frontend bridge (`window.zoomExplorerAPI`) uses Tauri commands/events for native integration.
+* Platform capability command is included to support desktop/mobile feature gating.
+* UI keeps the existing look-and-feel and now includes a mobile viewport meta tag for responsive behavior in mobile WebViews.
+
+### Run Tauri (desktop)
+
+```
+npm install
+npm run tauri:dev
+```
+
+### Build Tauri (desktop)
+
+```
+npm run tauri:build
+```
+
+### Mobile targets (requires Tauri mobile prerequisites)
+
+```
+npm run tauri:android:dev
+npm run tauri:ios:dev
+```
+
+### Updated project tree (migration-ready)
+
+```
+/src-tauri
+  Cargo.toml
+  tauri.conf.json
+  /capabilities
+    default.json
+  /src
+    main.rs
+    lib.rs
+    models.rs
+    /commands
+      app.rs
+      midi.rs
+    /midi
+      service.rs
+    /device
+      zoom_ms60bp.rs
+    /persistence
+      settings_store.rs
+    /logging
+      mod.rs
+
+/src
+  /shared
+    api-contract.ts
+    types.ts
+  tauri-bridge.ts
+  ...existing frontend code...
+```
+
+If the pedal does not appear, close any other MIDI app that might lock the port, then reconnect the pedal USB cable.
+
+## Web deployment (Netlify)
+
+This project can be deployed as a web browser application on Netlify.
+
+### Build settings
+
+* Build command: `npm run netlify:build`
+* Publish directory: `dist`
+
+### Local verification before deploy
+
+```
+npm install
+npm run build:web
+```
+
+Then verify the generated `dist` output locally:
+
+```
+npm run serve:web
+```
 
 ## Device IDs
 

@@ -84,8 +84,9 @@ export class MIDIDeviceManager
       return undefined;
     }
 
-    // Pair up devices that have not already been paired up
-    let newDeviceDescriptors = await getMIDIDeviceList(this._midi, inputs, outputs, 100, true);
+    // Pair up devices that have not already been paired up.
+    // 250 ms reduces false negatives on slower Windows MIDI stacks while keeping startup reasonably responsive.
+    let newDeviceDescriptors = await getMIDIDeviceList(this._midi, inputs, outputs, 250, true);
 
     if (newDeviceDescriptors.length === 0) {
       this._concurrentRunsCounter--;

@@ -106,6 +106,32 @@ export class ZoomPatch
   public static readonly NAME_LENGTH_MS_PLUS = 32;
   public static readonly NAME_LENGTH_G2_G2X_FOUR = 16;
 
+  private static readonly MAX_PRM2_WARNING_KEYS = 400;
+  private static readonly prm2WarningKeys = new Set<string>();
+
+  private warnPrm2VerificationIssue(issue: string, message: string): void
+  {
+    if (!shouldLog(LogLevel.Warning))
+      return;
+
+    let name = (this.ptcfShortName ?? this.name ?? "UnknownPatch").trim();
+    if (name.length === 0)
+      name = "UnknownPatch";
+
+    let warningKey = `${name}|${issue}`;
+    if (ZoomPatch.prm2WarningKeys.has(warningKey))
+      return;
+
+    console.warn(`${name}: ${message}`);
+    ZoomPatch.prm2WarningKeys.add(warningKey);
+
+    if (ZoomPatch.prm2WarningKeys.size > ZoomPatch.MAX_PRM2_WARNING_KEYS) {
+      let firstKey = ZoomPatch.prm2WarningKeys.keys().next().value;
+      if (firstKey !== undefined)
+        ZoomPatch.prm2WarningKeys.delete(firstKey);
+    }
+  }
+
   updateDerivedPropertiesFromPatchProperties()
   {
     if (this.nameName !== null)
@@ -146,7 +172,7 @@ export class ZoomPatch
       }
       else {
         // this.name.length is enforced in this.name setter
-        if (this.nameName !== this.name) { 
+        if (this.nameName !== this.name) {
           this.nameName = this.name;
           this.nameLength = this.nameName.length;
         }
@@ -572,7 +598,8 @@ export class ZoomPatch
     let bpmBits: number = 0;
 
     for (let i = 0; i < effectSettings.length; i++) {
-      if (effectSettings[i].id === 0x07000ff0) { // see zoom-effect-ids-ms70cdrp.ts, last effect in list
+      // Some devices/firmwares report BPM as 0x07000ff0 while others report 0x09000ff0.
+      if (effectSettings[i].id === 0x07000ff0 || effectSettings[i].id === 0x09000ff0) {
         bpmBits |= 1 << i;
       }
     }
@@ -1133,20 +1160,20 @@ export class ZoomPatch
         let individualChecksFailed = false;
 
         if (! (individualChecksFailed = individualChecksFailed || this.verifyPrm2EffectSlotBits())) {
-          shouldLog(LogLevel.Warning) && console.warn(`${this.ptcfShortName}: verifyPrm2EffectSlotBits() failed. This is known to happen when deleting effects from a slot on the pedal.`);
+          this.warnPrm2VerificationIssue("effect-slot", "verifyPrm2EffectSlotBits() failed. This is known to happen when deleting effects from a slot on the pedal.");
         }
 
         if (! (individualChecksFailed = individualChecksFailed || this.verifyPrm2PreampSlotBits()))
-          shouldLog(LogLevel.Warning) && console.warn(`${this.ptcfShortName}: verifyPrm2PreampSlotBits() failed`);
+          this.warnPrm2VerificationIssue("preamp-slot", "verifyPrm2PreampSlotBits() failed");
 
         if (! (individualChecksFailed = individualChecksFailed || this.verifyPrm2BPMSlotBits()))
-          shouldLog(LogLevel.Warning) && console.warn(`${this.ptcfShortName}: verifyPrm2BPMSlotBits() failed`);
+          this.warnPrm2VerificationIssue("bpm-slot", "verifyPrm2BPMSlotBits() failed");
 
         if (! (individualChecksFailed = individualChecksFailed || this.verifyPrm2LineSelSlotBits()))
-          shouldLog(LogLevel.Warning) && console.warn(`${this.ptcfShortName}: verifyPrm2LineSelSlotBits() failed`);
+          this.warnPrm2VerificationIssue("line-sel-slot", "verifyPrm2LineSelSlotBits() failed");
 
         if ( (!individualChecksFailed) && this.verifyPrm2Buffer())
-          shouldLog(LogLevel.Warning) && console.warn(`${this.ptcfShortName}: verifyPrm2Buffer() failed.`);
+          this.warnPrm2VerificationIssue("buffer", "verifyPrm2Buffer() failed.");
 
         /*
         o prm2 unknown byte 9 is always 0x80. But scanning through patches on MS-50G+ gives 1 anomaly (warning) for this,
@@ -1659,16 +1686,16 @@ export class ZoomPatch
     }
 
     if (!this.verifyPrm2Buffer())
-      shouldLog(LogLevel.Warning) && console.warn(`${this.ptcfShortName}: verifyPrm2Buffer() failed`);
+      this.warnPrm2VerificationIssue("buffer", "verifyPrm2Buffer() failed");
 
     if (!this.verifyPrm2PreampSlotBits())
-      shouldLog(LogLevel.Warning) && console.warn(`${this.ptcfShortName}: verifyPrm2PreampSlotBits() failed`);
+      this.warnPrm2VerificationIssue("preamp-slot", "verifyPrm2PreampSlotBits() failed");
 
     if (!this.verifyPrm2BPMSlotBits())
-      shouldLog(LogLevel.Warning) && console.warn(`${this.ptcfShortName}: verifyPrm2BPMSlotBits() failed`);
+      this.warnPrm2VerificationIssue("bpm-slot", "verifyPrm2BPMSlotBits() failed");
 
     if (!this.verifyPrm2LineSelSlotBits())
-      shouldLog(LogLevel.Warning) && console.warn(`${this.ptcfShortName}: verifyPrm2LineSelSlotBits() failed`);
+      this.warnPrm2VerificationIssue("line-sel-slot", "verifyPrm2LineSelSlotBits() failed");
 
     // compareBuffers(ptcfChunk, this.ptcfChunk);
 

@@ -130,7 +130,8 @@ export function replaceEffectNamesInMap(effectIDMap: EffectIDMap, nameMap: Map<n
     let effectName = effect.name;
     let newName = nameMap.get(id);
     if (newName === undefined) {
-      if (id !== 0x07000ff0) // silently ignore the BPM effect
+      // Silently ignore BPM pseudo-effect IDs when the name list does not contain them.
+      if (id !== 0x07000ff0 && id !== 0x09000ff0)
         shouldLog(LogLevel.Warning) && console.warn(`ID ${id.toString(16).padStart(8, "0")} ("${effectName}") from effectIDMap was not found in nameMap`);
     }
     else {

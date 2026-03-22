@@ -1,0 +1,4110 @@
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
+}
+body {
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.8em;
+}
+.titleContainer {
+  margin-left: 20px;
+  margin-right: 20px;
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 0fr;
+}
+.sitename {
+  text-align: center;
+  font-family: 'Jolly Lodger';
+  font-size: 7em;
+  font-weight: 100;
+  line-height: 0.9;
+}
+.version {
+  margin-left: auto;
+  margin-right: 20 px;
+  margin-top: 10px;
+  width:fit-content;            
+  text-align: left;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 400;
+  font-size: 1.0em;
+}
+.version a:link {
+  color:black;
+  text-decoration: none;
+}
+.version a:visited {
+  color:black;
+  text-decoration: none;
+}
+.version a:hover {
+  color: blue;
+  text-decoration:none;
+}
+.version > a > span {
+  position: relative;
+  top: 0.25em;
+}
+.donate {
+  position:fixed;
+  right: 20px;
+  margin-left: auto;
+  margin-top: 0.4em;
+  width:fit-content;
+}
+.byWaveformer {
+  text-align: center;
+  font-family: 'Roboto', sans-serif;
+  font-size: 1.75em;
+  font-weight: 600;
+  line-height: 0.1;
+  margin: 0px 0px 0px 3.5em;
+}
+.byWaveformer a:link {
+  color:black;
+  text-decoration: none;
+}
+.byWaveformer a:visited {
+  color:black;
+  text-decoration: none;
+}
+.byWaveformer a:hover {
+  color: blue;
+  text-decoration:none;
+}
+
+.subtitle {
+  padding-top: 0.8em;
+  text-align: center;
+  font-weight: 400;
+  font-size: 1.3em;
+}
+
+p#contact {
+  text-align: center;
+}
+
+#content {
+  padding: 0px;
+  overflow-x: auto;
+}
+
+:root {
+  --zx-font-family-ui: 'Roboto', 'Segoe UI', sans-serif;
+  --zx-font-size-ui-sm: 13px;
+  --zx-font-size-ui: 14px;
+  --zx-font-size-ui-lg: 15px;
+  --zx-bg: #1c252e;
+  --zx-bg-elev: #22313f;
+  --zx-panel: #243342;
+  --zx-panel-2: #2a3b4b;
+  --zx-border: #344a5f;
+  --zx-text: #f2f6fa;
+  --zx-muted: #9fb0c1;
+  --zx-accent: #2f9cff;
+  --zx-accent-soft: rgba(47, 156, 255, 0.24);
+  --zx-good: #4ad98c;
+  --zx-danger: #ff6c86;
+
+  /* Unified parameter control palette (mobile + desktop alignment) */
+  --zx-param-fill-strong: rgba(41, 135, 234, 0.9);
+  --zx-param-fill-soft: rgba(41, 135, 234, 0.18);
+  --zx-param-bg-strong: rgba(28, 47, 70, 0.96);
+  --zx-param-bg-base-top: #1b2940;
+  --zx-param-bg-base-bottom: #17263a;
+  --zx-param-edge: rgba(171, 194, 219, 0.14);
+}
+
+body {
+  font-family: var(--zx-font-family-ui) !important;
+  font-size: var(--zx-font-size-ui);
+  line-height: 1.25;
+  background: radial-gradient(circle at 15% 0%, #2a3b4b 0%, var(--zx-bg) 40%, #151e26 100%) !important;
+  color: var(--zx-text) !important;
+  min-height: 100vh;
+}
+
+#mainLayout,
+#patchEditors,
+#patchLists,
+#sidebar,
+#fileBrowserSidebar,
+.patchSelectorDialog,
+.changeEffectDialog,
+#textInputDialog,
+#startupLoadingOverlay,
+#orientationLockOverlay {
+  font-family: var(--zx-font-family-ui) !important;
+}
+
+.version a:link,
+.version a:visited,
+.byWaveformer a:link,
+.byWaveformer a:visited,
+.subtitle,
+#contact,
+#contact a {
+  color: var(--zx-text) !important;
+}
+
+#mainLayout,
+#content {
+  background: transparent !important;
+}
+
+.collapsibleContainer {
+  border: 1px solid var(--zx-border) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0.1) 100%) !important;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.35) !important;
+}
+
+#patchEditorCollapsibleButton,
+#patchListCollapsibleButton {
+  background: var(--zx-panel) !important;
+  color: var(--zx-text) !important;
+}
+
+#patchEditors {
+  padding: 14px !important;
+}
+
+#patchEditors .editPatchTable {
+  width: min(1450px, calc(100vw - 90px)) !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  margin: 0 auto !important;
+  border: 1px solid var(--zx-border) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  background: linear-gradient(180deg, var(--zx-panel), var(--zx-bg-elev)) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 14px 30px rgba(0, 0, 0, 0.28) !important;
+  color: var(--zx-text) !important;
+}
+
+#patchEditors .editPatchTopRow th,
+#patchEditors .editPatchDescriptionRow th {
+  border: 0 !important;
+  color: var(--zx-text) !important;
+  background: rgba(22, 34, 45, 0.6) !important;
+  padding: 12px 10px !important;
+  vertical-align: middle !important;
+}
+
+#patchEditors .editPatchTableNumber {
+  font-size: 1.35rem !important;
+  font-weight: 500 !important;
+  padding: 10px 14px 8px 16px !important;
+  white-space: nowrap;
+  width: auto !important;
+  min-width: 80px !important;
+}
+
+#patchEditors .editPatchTableNumberText {
+  display: block !important;
+}
+
+#patchEditors .editPatchTableName {
+  display: table-cell !important;
+  padding: 10px !important;
+  background: transparent !important;
+  position: relative !important;
+  min-width: 200px !important;
+  max-width: 500px !important;
+}
+
+#patchEditors .editPatchTableName > span.editPatchNameText,
+#patchEditors .editPatchTableName > div.patchSelectorGroup {
+  display: inline-flex !important;
+  vertical-align: middle !important;
+}
+
+#patchEditors .editPatchNameText {
+  font-size: 1.45rem !important;
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  outline: 1px solid transparent !important;
+  color: inherit !important;
+  font-weight: 500 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  min-width: 360px !important;
+  cursor: text !important;
+  margin-right: 4px !important;
+}
+
+#patchEditors .editPatchNameText:focus {
+  outline: 1px solid var(--zx-accent) !important;
+  box-shadow: 0 0 0 3px var(--zx-accent-soft) !important;
+}
+
+#patchEditors .editPatchTableTempoValue {
+  padding: 12px 10px !important;
+  text-align: center !important;
+  width: 100px !important;
+  min-width: 70px !important;
+}
+
+#patchEditors .editPatchTableStatus {
+  padding: 8px 14px 8px 10px !important;
+  text-align: right !important;
+  vertical-align: middle !important;
+  border: 0 !important;
+  background: transparent !important;
+  white-space: nowrap !important;
+  width: 1px !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+#patchEditors .topBarActions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  justify-content: flex-end !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+}
+
+#patchEditors .topBarActions::-webkit-scrollbar {
+  display: none !important;
+}
+
+#patchEditors .topBarActionButton {
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--zx-muted) !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  width: auto !important;
+  padding: 0 10px !important;
+  display: flex;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease !important;
+  flex-shrink: 0 !important;
+}
+
+#patchEditors .topBarIconOnly {
+  width: 36px !important;
+  min-width: 36px !important;
+  padding: 0 !important;
+}
+
+#patchEditors .topBarLabeledActionButton {
+  justify-content: center !important;
+  gap: 6px !important;
+  min-width: 104px !important;
+}
+
+#patchEditors .topBarActionButton .material-symbols-outlined {
+  font-size: 22px !important;
+}
+
+#patchEditors .topBarActionButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--zx-text) !important;
+}
+
+#patchEditors .topBarActionButton:disabled {
+  opacity: 0.28 !important;
+  cursor: default !important;
+}
+
+#patchEditors .topBarActionLabel {
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+}
+
+#patchEditors .editPatchTableTempoValue,
+#patchEditors .editPatchTableTempoLabel {
+  display: none !important;
+}
+
+#patchEditors .editPatchTableDescription {
+  font-size: 0.95rem !important;
+  color: var(--zx-muted) !important;
+  padding: 6px 16px 12px 16px !important;
+}
+
+#patchEditors .editPatchTableSelector {
+  display: none !important;
+}
+
+#patchEditors .patchSelectorGroup {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0 !important;
+  position: relative !important;
+  vertical-align: middle !important;
+}
+
+#patchEditors .patchSelectorLabel {
+  display: none !important;
+}
+
+#patchEditors .patchSelectorButton {
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--zx-text) !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  padding: 2px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: background-color 120ms ease, border-color 120ms ease !important;
+  flex-shrink: 0 !important;
+}
+
+#patchEditors .patchSelectorButton:hover:not([aria-expanded="true"]) {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+#patchEditors .patchSelectorButton[aria-expanded="true"] {
+  background: rgba(18, 150, 255, 0.15) !important;
+  border-color: var(--zx-accent) !important;
+}
+
+#patchEditors .patchSelectorButton .material-symbols-outlined {
+  font-size: 24px;
+}
+
+#patchEditors .patchSelectorButtonLabelText {
+  display: none !important;
+}
+
+#patchEditors .patchSelectorDropdown {
+  display: none !important;
+}
+
+/* Patch selector dialog — styled like Change Effect modal */
+.patchSelectorDialog {
+  border: 0;
+  padding: 0;
+  margin: auto;
+  width: min(980px, 95vw);
+  max-width: 980px;
+  max-height: 88vh;
+  background: transparent;
+  color: var(--zx-text);
+}
+
+body.mobile-ui-mode .patchSelectorDialog {
+  width: calc(100vw - 12px) !important;
+  max-width: none !important;
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 8px) !important;
+  margin: 4px auto !important;
+}
+
+.patchSelectorDialog::backdrop {
+  background: rgba(5, 10, 16, 0.76);
+  backdrop-filter: blur(2px);
+}
+
+.patchSelectorPanel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: min(440px, 80vh);
+  max-height: 84vh;
+  border-radius: 16px;
+  border: 1px solid var(--zx-border);
+  background: var(--zx-bg-elev);
+  box-shadow: 0 26px 58px rgba(0, 0, 0, 0.5);
+}
+
+body.mobile-ui-mode .patchSelectorPanel {
+  min-height: 0 !important;
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 12px) !important;
+  border-radius: 14px !important;
+  padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+}
+
+.patchSelectorHeader {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 22px;
+  background: var(--zx-panel);
+  border-bottom: 1px solid var(--zx-border);
+  flex-shrink: 0;
+}
+
+body.mobile-ui-mode .patchSelectorHeader {
+  padding: max(12px, env(safe-area-inset-top)) 14px 12px 14px !important;
+}
+
+.patchSelectorTitle {
+  margin: 0;
+  text-align: center;
+  color: var(--zx-text);
+  font-size: clamp(15px, 1.4vw, 20px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-family: var(--zx-font-family-ui);
+}
+
+body.mobile-ui-mode .patchSelectorTitle {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+}
+
+.patchSelectorCloseButton {
+  border: 0;
+  background: transparent;
+  color: var(--zx-accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0;
+  font-size: clamp(13px, 1.2vw, 15px);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+body.mobile-ui-mode .patchSelectorCloseButton {
+  min-height: 44px !important;
+  font-size: 15px !important;
+}
+
+.patchSelectorList {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0;
+  background: var(--zx-bg-elev);
+}
+
+.patchSelectorMenuItem {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--zx-border);
+  background: var(--zx-panel);
+  color: var(--zx-text);
+  display: flex;
+  align-items: center;
+  min-height: clamp(44px, 5.5vh, 60px);
+  padding: 0 18px;
+  text-align: left;
+  font-size: clamp(13px, 1.2vw, 16px);
+  font-family: var(--zx-font-family-ui);
+  font-weight: 400;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 120ms ease;
+}
+
+body.mobile-ui-mode .patchSelectorMenuItem {
+  min-height: 60px !important;
+  padding: 0 14px !important;
+  font-size: 18px !important;
+  font-weight: 500 !important;
+  line-height: 1.2;
+}
+
+.patchSelectorMenuItem:hover {
+  background: var(--zx-panel-2);
+  color: var(--zx-text);
+}
+
+.patchSelectorMenuItem.selected {
+  background: var(--zx-panel-2);
+  border-left: 3px solid var(--zx-accent);
+  padding-left: 15px;
+  color: var(--zx-text);
+}
+
+/* Mobile effect dialog improvements */
+body.mobile-ui-mode .changeEffectDialog {
+  width: calc(100vw - 12px) !important;
+  max-width: none !important;
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 8px) !important;
+  margin: 4px auto !important;
+}
+
+body.mobile-ui-mode .changeEffectPanel {
+  min-height: 0 !important;
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 12px) !important;
+  border-radius: 14px !important;
+  padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  background: linear-gradient(180deg, var(--zx-param-bg-base-top) 0%, var(--zx-param-bg-base-bottom) 100%) !important;
+  border-color: var(--zx-param-edge) !important;
+}
+
+body.mobile-ui-mode .changeEffectHeader {
+  padding: max(12px, env(safe-area-inset-top)) 14px 12px 14px !important;
+  background: var(--zx-param-bg-base-top) !important;
+  border-bottom-color: var(--zx-param-edge) !important;
+}
+
+body.mobile-ui-mode .changeEffectTitle {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+}
+
+body.mobile-ui-mode .changeEffectList {
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  background: linear-gradient(180deg, rgba(28, 37, 47, 0.6) 0%, rgba(23, 38, 58, 0.8) 100%) !important;
+}
+
+body.mobile-ui-mode .changeEffectListItem {
+  min-height: 60px !important;
+  padding: 0 12px !important;
+  background: linear-gradient(180deg, var(--zx-param-bg-base-top) 0%, var(--zx-param-bg-base-bottom) 100%) !important;
+  border-bottom-color: var(--zx-param-edge) !important;
+}
+
+body.mobile-ui-mode .changeEffectItemName {
+  font-size: 18px !important;
+  font-weight: 500 !important;
+}
+
+body.mobile-ui-mode .changeEffectItemChevron {
+  font-size: 20px !important;
+  color: var(--zx-accent) !important;
+}
+
+body.mobile-ui-mode .patchSelectorPanel {
+  background: linear-gradient(180deg, var(--zx-param-bg-base-top) 0%, var(--zx-param-bg-base-bottom) 100%) !important;
+  border-color: var(--zx-param-edge) !important;
+}
+
+body.mobile-ui-mode .patchSelectorHeader {
+  background: var(--zx-param-bg-base-top) !important;
+  border-bottom-color: var(--zx-param-edge) !important;
+}
+
+body.mobile-ui-mode .patchSelectorList {
+  background: linear-gradient(180deg, rgba(28, 37, 47, 0.6) 0%, rgba(23, 38, 58, 0.8) 100%) !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+body.mobile-ui-mode .patchSelectorMenuItem {
+  min-height: 60px !important;
+  padding: 0 14px !important;
+  font-size: 18px !important;
+  font-weight: 500 !important;
+  background: linear-gradient(180deg, var(--zx-param-bg-base-top) 0%, var(--zx-param-bg-base-bottom) 100%) !important;
+  border-bottom-color: var(--zx-param-edge) !important;
+}
+
+body.mobile-ui-mode .patchSelectorMenuItem:hover {
+  background: linear-gradient(180deg, rgba(47, 156, 255, 0.1) 0%, rgba(47, 156, 255, 0.06) 100%) !important;
+}
+
+body.mobile-ui-mode .patchSelectorMenuItem.selected {
+  background: linear-gradient(180deg, rgba(47, 156, 255, 0.18) 0%, rgba(47, 156, 255, 0.1) 100%) !important;
+  border-left: 3px solid var(--zx-accent) !important;
+  padding-left: 11px !important;
+  color: #ffffff !important;
+}
+
+/* Old div-based menu — kept for non-dialog fallback but hidden */
+#patchEditors .patchSelectorMenu {
+  display: none !important;
+}
+
+/* Patch selector button */
+
+#patchEditors .patchSelectorMenuItem {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--zx-text);
+  text-align: left;
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+#patchEditors .patchSelectorMenuItem:hover,
+#patchEditors .patchSelectorMenuItem.selected {
+  background: rgba(18, 150, 255, 0.2);
+  color: #ffffff;
+}
+
+#patchEditors .patchDirtyIndicator {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  white-space: nowrap;
+  display: block;
+  visibility: hidden;
+  line-height: 1.4;
+}
+
+#patchEditors .patchDirtyIndicator.visible-saved {
+  visibility: visible;
+  color: var(--zx-good);
+}
+
+#patchEditors .patchDirtyIndicator.visible-modified {
+  visibility: visible;
+  color: #ffd26e;
+}
+
+/* Overflow menu is portrait-mobile only; hide on desktop */
+.mobileOverflowMenuWrapper {
+  display: none !important;
+}
+
+/* Effect selector button is portrait-mobile only */
+.mobileEffectSelectorButton {
+  display: none !important;
+}
+
+/* Effect toggle is portrait-mobile only */
+.mobileEffectToggle {
+  display: none !important;
+}
+
+#patchEditors .editPatchTableButtons {
+  width: 1px;
+  white-space: nowrap;
+  padding: 8px !important;
+  background: rgba(15, 23, 31, 0.8) !important;
+  border-left: 1px solid var(--zx-border) !important;
+}
+
+#patchEditors .loadSaveButtons {
+  border: 1px solid var(--zx-border) !important;
+  border-radius: 9px !important;
+  background: #1f2d3a !important;
+  color: var(--zx-text) !important;
+  min-width: 62px;
+  font-size: 0.7rem;
+  transition: transform 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+#patchEditors .loadSaveButtons:hover:enabled {
+  border-color: var(--zx-accent) !important;
+  background: #21364a !important;
+  transform: translateY(-1px);
+}
+
+#patchEditors .editPatchEffectsCell,
+#patchEditors .editPatchParametersCell {
+  border: 0 !important;
+  background: var(--zx-bg) !important;
+}
+
+#patchEditors .effectsChainViewport {
+  overflow-x: auto;
+  padding: 10px 4px 14px 4px;
+}
+
+#patchEditors .editEffectsChainTable {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: auto !important;
+}
+
+#patchEditors .editEffectsChainTable tr {
+  display: flex;
+  gap: 14px;
+}
+
+#patchEditors .editEffectsChainTable td {
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+#patchEditors .editEffectTable {
+  width: 210px;
+  min-width: 210px;
+  border: 1px solid var(--zx-border) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, var(--zx-panel), #1f2b36) !important;
+  overflow: hidden;
+  box-shadow: 0 8px 14px rgba(0, 0, 0, 0.22);
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  user-select: none;
+}
+
+#patchEditors .editEffectTable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 18px rgba(0, 0, 0, 0.28);
+}
+
+#patchEditors .editEffectTable.editEffectSlot {
+  border-color: var(--zx-accent) !important;
+  box-shadow: 0 0 0 1px var(--zx-accent), 0 14px 20px rgba(0, 0, 0, 0.35);
+}
+
+#patchEditors .editEffectTable.editEffectOff {
+  opacity: 0.5;
+  filter: saturate(0.65);
+}
+
+#patchEditors .editEffectTable.dragging {
+  opacity: 0.45;
+}
+
+#patchEditors .editEffectTable.drag-over {
+  box-shadow: 0 0 0 2px var(--zx-accent), 0 12px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Mobile touch drag-and-drop ─────────────────────────────────────────── */
+
+/* Ghost element appended directly to <body>; must not be scoped to #patchEditors */
+.mobile-drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0d1720;
+  box-shadow:
+    0 10px 36px rgba(0, 0, 0, 0.8),
+    0 0 0 2px rgba(18, 150, 255, 0.75);
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* Source card fades to a placeholder while drag is active */
+body.mobile-ui-mode #patchEditors .editEffectTable.mobile-drag-source {
+  opacity: 0.25 !important;
+}
+
+/* Target card glows with a blue drop-shadow on its image (avoids overflow:hidden clipping) */
+body.mobile-ui-mode #patchEditors .editEffectTable.mobile-drag-over .effectPedalImage {
+  filter: drop-shadow(0 0 3px #1296ff) drop-shadow(0 0 12px rgba(18, 150, 255, 0.7)) !important;
+}
+
+#patchEditors .editEffectTable th {
+  border: 0 !important;
+  padding: 10px !important;
+  line-height: 1.2 !important;
+  text-align: left !important;
+}
+
+#patchEditors .editEffectTableTopBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#patchEditors .editEffectTableEffectName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+#patchEditors .effectOnOffButton,
+#patchEditors .effectDragHandle,
+#patchEditors .effectActionButton,
+#patchEditors .effectSelectButton {
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--zx-text) !important;
+  cursor: pointer;
+}
+
+#patchEditors .effectOnOffButton.on {
+  color: #6ff3a5 !important;
+}
+
+#patchEditors .effectDragHandle {
+  cursor: grab;
+}
+
+#patchEditors .effectDragHandle:active {
+  cursor: grabbing;
+}
+
+#patchEditors .effectPedalImageWrapper {
+  height: 108px;
+  margin: 8px 2px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+#patchEditors .effectPedalImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+}
+
+#patchEditors .effectPedalImage.missing {
+  display: none;
+}
+
+#patchEditors .effectPedalFallback {
+  display: none;
+  color: var(--zx-muted);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 8px;
+}
+
+#patchEditors .effectPedalFallback.visible {
+  display: block;
+}
+
+#patchEditors .editEffectTableButtons,
+#patchEditors .effectCardBottomRow {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+#patchEditors .editPatchParametersCell {
+  border-top: 1px solid var(--zx-border) !important;
+  padding: 14px 14px 16px 14px !important;
+  background: linear-gradient(180deg, #1e2a35, #1b252f) !important;
+}
+
+#patchEditors .parameterEditorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+
+#patchEditors .parameterEditorTitle {
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--zx-muted);
+}
+
+#patchEditors .parameterEditorEffectName {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+#patchEditors .editParameterTable {
+  width: 100%;
+  border-collapse: separate !important;
+  border-spacing: 8px 6px;
+  table-layout: fixed;
+}
+
+#patchEditors .editParameterTable td {
+  border: 1px solid var(--zx-border) !important;
+  background: var(--zx-panel-2) !important;
+  color: var(--zx-text) !important;
+  border-radius: 8px;
+  text-align: center;
+  padding: 8px 6px;
+}
+
+#patchEditors .editParameterTable .editParameterValueCell {
+  font-size: 1.05rem;
+  font-weight: 600;
+  background-repeat: no-repeat !important;
+  background-size: 0%;
+}
+
+#patchEditors .editParameterTable .editParameterValueCell:focus {
+  outline: 1px solid var(--zx-accent);
+  box-shadow: 0 0 0 3px var(--zx-accent-soft);
+}
+
+#patchEditors .editParameterTable .unmapped {
+  border-color: var(--zx-danger) !important;
+  box-shadow: inset 0 0 0 1px var(--zx-danger);
+}
+
+#patchEditors .editParameterTable .changed {
+  border-color: var(--zx-good) !important;
+  box-shadow: inset 0 0 0 1px var(--zx-good);
+}
+
+#patchEditors .emptyParameterCell {
+  color: var(--zx-muted) !important;
+}
+
+.patchListContainer,
+#patchesTable,
+#patchesTable th,
+#patchesTable td {
+  background: var(--zx-panel) !important;
+  color: var(--zx-text) !important;
+  border-color: var(--zx-border) !important;
+}
+
+#patchesTable td.highlight {
+  background: #2b4156 !important;
+}
+
+@media (max-width: 1024px) {
+  #patchEditors .editPatchTable {
+    width: calc(100vw - 38px) !important;
+  }
+
+  #patchEditors .editEffectTable {
+    width: 188px;
+    min-width: 188px;
+  }
+
+  #patchEditors .loadSaveButtons {
+    font-size: 0.63rem;
+    min-width: 56px;
+  }
+}
+
+@media (max-width: 768px) {
+  #patchEditors {
+    padding: 8px !important;
+  }
+
+  #patchEditors .editPatchTable {
+    width: calc(100vw - 20px) !important;
+  }
+
+  #patchEditors .editPatchTableNumber {
+    font-size: 1.05rem !important;
+  }
+
+  #patchEditors .patchNameInner > span {
+    font-size: 1.05rem !important;
+  }
+
+  #patchEditors .editPatchTableTempoValue,
+  #patchEditors .editPatchTableTempoLabel {
+    font-size: 0.9rem !important;
+  }
+
+  #patchEditors .editPatchTableButtons {
+    padding: 4px !important;
+  }
+
+  #patchEditors .loadSaveButtons {
+    margin: 2px !important;
+    min-width: 48px;
+  }
+
+  #patchEditors .editEffectTable {
+    width: 172px;
+    min-width: 172px;
+  }
+
+  #patchEditors .editParameterTable {
+    border-spacing: 6px 6px;
+  }
+}
+
+/* Modern Pedalboard UI v3 */
+body {
+  margin: 0 !important;
+  background: #1c252e !important;
+  color: #eef3f8 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+#mainLayout,
+#content {
+  width: 100% !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.collapsibleContainer {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  margin: 0 !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+}
+
+#patchEditorCollapsibleButton,
+#patchEditors + br,
+#patchEditors + p {
+  display: none !important;
+}
+
+#patchEditors {
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+#patchEditors .editPatchTable {
+  width: 100% !important;
+  border: 0 !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  table-layout: auto !important;
+  background: #1c252e !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+#patchEditors .editPatchTopRow th {
+  background: #0b0f15 !important;
+  color: #eef3f8 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #263443 !important;
+  padding: 12px 10px !important;
+  vertical-align: middle !important;
+}
+
+#patchEditors .editPatchTableNumber {
+  width: 64px !important;
+  font-size: clamp(20px, 2.2vw, 34px) !important;
+  font-weight: 500 !important;
+  padding-left: 12px !important;
+  white-space: nowrap !important;
+}
+
+#patchEditors .editPatchTableName {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+#patchEditors .editPatchNameText {
+  max-width: none !important;
+  min-width: 360px !important;
+}
+
+
+
+#patchEditors .editPatchTableTempoValue,
+#patchEditors .editPatchTableTempoLabel {
+  display: none !important;
+}
+
+#patchEditors .editPatchDescriptionRow {
+  display: table-row !important;
+  height: 0 !important;
+}
+
+#patchEditors .editPatchTableDescription {
+  border: 0 !important;
+  background: #0b0f15 !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  padding: 0 !important;
+}
+
+#patchEditors .editPatchTableButtons {
+  width: 88px !important;
+  min-width: 88px !important;
+  border-left: 0 !important;
+  background: #0b0f15 !important;
+  text-align: center !important;
+  padding-right: 8px !important;
+}
+
+/* Save-to-pedal button brightens in accent colour when there are unsaved changes */
+#syncPatchToPedalButton:not(:disabled) {
+  color: #1296ff !important;
+}
+
+#patchEditors .editPatchActionRow td {
+  border: 0 !important;
+  border-bottom: 1px solid rgba(74, 98, 124, 0.3) !important;
+  background: rgba(11, 19, 29, 0.72) !important;
+  padding: 10px 10px 8px 10px !important;
+}
+
+#patchEditors .patchActionButtons {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
+  gap: 22px !important;
+  max-width: 760px !important;
+  margin: 0 auto !important;
+}
+
+
+#patchEditors .patchActionButton {
+  border: 0 !important;
+  background: transparent !important;
+  color: rgba(219, 229, 239, 0.34) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  min-height: 68px !important;
+  min-width: 156px !important;
+  font-size: 22px !important;
+  padding: 4px 14px !important;
+}
+
+#patchEditors .patchActionButton span:first-child {
+  font-size: 30px !important;
+}
+
+
+#patchEditors .patchActionButton:disabled {
+  opacity: 0.3 !important;
+}
+
+#patchEditors .editPatchEffectsCell {
+  border: 0 !important;
+  background: linear-gradient(90deg, #1c252e 0%, #202a38 45%, #1c252e 100%) !important;
+  position: relative !important;
+  padding: 18px 0 16px 0 !important;
+}
+
+#patchEditors .editPatchEffectsCell::before,
+#patchEditors .editPatchEffectsCell::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 10px !important;
+  background: #b2bcc6 !important;
+}
+
+#patchEditors .editPatchEffectsCell::before {
+  top: 46% !important;
+  opacity: 0.9 !important;
+}
+
+#patchEditors .editPatchEffectsCell::after {
+  top: 86% !important;
+  opacity: 0.65 !important;
+}
+
+#patchEditors .effectsChainViewport {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 0 14px 12px 14px !important;
+}
+
+#patchEditors .editEffectsChainTable {
+  width: max-content !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  margin: 0 auto !important;
+}
+
+#patchEditors .editEffectsChainTable tr {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 18px !important;
+}
+
+#patchEditors .editEffectsChainTable td {
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+#patchEditors .editEffectTable {
+  width: 178px !important;
+  min-width: 178px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+#patchEditors .editEffectTable th {
+  padding: 0 !important;
+  text-align: center !important;
+}
+
+#patchEditors .editEffectTableTopBar {
+  opacity: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+}
+
+#patchEditors .effectLed {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 4px !important;
+  margin: 0 auto 10px auto !important;
+  background: #ff5056 !important;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.22) inset,
+    0 0 12px rgba(255, 80, 86, 0.45) !important;
+  opacity: 1 !important;
+  transition: background-color 140ms ease, box-shadow 140ms ease !important;
+}
+
+#patchEditors .effectLed.on {
+  background: #31d17f !important;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.22) inset,
+    0 0 14px rgba(49, 209, 127, 0.55) !important;
+}
+
+#patchEditors .effectLed.blank {
+  display: none !important;
+}
+
+#patchEditors .effectPedalImageWrapper {
+  width: 178px !important;
+  height: 242px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  overflow: visible !important;
+}
+
+#patchEditors .effectPedalImage {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  padding: 0 !important;
+}
+
+#patchEditors .editEffectTable.editEffectOff .effectPedalImageWrapper {
+  opacity: 0.45 !important;
+  filter: saturate(0.55) !important;
+}
+
+#patchEditors .editEffectTable.blankEffect .effectPedalImageWrapper {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+#patchEditors .editEffectTableButtons,
+#patchEditors .effectCardBottomRow {
+  display: none !important;
+}
+
+#patchEditors .editEffectTable.blankEffect .effectSelectionIndicator {
+  display: none !important;
+}
+
+#patchEditors .editPatchParametersCell {
+  border: 0 !important;
+  border-top: 1px solid rgba(74, 98, 124, 0.3) !important;
+  background: #1c252e !important;
+  padding: 12px 12px 24px 12px !important;
+}
+
+#patchEditors .parameterEditorHeader {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+#patchEditors .parameterEditorTitle {
+  color: #90a2b4 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.07em !important;
+}
+
+#patchEditors .parameterEditorEffectName {
+  color: #eef3f8 !important;
+  font-size: clamp(18px, 2vw, 28px) !important;
+  font-weight: 600 !important;
+}
+
+#patchEditors .editParameterTable {
+  width: min(1140px, calc(100% - 16px)) !important;
+  margin: 0 auto !important;
+  border-collapse: separate !important;
+  border-spacing: 14px 8px !important;
+  table-layout: fixed !important;
+}
+
+#patchEditors .parameterValueRow td {
+  --value-percent: 0;
+  width: 118px !important;
+  height: 118px !important;
+  min-width: 118px !important;
+  border-radius: 50% !important;
+  border: 0 !important;
+  background:
+    radial-gradient(circle at center, #1a2430 58%, transparent 59%),
+    conic-gradient(var(--knob-color, #1296ff) calc(var(--value-percent) * 1%), #4e5761 0) !important;
+  color: #f4f7fb !important;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.06) !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  font-size: clamp(22px, 2.6vw, 46px) !important;
+  font-weight: 500 !important;
+  padding: 0 !important;
+  cursor: ns-resize !important;
+}
+
+#patchEditors .parameterValueRow td:focus {
+  outline: 0 !important;
+  box-shadow: 0 0 0 3px rgba(18, 150, 255, 0.28), inset 0 0 0 3px rgba(255, 255, 255, 0.06) !important;
+}
+
+#patchEditors .parameterNameRow td,
+#patchEditors .editParameterNameCell {
+  border: 0 !important;
+  background: transparent !important;
+  color: #d3dce6 !important;
+  text-align: center !important;
+  font-size: clamp(18px, 2.5vw, 42px) !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  padding: 0 2px !important;
+}
+
+#patchEditors .emptyParameterCell {
+  border: 0 !important;
+  background: transparent !important;
+  color: #9ba8b5 !important;
+  font-size: 16px !important;
+}
+
+@media (max-width: 1100px) {
+  #patchEditors .editPatchTableNumber,
+  #patchEditors .editPatchTableName {
+    font-size: clamp(20px, 3vw, 34px) !important;
+  }
+
+  #patchEditors .editPatchTableSelector {
+    width: 190px !important;
+    min-width: 190px !important;
+  }
+
+  #patchEditors .editEffectTable,
+  #patchEditors .effectPedalImageWrapper {
+    width: 154px !important;
+    min-width: 154px !important;
+    height: 214px !important;
+  }
+
+  #patchEditors .parameterValueRow td {
+    width: 104px !important;
+    min-width: 104px !important;
+    height: 104px !important;
+  }
+}
+
+@media (max-width: 820px) {
+  #patchEditors .patchActionButtons {
+    gap: 12px !important;
+  }
+
+  #patchEditors .patchActionButton {
+    min-width: 128px !important;
+  }
+
+  #patchEditors .editEffectsChainTable {
+    margin: 0 !important;
+  }
+
+  #patchEditors .editEffectsChainTable tr {
+    gap: 12px !important;
+  }
+
+  #patchEditors .editPatchTableSelector {
+    display: none !important;
+  }
+
+  #patchEditors .editPatchTableButtons {
+    width: 96px !important;
+    min-width: 96px !important;
+    padding-right: 8px !important;
+  }
+}
+
+/* Modern Pedalboard UI v3 - Stability Fixes */
+#patchEditors .editPatchTable tr,
+#patchEditors .editPatchTable td,
+#patchEditors .editPatchTable th {
+  border: 0 !important;
+}
+
+#patchEditors .editPatchTopRow th {
+  border-bottom: 1px solid #263443 !important;
+}
+
+#patchEditors .editPatchTable td {
+  vertical-align: middle !important;
+}
+
+/* New header layout - selector button and menu styles are defined above */
+
+#patchEditors .effectLedToggle {
+  appearance: none !important;
+  border: 0 !important;
+  cursor: pointer !important;
+  display: block !important;
+}
+
+#patchEditors .effectLedToggle:active {
+  transform: translateY(1px) scale(0.98) !important;
+}
+
+#patchEditors .effectLedToggle:focus-visible {
+  outline: 2px solid #1296ff !important;
+  outline-offset: 2px !important;
+}
+
+#patchEditors .editParameterTable {
+  width: auto !important;
+  border-spacing: 0 !important;
+}
+
+#patchEditors .editParameterTable tr {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 16px !important;
+}
+
+#patchEditors .parameterValueRow {
+  margin-bottom: 6px !important;
+}
+
+#patchEditors .parameterNameRow {
+  margin-bottom: 12px !important;
+}
+
+#patchEditors .parameterValueRow td {
+  flex: 0 0 118px !important;
+  transition: transform 120ms ease, box-shadow 120ms ease, background-image 90ms linear !important;
+}
+
+#patchEditors .parameterValueRow td.knobDragging {
+  transform: scale(1.05) !important;
+}
+
+#patchEditors .parameterNameRow td {
+  flex: 0 0 118px !important;
+}
+
+/* Modern Pedalboard UI v3 - Fixed 6 Slot Chain */
+#patchEditors {
+  --chain-pedal-width: 178px;
+  --chain-pedal-height: 242px;
+  --chain-gap: 18px;
+  --chain-area-height: 520px;
+}
+
+#patchEditors .editPatchEffectsCell {
+  height: var(--chain-area-height) !important;
+  min-height: var(--chain-area-height) !important;
+  max-height: var(--chain-area-height) !important;
+}
+
+#patchEditors .effectsChainViewport {
+  height: 100% !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+}
+
+#patchEditors .editEffectsChainTable {
+  width: calc((6 * var(--chain-pedal-width)) + (5 * var(--chain-gap))) !important;
+  min-width: calc((6 * var(--chain-pedal-width)) + (5 * var(--chain-gap))) !important;
+  margin: 0 auto !important;
+}
+
+#patchEditors .editEffectsChainTable tr {
+  width: 100% !important;
+  justify-content: space-between !important;
+  align-items: flex-end !important;
+  gap: var(--chain-gap) !important;
+}
+
+#patchEditors .editEffectTable {
+  width: var(--chain-pedal-width) !important;
+  min-width: var(--chain-pedal-width) !important;
+}
+
+#patchEditors .effectPedalImageWrapper {
+  width: var(--chain-pedal-width) !important;
+  min-width: var(--chain-pedal-width) !important;
+  height: var(--chain-pedal-height) !important;
+}
+
+#patchEditors .emptyEffectSlotCell {
+  width: var(--chain-pedal-width) !important;
+  min-width: var(--chain-pedal-width) !important;
+}
+
+#patchEditors .emptyEffectSlotCell::before {
+  content: "" !important;
+  display: block !important;
+  width: 100% !important;
+  height: calc(var(--chain-pedal-height) + 74px) !important;
+}
+
+#patchEditors .parameterEditorHeader {
+  display: none !important;
+}
+
+@media (max-width: 1200px) {
+  #patchEditors {
+    --chain-pedal-width: 156px;
+    --chain-pedal-height: 216px;
+    --chain-gap: 14px;
+    --chain-area-height: 460px;
+  }
+}
+
+@media (max-width: 820px) {
+  #patchEditors {
+    --chain-pedal-width: 130px;
+    --chain-pedal-height: 184px;
+    --chain-gap: 10px;
+    --chain-area-height: 360px;
+  }
+}
+
+/* Modern Pedalboard UI v3 - Final Layout Polish */
+#patchEditors .editPatchEffectsCell::after {
+  display: none !important;
+}
+
+#patchEditors .editPatchParametersCell {
+  border-top: 0 !important;
+  padding-top: 8px !important;
+}
+
+#patchEditors .editEffectsChainTable {
+  width: auto !important;
+  min-width: max-content !important;
+}
+
+#patchEditors .editEffectsChainTable tr {
+  justify-content: center !important;
+}
+
+#patchEditors .editParameterTable {
+  width: max-content !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+}
+
+#patchEditors .editParameterTable tr {
+  justify-content: center !important;
+  gap: clamp(12px, 1.8vw, 24px) !important;
+  margin: 0 0 10px 0 !important;
+}
+
+#patchEditors .parameterValueRow td {
+  width: clamp(98px, 10.5vw, 132px) !important;
+  min-width: clamp(98px, 10.5vw, 132px) !important;
+  height: clamp(98px, 10.5vw, 132px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  line-height: 1 !important;
+  font-size: clamp(24px, 2.4vw, 40px) !important;
+  padding: 0 !important;
+}
+
+#patchEditors .parameterNameRow td,
+#patchEditors .editParameterNameCell {
+  max-width: clamp(98px, 10.5vw, 132px) !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word !important;
+  font-size: clamp(16px, 1.9vw, 28px) !important;
+  line-height: 1.05 !important;
+}
+
+/* Modern Pedalboard UI v3 - Pointer + Knob Interaction Fix */
+#patchEditors {
+  --chain-area-height: clamp(248px, 33vh, 340px);
+}
+
+#patchEditors .editPatchEffectsCell {
+  min-height: var(--chain-area-height) !important;
+  max-height: var(--chain-area-height) !important;
+  height: var(--chain-area-height) !important;
+  background: #1c252e !important;
+  padding-top: 8px !important;
+  padding-bottom: 2px !important;
+}
+
+#patchEditors .effectSelectionIndicator {
+  width: calc(100% - 12px) !important;
+  max-width: 100% !important;
+  height: 20px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, 100% 0, 50% 100%) !important;
+  background: #1296ff !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: calc(100% - 1px) !important;
+  transform: translateX(-50%) !important;
+  transform-origin: top center !important;
+  z-index: 5 !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  margin: 0 !important;
+  transition: opacity 100ms ease !important;
+}
+
+#patchEditors .editEffectSlot .effectSelectionIndicator {
+  opacity: 1 !important;
+}
+
+#patchEditors .editEffectTable.blankEffect .effectSelectionIndicator {
+  display: block !important;
+  width: calc(100% - 24px) !important;
+  height: 14px !important;
+  top: calc(100% + 2px) !important;
+  clip-path: none !important;
+  border-radius: 2px !important;
+  background: linear-gradient(180deg, #ffe680 0%, #ffcf33 100%) !important;
+  box-shadow: 0 0 8px rgba(255, 207, 51, 0.85), 0 0 16px rgba(255, 207, 51, 0.55) !important;
+}
+
+#patchEditors .editPatchParametersCell {
+  position: relative !important;
+  background: #1c252e !important;
+  padding-top: 0 !important;
+}
+
+#patchEditors .parameterSelectionPointer {
+  display: none !important;
+  position: absolute !important;
+  top: -2px !important;
+  left: 50% !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-left: 24px solid transparent !important;
+  border-right: 24px solid transparent !important;
+  border-top: 16px solid #1296ff !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateX(-50%) !important;
+  transition: left 140ms ease, opacity 100ms ease !important;
+  z-index: 2 !important;
+}
+
+#patchEditors .parameterSelectionPointer.visible {
+  opacity: 1 !important;
+}
+
+#patchEditors .editParameterTable {
+  margin-top: 2px !important;
+  width: max-content !important;
+  max-width: calc(100% - 8px) !important;
+  --param-cell-size: 118px;
+}
+
+#patchEditors .editParameterTable tr {
+  display: flex !important;
+  justify-content: center !important;
+  gap: clamp(10px, 1.6vw, 22px) !important;
+  margin: 0 0 10px 0 !important;
+}
+
+#patchEditors .editParameterValueCell {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  cursor: ns-resize !important;
+}
+
+#patchEditors .parameterValueRow td {
+  width: var(--param-cell-size) !important;
+  min-width: var(--param-cell-size) !important;
+  height: var(--param-cell-size) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  line-height: 1 !important;
+  padding: 0 !important;
+  font-size: clamp(16px, 1.7vw, 30px) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#patchEditors .parameterNameRow td,
+#patchEditors .editParameterNameCell {
+  width: var(--param-cell-size) !important;
+  min-width: var(--param-cell-size) !important;
+  max-width: var(--param-cell-size) !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+  hyphens: auto !important;
+  line-height: 1.05 !important;
+  font-size: clamp(13px, 1.2vw, 20px) !important;
+}
+
+#patchEditors .editParameterValueCell.parameterSwitchCell {
+  position: relative !important;
+  width: var(--param-cell-size) !important;
+  min-width: var(--param-cell-size) !important;
+  height: var(--param-cell-size) !important;
+  min-height: var(--param-cell-size) !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #f4f7fb !important;
+  font-size: 0 !important;
+  cursor: pointer !important;
+  overflow: visible !important;
+}
+
+#patchEditors .parameterSwitchCurrentValue {
+  position: absolute !important;
+  top: 10px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: calc(100% - 10px) !important;
+  text-align: center !important;
+  color: #f4f7fb !important;
+  font-size: clamp(14px, 1.3vw, 22px) !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#patchEditors .parameterSwitchTrack {
+  position: absolute !important;
+  left: 50% !important;
+  bottom: 10px !important;
+  transform: translateX(-50%) !important;
+  width: min(84px, calc(var(--param-cell-size) - 18px)) !important;
+  height: 42px !important;
+  border-radius: 999px !important;
+  background: #4f5965 !important;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.1) !important;
+  transition: background-color 130ms ease !important;
+}
+
+#patchEditors .parameterSwitchThumb {
+  position: absolute !important;
+  top: 5px !important;
+  left: 5px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: #f4f7fb !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
+  transition: transform 130ms ease !important;
+}
+
+#patchEditors .editParameterValueCell.parameterSwitchCell.parameterSwitchOn .parameterSwitchTrack {
+  background: #1296ff !important;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.16), 0 0 10px rgba(18, 150, 255, 0.35) !important;
+}
+
+#patchEditors .editParameterValueCell.parameterSwitchCell.parameterSwitchOn .parameterSwitchThumb {
+  transform: translateX(42px) !important;
+}
+
+#patchEditors .parameterSwitchNameCell {
+  white-space: normal !important;
+  line-height: 1.05 !important;
+}
+
+@media (max-width: 1200px) {
+  #patchEditors .parameterSelectionPointer {
+    border-left-width: 20px !important;
+    border-right-width: 20px !important;
+    border-top-width: 14px !important;
+  }
+}
+
+/* Text Input Dialog - Import Patch from Text */
+#textInputDialog {
+  border: 0;
+  padding: 0;
+  margin: auto;
+  width: min(600px, 90vw);
+  background: transparent;
+}
+
+#textInputDialog::backdrop {
+  background: rgba(5, 10, 16, 0.76);
+  backdrop-filter: blur(2px);
+}
+
+.textInputPanel {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  border: 1px solid rgba(72, 96, 121, 0.52);
+  background: #101822;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.textInputHeader {
+  padding: 20px 24px;
+  background: #080d14;
+  border-bottom: 1px solid rgba(65, 88, 112, 0.36);
+}
+
+.textInputTitle {
+  margin: 0;
+  text-align: center;
+  color: #f2f6fb;
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.textInputForm {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  gap: 16px;
+}
+
+.textInputContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.textInputLabel {
+  color: #d9e5ef;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.textInputArea {
+  background: #0f1419;
+  color: #e3ebf4;
+  border: 1px solid rgba(65, 88, 112, 0.4);
+  border-radius: 6px;
+  padding: 12px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 120px;
+  max-height: 300px;
+  line-height: 1.4;
+}
+
+.textInputArea:focus {
+  outline: none;
+  border-color: #1296ff;
+  box-shadow: 0 0 0 2px rgba(18, 150, 255, 0.2);
+}
+
+.textInputArea::placeholder {
+  color: rgba(217, 229, 239, 0.5);
+}
+
+.textInputActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.textInputButton {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+  min-width: 100px;
+}
+
+.textInputCancelButton {
+  background: rgba(255, 255, 255, 0.08);
+  color: #b7c3cf;
+  border-color: rgba(65, 88, 112, 0.3);
+}
+
+.textInputCancelButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #d9e5ef;
+  border-color: rgba(65, 88, 112, 0.5);
+}
+
+.textInputConfirmButton {
+  background: rgba(18, 150, 255, 0.15);
+  color: #1296ff;
+  border-color: rgba(18, 150, 255, 0.4);
+}
+
+.textInputConfirmButton:hover:not(:disabled) {
+  background: rgba(18, 150, 255, 0.25);
+  color: #4bb3ff;
+  border-color: rgba(18, 150, 255, 0.7);
+}
+
+.textInputButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Change Effect Modal - Category -> Effect */
+#effectSelectors {
+  position: relative;
+  z-index: 120;
+}
+
+.changeEffectDialog {
+  border: 0;
+  padding: 0;
+  margin: auto;
+  width: min(980px, 95vw);
+  max-width: 980px;
+  max-height: 88vh;
+  background: transparent;
+  color: var(--zx-text);
+}
+
+.changeEffectDialog::backdrop {
+  background: rgba(5, 10, 16, 0.76);
+  backdrop-filter: blur(2px);
+}
+
+.changeEffectPanel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: min(560px, 84vh);
+  max-height: 84vh;
+  border-radius: 16px;
+  border: 1px solid var(--zx-border);
+  background: var(--zx-bg-elev);
+  box-shadow: 0 26px 58px rgba(0, 0, 0, 0.5);
+}
+
+.changeEffectHeader {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 22px;
+  background: var(--zx-panel);
+  border-bottom: 1px solid var(--zx-border);
+}
+
+.changeEffectTitle {
+  margin: 0;
+  text-align: center;
+  color: var(--zx-text);
+  font-size: clamp(15px, 1.4vw, 20px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-family: var(--zx-font-family-ui);
+}
+
+.changeEffectBackButton,
+.changeEffectConfirmButton {
+  border: 0;
+  background: transparent;
+  color: var(--zx-accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0;
+  font-size: clamp(13px, 1.2vw, 15px);
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.changeEffectBackButton .material-symbols-outlined {
+  font-size: 0.95em;
+}
+
+.changeEffectConfirmButton {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.changeEffectConfirmButton.visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.changeEffectConfirmButton:disabled {
+  opacity: 0.45;
+}
+
+.changeEffectList {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0;
+  background: var(--zx-bg-elev);
+}
+
+.changeEffectListItem {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--zx-border);
+  background: var(--zx-panel);
+  color: var(--zx-text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: clamp(44px, 5.5vh, 60px);
+  padding: 0 18px;
+  text-align: left;
+  font-family: var(--zx-font-family-ui);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 120ms ease;
+}
+
+.changeEffectCategoryItem {
+  background: var(--zx-panel-2);
+}
+
+.changeEffectCategoryItem::before {
+  content: "";
+  width: 3px;
+  align-self: stretch;
+  margin-left: -18px;
+  margin-right: 14px;
+  background: var(--category-color, var(--zx-accent));
+  border-radius: 2px;
+}
+
+.changeEffectEntryItem {
+  background: var(--zx-panel);
+}
+
+.changeEffectEntryItem::before {
+  content: "";
+  width: 3px;
+  align-self: stretch;
+  margin-left: -18px;
+  margin-right: 14px;
+  background: var(--effect-color, var(--zx-accent));
+  opacity: 0.6;
+  border-radius: 2px;
+}
+
+.changeEffectListItem:hover {
+  background: var(--zx-panel-2);
+}
+
+.changeEffectListItem.selected {
+  background: var(--zx-panel-2);
+  border-left: 3px solid var(--zx-accent);
+  padding-left: 15px;
+}
+
+.changeEffectItemName {
+  font-size: clamp(13px, 1.2vw, 16px);
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  font-family: var(--zx-font-family-ui);
+  font-weight: 400;
+}
+
+.changeEffectItemChevron {
+  color: var(--zx-muted);
+  font-size: clamp(18px, 1.5vw, 22px);
+  flex-shrink: 0;
+}
+}
+
+.changeEffectEmptyState {
+  padding: 28px;
+  color: #8ca5be;
+  font-size: clamp(16px, 1.3vw, 20px);
+}
+
+@media (max-width: 860px) {
+  .changeEffectHeader {
+    padding: 14px 14px;
+  }
+
+  .changeEffectListItem {
+    padding: 0 12px;
+  }
+
+  .changeEffectCategoryItem::before,
+  .changeEffectEntryItem::before {
+    margin-left: -12px;
+    margin-right: 12px;
+  }
+}
+
+/* Mobile effect selector: category pills + grid layout */
+.changeEffectMobileCategoryBar {
+  display: none;
+}
+
+body.mobile-ui-mode .changeEffectMobileCategoryBar {
+  display: flex !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  gap: 8px !important;
+  padding: 10px 12px !important;
+  background: linear-gradient(180deg, rgba(28, 37, 47, 0.4), rgba(23, 38, 58, 0.6)) !important;
+  border-bottom: 1px solid var(--zx-param-edge) !important;
+  scrollbar-width: none !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.changeEffectMobileCategoryBar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.changeEffectCategoryPill {
+  flex-shrink: 0;
+  height: 34px;
+  box-sizing: border-box;
+  border: 1px solid rgba(171, 194, 219, 0.2);
+  border-radius: 20px;
+  background: rgba(47, 156, 255, 0.08);
+  color: rgba(242, 246, 251, 0.7);
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--zx-font-family-ui);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.changeEffectCategoryPill:hover {
+  background: rgba(47, 156, 255, 0.16);
+  border-color: rgba(47, 156, 255, 0.45);
+  color: #f2f6fb;
+}
+
+.changeEffectCategoryPill.active {
+  background: var(--zx-accent);
+  border-color: var(--zx-accent);
+  color: #ffffff;
+}
+
+.changeEffectGridLayout {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)) !important;
+  gap: 8px !important;
+  padding: 10px !important;
+  background: linear-gradient(180deg, rgba(28, 37, 47, 0.6) 0%, rgba(23, 38, 58, 0.8) 100%) !important;
+}
+
+body.mobile-ui-mode .changeEffectGridLayout {
+  grid-template-columns: 1fr !important;
+}
+
+.changeEffectGridItem {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  border: 1px solid var(--zx-param-edge);
+  border-left: 4px solid rgba(47, 156, 255, 0.35);
+  background: linear-gradient(180deg, var(--zx-param-bg-base-top) 0%, var(--zx-param-bg-base-bottom) 100%);
+  color: rgba(242, 246, 251, 0.85);
+  padding: 0 14px;
+  min-height: 56px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--zx-font-family-ui);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  border-radius: 8px;
+  box-sizing: border-box !important;
+}
+
+.changeEffectGridItem:hover {
+  background: linear-gradient(180deg, rgba(47, 156, 255, 0.1) 0%, rgba(47, 156, 255, 0.06) 100%);
+  border-left-color: var(--zx-accent);
+  color: #f2f6fb;
+}
+
+.changeEffectGridItem.selected {
+  background: linear-gradient(180deg, rgba(47, 156, 255, 0.18) 0%, rgba(47, 156, 255, 0.1) 100%) !important;
+  border-left-color: var(--zx-accent) !important;
+  border-left-width: 4px !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 0 0 1px rgba(47, 156, 255, 0.3) !important;
+}
+
+.changeEffectMobileEffectItem {
+  position: relative;
+}
+
+.changeEffectMobileEffectName {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Startup loading overlay */
+#startupLoadingOverlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: radial-gradient(circle at 18% 0%, rgba(45, 66, 92, 0.34), rgba(13, 22, 33, 0.95) 52%, rgba(10, 17, 27, 0.99) 100%);
+  z-index: 2147483000;
+}
+
+#startupLoadingOverlay.visible {
+  display: flex;
+}
+
+#startupLoadingOverlay .startupLoadingCard {
+  width: min(420px, 86vw);
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  color: #edf4fb;
+  text-align: center;
+}
+
+#startupLoadingOverlay .startupLoadingSpinner {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 3px solid rgba(204, 220, 237, 0.25);
+  border-top-color: #1296ff;
+  animation: startupSpin 900ms linear infinite;
+}
+
+#startupLoadingOverlay .startupLoadingTitle {
+  font-size: clamp(34px, 3vw, 44px);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.012em;
+}
+
+#startupLoadingOverlay .startupLoadingDetail {
+  color: #9ab1c8;
+  font-size: clamp(14px, 1.15vw, 16px);
+  line-height: 1.32;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  #startupLoadingOverlay .startupLoadingCard {
+    width: min(320px, 82vw);
+    gap: 9px;
+  }
+
+  #startupLoadingOverlay .startupLoadingSpinner {
+    width: 46px;
+    height: 46px;
+  }
+
+  #startupLoadingOverlay .startupLoadingTitle {
+    font-size: clamp(30px, 8vw, 38px);
+  }
+
+  #startupLoadingOverlay .startupLoadingDetail {
+    font-size: 13.5px;
+  }
+}
+
+@keyframes startupSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Portrait orientation lock overlay for mobile phones */
+body.portrait-lock-active {
+  overflow: hidden !important;
+}
+
+body.portrait-lock-active > * {
+  visibility: hidden !important;
+}
+
+body.portrait-lock-active #orientationLockOverlay {
+  visibility: visible !important;
+  display: flex !important;
+}
+
+#orientationLockOverlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(circle at 12% 0%, rgba(45, 68, 94, 0.2), #0a1522 50%, #08111c 100%);
+  z-index: 2147483200;
+}
+
+#orientationLockOverlay.visible {
+  display: flex;
+}
+
+#orientationLockOverlay .orientationLockContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  color: #eaf2fb;
+}
+
+#orientationLockOverlay .orientationLockIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid rgba(18, 150, 255, 0.75);
+  position: relative;
+  transform: rotate(90deg);
+  opacity: 0.9;
+}
+
+#orientationLockOverlay .orientationLockIcon::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 7px;
+  width: 2px;
+  height: 26px;
+  background: rgba(18, 150, 255, 0.75);
+  transform: translateX(-50%);
+}
+
+#orientationLockOverlay .orientationLockTitle {
+  font-size: clamp(24px, 3.2vw, 34px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+#orientationLockOverlay .orientationLockDetail {
+  font-size: clamp(13px, 1.3vw, 16px);
+  color: #9cb3c9;
+}
+
+/*
+  Mobile Landscape — safe scaling-only approach.
+  Strategy: DO NOT touch #mainLayout or #content layout/overflow.
+  Only scale down patch-editor elements via CSS custom properties and font sizes.
+  The sidebar keeps position:fixed and just collapses to its slim state.
+  This preserves all pointer-event areas and scroll contexts.
+*/
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Compact patch editor sizes */
+  #patchEditors {
+    --chain-pedal-width: clamp(88px, 13vw, 118px);
+    --chain-pedal-height: clamp(126px, 20vh, 172px);
+    --chain-gap: clamp(5px, 1vw, 9px);
+    --chain-area-height: clamp(160px, 38vh, 220px);
+  }
+
+  #patchEditors .topBarActionLabel {
+    display: none !important;
+  }
+
+  #patchEditors .topBarActionButton {
+    height: 30px !important;
+    min-width: 30px !important;
+    padding: 0 6px !important;
+  }
+
+  #patchEditors .topBarActionButton .material-symbols-outlined {
+    font-size: 18px !important;
+  }
+
+  #patchEditors .topBarActions {
+    gap: 4px !important;
+    flex-wrap: wrap !important;
+  }
+
+  #patchEditors .editParameterTable {
+    --param-cell-size: clamp(64px, 9vw, 88px);
+  }
+
+  #patchEditors .parameterValueRow td {
+    font-size: clamp(12px, 1.4vw, 20px) !important;
+  }
+
+  #patchEditors .parameterNameRow td,
+  #patchEditors .editParameterNameCell {
+    font-size: clamp(10px, 1vw, 13px) !important;
+    line-height: 1.05 !important;
+  }
+
+  #patchEditors .parameterSwitchTrack {
+    width: min(66px, calc(var(--param-cell-size) - 14px)) !important;
+    height: 30px !important;
+    bottom: 8px !important;
+  }
+
+  #patchEditors .parameterSwitchThumb {
+    width: 20px !important;
+    height: 20px !important;
+    top: 5px !important;
+    left: 5px !important;
+  }
+
+  #patchEditors .editParameterValueCell.parameterSwitchCell.parameterSwitchOn .parameterSwitchThumb {
+    transform: translateX(36px) !important;
+  }
+
+  #patchEditors .effectLed {
+    width: 30px !important;
+    height: 30px !important;
+    margin: 0 auto 6px auto !important;
+  }
+
+  #patchEditors .effectSelectionIndicator {
+    height: 14px !important;
+    top: calc(100% + 1px) !important;
+  }
+
+  #patchesTable {
+    font-size: 11px !important;
+  }
+
+  #patchesTable th,
+  #patchesTable td {
+    padding: 1px 3px !important;
+  }
+}
+
+/* Narrow-window/mobile fallback: keep all controls reachable without changing JS behavior. */
+@media (max-width: 980px) {
+  /* Allow topbar actions to wrap on mobile - icons only, no labels */
+  #patchEditors .topBarActionLabel {
+    display: none !important;
+  }
+
+  /* Patch selector button: slightly larger touch target */
+  #patchEditors .patchSelectorButton {
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 2px !important;
+  }
+
+  /* Patch selector menu items: bigger touch targets on mobile */
+  #patchEditors .patchSelectorMenuItem {
+    padding: 12px 16px !important;
+    font-size: 16px !important;
+    min-height: 44px !important;
+  }
+
+  #content {
+    overflow-x: auto !important;
+  }
+
+  #patchEditors .editPatchTable {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  #patchEditors .editPatchTableTopRow th {
+    padding: 10px 8px !important;
+  }
+
+  #patchEditors .editPatchTableNumber {
+    width: auto !important;
+    min-width: 52px !important;
+    font-size: clamp(16px, 4.5vw, 26px) !important;
+    padding-left: 8px !important;
+  }
+
+  #patchEditors .editPatchNameText {
+    min-width: 0 !important;
+    max-width: clamp(140px, 42vw, 320px) !important;
+    font-size: clamp(14px, 3.2vw, 24px) !important;
+  }
+
+  #patchEditors .editPatchTableStatus {
+    width: auto !important;
+    max-width: 48vw !important;
+    padding: 6px 6px 6px 6px !important;
+  }
+
+  #patchEditors .topBarActions {
+    justify-content: flex-start !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 6px !important;
+    max-width: 100% !important;
+    padding-bottom: 2px !important;
+  }
+
+  #patchEditors .topBarActionButton {
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 8px !important;
+  }
+
+  #patchEditors .topBarLabeledActionButton {
+    min-width: 36px !important;
+  }
+
+  #patchEditors .topBarActionLabel {
+    display: none !important;
+  }
+
+  #patchEditors {
+    --chain-pedal-width: clamp(120px, 22vw, 162px);
+    --chain-pedal-height: clamp(170px, 33vw, 226px);
+    --chain-gap: clamp(8px, 1.6vw, 12px);
+    --chain-area-height: clamp(320px, 58vw, 430px);
+  }
+
+  #patchEditors .editPatchEffectsCell {
+    height: auto !important;
+    min-height: clamp(300px, 52vw, 420px) !important;
+    max-height: none !important;
+  }
+
+  #patchEditors .editEffectTable,
+  #patchEditors .effectPedalImageWrapper {
+    width: var(--chain-pedal-width) !important;
+    min-width: var(--chain-pedal-width) !important;
+    height: var(--chain-pedal-height) !important;
+  }
+
+  #patchEditors .parameterValueRow td,
+  #patchEditors .parameterNameRow td {
+    flex: 0 0 clamp(88px, 16vw, 110px) !important;
+  }
+
+  #patchEditors .parameterValueRow td {
+    width: clamp(88px, 16vw, 110px) !important;
+    min-width: clamp(88px, 16vw, 110px) !important;
+    height: clamp(88px, 16vw, 110px) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  #patchEditors .editPatchTableButtons {
+    width: 72px !important;
+    min-width: 72px !important;
+    padding-right: 4px !important;
+  }
+
+  #patchEditors .loadSaveButtons {
+    min-width: 42px !important;
+    font-size: 0.62rem !important;
+    margin: 1px !important;
+  }
+
+  #patchEditors .patchActionButtons {
+    gap: 10px !important;
+  }
+
+  #patchEditors .patchActionButton {
+    min-width: 112px !important;
+    min-height: 56px !important;
+    font-size: 18px !important;
+  }
+}
+
+/* Compact desktop-like layout for mobile/narrow windows: keep all effect cards visible. */
+@media (orientation: landscape) and (max-height: 560px), (max-width: 980px) {
+  #patchEditors {
+    --chain-pedal-width: clamp(82px, 11vw, 108px);
+    --chain-pedal-height: clamp(118px, 18vh, 154px);
+    --chain-gap: clamp(4px, 0.8vw, 8px);
+    --chain-area-height: clamp(220px, 36vh, 300px);
+  }
+
+  #patchEditors .editPatchEffectsCell {
+    height: auto !important;
+    min-height: var(--chain-area-height) !important;
+    max-height: none !important;
+    padding: 10px 0 8px 0 !important;
+  }
+
+  #patchEditors .effectsChainViewport {
+    overflow-x: hidden !important;
+    padding: 0 6px 8px 6px !important;
+  }
+
+  #patchEditors .editEffectsChainTable {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #patchEditors .editEffectsChainTable tr {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    gap: var(--chain-gap) !important;
+  }
+
+  #patchEditors .editEffectsChainTable td {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  #patchEditors .editEffectTable {
+    width: var(--chain-pedal-width) !important;
+    min-width: 0 !important;
+    max-width: var(--chain-pedal-width) !important;
+  }
+
+  #patchEditors .effectPedalImageWrapper {
+    width: var(--chain-pedal-width) !important;
+    height: var(--chain-pedal-height) !important;
+  }
+
+  #patchEditors .effectLed {
+    width: clamp(28px, 4vw, 36px) !important;
+    height: clamp(28px, 4vw, 36px) !important;
+    margin: 0 auto 6px auto !important;
+  }
+
+  #patchEditors .editPatchParametersCell {
+    padding: 8px 8px 12px 8px !important;
+  }
+
+  #patchEditors .editParameterTable tr {
+    gap: clamp(6px, 0.9vw, 10px) !important;
+  }
+
+  #patchEditors .parameterValueRow td,
+  #patchEditors .parameterNameRow td {
+    flex: 0 0 clamp(74px, 10.5vw, 94px) !important;
+  }
+
+  #patchEditors .parameterValueRow td {
+    width: clamp(74px, 10.5vw, 94px) !important;
+    min-width: clamp(74px, 10.5vw, 94px) !important;
+    height: clamp(74px, 10.5vw, 94px) !important;
+    font-size: clamp(11px, 1.4vw, 16px) !important;
+  }
+
+  #patchEditors .parameterNameRow td,
+  #patchEditors .editParameterNameCell {
+    font-size: clamp(9px, 1vw, 12px) !important;
+  }
+}
+
+/* Landscape compact: use vh-based sizing so layout fits without transform scaling.
+   Must come AFTER the combined query above to override variables for landscape-only. */
+@media (orientation: landscape) and (max-height: 560px) {
+  #patchEditors {
+    /* Shrink chain to ~44vh so it fits a 393px viewport without overflow */
+    --chain-pedal-height: min(40vh, 148px);
+    --chain-area-height: min(44vh, 270px);
+  }
+
+  #patchEditors .editPatchEffectsCell {
+    padding: 6px 0 4px 0 !important;
+  }
+
+  /* Compress action-row buttons to icon-only so they take only ~36px */
+  #patchEditors .editPatchActionRow td {
+    padding: 6px 10px 4px 10px !important;
+  }
+
+  #patchEditors .editPatchActionRow .patchActionButton {
+    min-height: 36px !important;
+    min-width: 44px !important;
+    font-size: 18px !important;
+    padding: 0 10px !important;
+    gap: 0 !important;
+  }
+
+  #patchEditors .editPatchActionRow .patchActionButton > span:not(.material-symbols-outlined) {
+    display: none !important;
+  }
+
+  /* Parameter table: fill full width via flex */
+  #patchEditors .editParameterTable {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #patchEditors .editParameterTable tr {
+    gap: clamp(4px, 0.5vw, 8px) !important;
+    margin: 0 0 4px 0 !important;
+  }
+
+  /* Parameter cells: grow to fill row width, height responsive to vh */
+  #patchEditors .parameterValueRow td,
+  #patchEditors .parameterNameRow td {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+  }
+
+  #patchEditors .parameterValueRow td {
+    height: clamp(42px, 7vh, 84px) !important;
+    min-height: 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    font-size: clamp(9px, 1.5vh, 14px) !important;
+  }
+
+  #patchEditors .parameterNameRow td,
+  #patchEditors .editParameterNameCell {
+    font-size: clamp(7px, 1.2vh, 11px) !important;
+  }
+
+  #patchEditors .editPatchParametersCell {
+    padding: 4px 6px 6px 6px !important;
+  }
+}
+
+/* Runtime-applied fit mode: keep entire editor visible without viewport scroll.
+   IMPORTANT: Never change display or layout of table/tr/td elements here — it
+   breaks table rendering and makes hidden editors visible. Only control overflow
+   and sizing on non-table wrapper elements. */
+body.viewport-fit-mode,
+body.viewport-fit-mode #content,
+body.viewport-fit-mode #mainLayout {
+  overflow: hidden !important;
+}
+
+body.viewport-fit-mode .collapsibleContainer {
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+#patchEditors.viewport-fit-active {
+  overflow: hidden !important;
+}
+
+#patchEditors .editPatchTable.viewport-fit-target {
+  will-change: transform;
+}
+
+/* Modal patch selector styling */
+/* (Moved to patchSelectorMenu.open styling above) */
+
+/* Dedicated mobile view mode (separate from desktop).
+   Activated by JS via body.mobile-ui-mode based on viewport/media query. */
+body.mobile-ui-mode #mainLayout,
+body.mobile-ui-mode #content,
+body.mobile-ui-mode .collapsibleContainer,
+body.mobile-ui-mode #patchEditors {
+  width: 100% !important;
+  margin: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-radius: 0 !important;
+}
+
+body.mobile-ui-mode #content,
+body.mobile-ui-mode #mainLayout {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+body.mobile-ui-mode .collapsibleContainer {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+body.mobile-ui-mode #patchEditors {
+  --mobile-side-padding: 6px;
+  --chain-gap: clamp(6px, 1vw, 10px);
+  --chain-pedal-width: calc((100vw - (2 * var(--mobile-side-padding)) - (4 * var(--chain-gap))) / 5) !important;
+  --chain-pedal-height: clamp(95px, 16vh, 135px) !important;
+  --chain-area-height: clamp(125px, 30vh, 160px) !important;
+  padding: 0 !important;
+}
+
+body.mobile-ui-mode #patchEditors .editPatchActionRow,
+body.mobile-ui-mode #patchEditors .patchActionButtons,
+body.mobile-ui-mode #patchEditors .patchActionButton {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Deterministic compact profile for short landscape mobile viewports (e.g. 852x393). */
+@media (orientation: landscape) and (max-height: 430px) and (max-width: 900px) {
+  body.mobile-ui-mode #patchEditors {
+    --mobile-side-padding: 8px;
+    --chain-gap: 8px;
+    --chain-pedal-width: 68px;
+    --chain-pedal-height: 74px;
+    --chain-area-height: 108px;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchTopRow th {
+    padding: 4px 6px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .topBarActions {
+    margin-left: auto !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 3px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .topBarActionButton,
+  body.mobile-ui-mode #patchEditors .topBarLabeledActionButton,
+  body.mobile-ui-mode #patchEditors .patchSelectorButton {
+    min-width: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 4px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchActionRow td {
+    padding: 1px 8px 0 8px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .patchActionButtons {
+    gap: 6px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .patchActionButton {
+    min-width: 34px !important;
+    min-height: 24px !important;
+    font-size: 15px !important;
+    padding: 0 6px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchEffectsCell {
+    min-height: var(--chain-area-height) !important;
+    max-height: var(--chain-area-height) !important;
+    height: var(--chain-area-height) !important;
+    padding: 0 !important;
+  }
+
+  /* Anchor the chain line from bottom so it always crosses pedal centers. */
+  body.mobile-ui-mode #patchEditors .editPatchEffectsCell::before {
+    top: auto !important;
+    bottom: calc((var(--chain-pedal-height) * 0.42) + 2px) !important;
+    height: 5px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .effectsChainViewport {
+    padding: 2px var(--mobile-side-padding) 0 var(--mobile-side-padding) !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editEffectsChainTable {
+    width: auto !important;
+    min-width: max-content !important;
+    margin: 0 auto !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editEffectsChainTable tr {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    gap: var(--chain-gap) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editEffectTable,
+  body.mobile-ui-mode #patchEditors .effectPedalImageWrapper,
+  body.mobile-ui-mode #patchEditors .emptyEffectSlotCell {
+    width: var(--chain-pedal-width) !important;
+    min-width: var(--chain-pedal-width) !important;
+    max-width: var(--chain-pedal-width) !important;
+    height: var(--chain-pedal-height) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .effectLed {
+    width: 12px !important;
+    height: 12px !important;
+    margin: 0 auto 1px auto !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchParametersCell {
+    padding: 1px 6px 3px 6px !important;
+    overflow: hidden !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editParameterTable {
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editParameterTable tr {
+    gap: 4px !important;
+    margin: 0 0 1px 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .parameterValueRow td {
+    height: 80px !important;
+    min-height: 80px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editParameterValueCell.mobileStepperCell {
+    grid-template-rows: auto 16px 1fr 16px !important;
+    gap: 1px !important;
+    padding: 2px 3px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileStepperName {
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+    font-weight: 700 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileStepperButton {
+    min-height: 14px !important;
+    font-size: 10px !important;
+    padding: 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileStepperValue {
+    font-size: 11px !important;
+    line-height: 1 !important;
+  }
+}
+
+/* Valeton-inspired portrait mobile UI with strict vertical section order. */
+@media (orientation: portrait) and (max-width: 430px) {
+  /* ====== FULLSCREEN SHELL ====== */
+  body.mobile-ui-mode {
+    background: #1a2233 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.mobile-ui-mode #mainLayout,
+  body.mobile-ui-mode #content {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-height: 100dvh !important;
+    box-sizing: border-box !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+
+  body.mobile-ui-mode .collapsibleContainer {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background: #1a2233 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  body.mobile-ui-mode .collapsibleContainer > .collapsibleHeader {
+    display: none !important;
+  }
+
+  body.mobile-ui-mode #patchEditors {
+    --mobile-side-padding: 12px;
+    --chain-gap: 6px;
+    --chain-pedal-width: calc((100vw - (2 * var(--mobile-side-padding)) - (5 * var(--chain-gap))) / 6) !important;
+    --chain-pedal-height: 82px !important;
+    padding: 0 !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Turn the editPatchTable into a vertical flex container instead of a table */
+  body.mobile-ui-mode #patchEditors .editPatchTable {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    overflow: visible !important;
+    border-collapse: separate !important;
+  }
+
+  /* Table rows become block-level (except the top bar row which is flex) */
+  body.mobile-ui-mode #patchEditors .editPatchTable > tr:not(.editPatchTopRow),
+  body.mobile-ui-mode #patchEditors .editPatchTable > tbody > tr:not(.editPatchTopRow) {
+    display: block !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchDescriptionRow,
+  body.mobile-ui-mode #patchEditors .editPatchActionRow {
+    display: none !important;
+  }
+
+  /* ====== HEADER: Valeton-style top bar ====== */
+  body.mobile-ui-mode #patchEditors .editPatchTopRow {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    padding: 8px var(--mobile-side-padding) !important;
+    gap: 4px !important;
+    background: #1a2233 !important;
+    flex-shrink: 0 !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+    min-height: 44px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchTopRow th {
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    min-height: 30px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchTopRow .editPatchTableTempoValue {
+    display: none !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchTopRow .editPatchTableNumber {
+    order: 1 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchTopRow .editPatchTableName {
+    order: 2 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchTopRow .editPatchTableStatus {
+    order: 3 !important;
+  }
+
+  /* Number: left half of the pill */
+  body.mobile-ui-mode #patchEditors .editPatchTableNumber {
+    display: flex !important;
+    align-items: center !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: auto !important;
+    padding: 5px 0 5px 8px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px 0 0 10px !important;
+    flex-shrink: 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchTableNumberText {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #d0dae6 !important;
+    white-space: nowrap !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchTableNumber::after {
+    content: " | ";
+    margin-left: 6px !important;
+    color: rgba(208, 218, 230, 0.35);
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  body.mobile-ui-mode #patchEditors .patchDirtyIndicator {
+    display: none !important;
+  }
+
+  /* Name: middle part with constrained flex */
+  body.mobile-ui-mode #patchEditors .editPatchTableName {
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 1 auto !important;
+    min-width: 80px !important;
+    max-width: none !important;
+    padding: 0 !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 0 10px 10px 0 !important;
+    overflow: hidden !important;
+    gap: 6px !important;
+    min-height: 30px !important;
+    white-space: nowrap !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchNameText {
+    display: inline-block !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #d0dae6 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 5px 6px !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    outline: none !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Patch selector button in header */
+  body.mobile-ui-mode #patchEditors .patchSelectorGroup {
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    margin-left: 0 !important;
+    gap: 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .patchSelectorButton {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-radius: 0 10px 10px 0 !important;
+    border: none !important;
+    color: #d0dae6 !important;
+    cursor: pointer !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .patchSelectorButton .material-symbols-outlined {
+    font-size: 18px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .patchSelectorButton:active {
+    background: rgba(255, 255, 255, 0.12) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .patchSelectorDropdown {
+    display: none !important;
+  }
+
+  /* Modified-state color shift — use #patchEditors to beat the default color specificity */
+  body.mobile-ui-mode #patchEditors .editPatchTopRow.portrait-modified .editPatchTableNumberText,
+  body.mobile-ui-mode #patchEditors .editPatchTopRow.portrait-modified .editPatchNameText {
+    color: #ffd26e !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchTopRow.portrait-modified .editPatchTableNumber::after {
+    color: rgba(255, 210, 110, 0.4) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchTopRow.portrait-modified .patchSelectorButton {
+    background: rgba(255, 210, 110, 0.12) !important;
+  }
+
+  /* Hide unused header cells */
+  body.mobile-ui-mode #patchEditors .editPatchTableTempoValue,
+  body.mobile-ui-mode #patchEditors .editPatchTableDescription,
+  body.mobile-ui-mode #patchEditors .editPatchTableButtons {
+    display: none !important;
+  }
+
+  /* Status cell: contains action buttons */
+  body.mobile-ui-mode #patchEditors .editPatchTableStatus {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    width: auto !important;
+    padding: 0 !important;
+    background: transparent !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+  }
+
+  /* Hide desktop action buttons */
+  body.mobile-ui-mode #deleteCurrentPatchButton,
+  body.mobile-ui-mode #loadPatchFromDiskButton,
+  body.mobile-ui-mode #loadPatchFromTextButton,
+  body.mobile-ui-mode #undoEditPatchButton,
+  body.mobile-ui-mode #redoEditPatchButton,
+  body.mobile-ui-mode #savePatchToDiskButton {
+    display: none !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .topBarActions {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    overflow: visible !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Save button */
+  body.mobile-ui-mode #syncPatchToPedalButton {
+    display: inline-flex !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    padding: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  body.mobile-ui-mode #syncPatchToPedalButton .material-symbols-outlined {
+    font-size: 20px !important;
+    color: #d0dae6 !important;
+  }
+
+  body.mobile-ui-mode #syncPatchToPedalButton .topBarActionLabel {
+    display: none !important;
+  }
+
+  /* ====== OVERFLOW MENU ====== */
+  body.mobile-ui-mode .mobileOverflowMenuWrapper {
+    position: relative !important;
+    display: inline-flex !important;
+  }
+
+  body.mobile-ui-mode #mobileOverflowMenuButton {
+    display: inline-flex !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    padding: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+  }
+
+  body.mobile-ui-mode #mobileOverflowMenuButton .material-symbols-outlined {
+    font-size: 20px !important;
+    color: #d0dae6 !important;
+  }
+
+  body.mobile-ui-mode .mobileOverflowMenu {
+    display: none;
+    position: fixed !important;
+    top: calc(env(safe-area-inset-top) + 58px) !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    z-index: 10000 !important;
+    min-width: 220px !important;
+    max-height: min(62dvh, 420px) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 6px 0 !important;
+    background: #2a374a !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  body.mobile-ui-mode .mobileOverflowMenu.open {
+    display: block !important;
+  }
+
+  body.mobile-ui-mode .mobileOverflowMenuItem {
+    display: block !important;
+    width: 100% !important;
+    padding: 14px 18px !important;
+    background: none !important;
+    border: none !important;
+    color: #d0dae6 !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    text-align: left !important;
+    cursor: pointer !important;
+  }
+
+  body.mobile-ui-mode .mobileOverflowMenuItem:active {
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* Remove Select Patch from overflow menu in portrait */
+  body.mobile-ui-mode .mobileOverflowMenuItem[data-target="patchSelectorButton"] {
+    display: none !important;
+  }
+
+  /* ====== EFFECTS CHAIN: flat row of pedal images ====== */
+  body.mobile-ui-mode #patchEditors .editPatchEffectsCell {
+    padding: 12px 0 8px 0 !important;
+    background: #1a2233 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editPatchEffectsCell::before,
+  body.mobile-ui-mode #patchEditors .editPatchEffectsCell::after {
+    display: none !important;
+  }
+
+  /* Viewport: plain overflow-x scroll container. Padding provides side margins.
+  /* Viewport: flex container that centers the fixed-width table inside it.
+     overflow-x:auto lets the table scroll if it somehow exceeds the viewport.
+     This mirrors the desktop strategy exactly. */
+  body.mobile-ui-mode #patchEditors .effectsChainViewport {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 8px var(--mobile-side-padding) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .effectsChainViewport::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Table: ALWAYS exactly 6-slots wide (same as desktop).
+     This is the key: a fixed-width table inside a flex justify-content:center
+     viewport is always visually centered, regardless of how many effects exist.
+     --chain-pedal-width is calculated so 6 pedals + 5 gaps = viewport content width,
+     meaning 6 effects fill exactly and fewer effects leave centered whitespace filled
+     by the table background (which matches the cell background). */
+  body.mobile-ui-mode #patchEditors .editEffectsChainTable {
+    display: block !important;
+    width: calc((6 * var(--chain-pedal-width)) + (5 * var(--chain-gap))) !important;
+    min-width: calc((6 * var(--chain-pedal-width)) + (5 * var(--chain-gap))) !important;
+    max-width: none !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editEffectsChainTable > tbody {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* TR: flex row, centers however many effects exist within the fixed 6-slot-wide table */
+  body.mobile-ui-mode #patchEditors .editEffectsChainTable tr {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: var(--chain-gap) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editEffectsChainTable td {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0 !important;
+    flex: 0 0 auto !important;
+    width: var(--chain-pedal-width) !important;
+    min-width: var(--chain-pedal-width) !important;
+    max-width: var(--chain-pedal-width) !important;
+  }
+
+  /* Effect card: fixed-size, relative-positioned so children can fill it absolutely.
+     NO border — border would add to content-box width and break the 6-up fit calculation.
+     Glow is applied to .effectPedalImageWrapper instead. */
+  body.mobile-ui-mode #patchEditors .editEffectTable {
+    display: block !important;
+    position: relative !important;
+    width: var(--chain-pedal-width) !important;
+    min-width: var(--chain-pedal-width) !important;
+    max-width: var(--chain-pedal-width) !important;
+    height: var(--chain-pedal-height) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    transition: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Inner table elements: fill the card via absolute positioning (avoids
+     fragile height:100% propagation through display:block table elements) */
+  body.mobile-ui-mode #patchEditors .editEffectTable > tbody,
+  body.mobile-ui-mode #patchEditors .editEffectTable > tbody > tr,
+  body.mobile-ui-mode #patchEditors .editEffectTable > tbody > tr > th {
+    display: block !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Image wrapper: fills card exactly via absolute inset */
+  body.mobile-ui-mode #patchEditors .effectPedalImageWrapper {
+    display: flex !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .effectPedalImage {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    display: block !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .emptyEffectSlotCell {
+    width: var(--chain-pedal-width) !important;
+    min-width: var(--chain-pedal-width) !important;
+    max-width: var(--chain-pedal-width) !important;
+    height: var(--chain-pedal-height) !important;
+  }
+
+  /* Pedal images can visually overflow neighboring slots.
+     Disable pointer events on image layers so touch hit-testing resolves
+     to the slot/card underneath, preventing wrong-card drag starts. */
+  body.mobile-ui-mode #patchEditors .effectPedalImageWrapper,
+  body.mobile-ui-mode #patchEditors .effectPedalImage,
+  body.mobile-ui-mode #patchEditors .effectPedalFallback,
+  body.mobile-ui-mode #patchEditors .effectSelectionIndicator {
+    pointer-events: none !important;
+  }
+
+  /* Hide non-image children */
+  body.mobile-ui-mode #patchEditors .effectLed,
+  body.mobile-ui-mode #patchEditors .effectLedToggle,
+  body.mobile-ui-mode #patchEditors .editEffectTableTopBar,
+  body.mobile-ui-mode #patchEditors .editEffectTableButtons,
+  body.mobile-ui-mode #patchEditors .effectCardBottomRow,
+  body.mobile-ui-mode #patchEditors .effectSelectionIndicator {
+    display: none !important;
+  }
+
+  /* Selection glow on the pedal image itself (not external frame) */
+  body.mobile-ui-mode #patchEditors .editEffectTable.editEffectSlot .effectPedalImage {
+    filter: drop-shadow(0 0 2px #3f8fff) drop-shadow(0 0 7px rgba(63, 143, 255, 0.75)) !important;
+  }
+
+  /* Dim off effects */
+  body.mobile-ui-mode #patchEditors .editEffectTable.editEffectOff .effectPedalImageWrapper {
+    opacity: 0.35 !important;
+    filter: saturate(0.3) !important;
+  }
+
+  /* ====== EFFECT TOGGLE STRIP: switch + name + Change button ====== */
+  body.mobile-ui-mode #patchEditors .editPatchParametersCell {
+    display: block !important;
+    padding: 0 !important;
+    background: #1a2233 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .parameterSelectionPointer {
+    display: none !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .parameterEditorHeader {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin: 0 !important;
+    padding: 8px var(--mobile-side-padding) !important;
+    border-radius: 0 !important;
+    background: #1e2b3d !important;
+    border: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    min-height: 44px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .parameterEditorLeft {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .parameterEditorActions {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex: 0 0 auto !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .parameterEditorTitle {
+    display: none !important;
+  }
+
+  /* Effect on/off toggle */
+  body.mobile-ui-mode .mobileEffectToggle {
+    display: inline-flex !important;
+    position: relative;
+    width: 44px;
+    height: 26px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  body.mobile-ui-mode .mobileEffectToggleInput {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  body.mobile-ui-mode .mobileEffectToggleTrack {
+    position: absolute;
+    inset: 0;
+    border-radius: 26px;
+    background: #3e4d60;
+    transition: background-color 120ms ease;
+  }
+
+  body.mobile-ui-mode .mobileEffectToggleTrack::before {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    left: 3px;
+    top: 3px;
+    border-radius: 50%;
+    background: #f3f7fb;
+    transition: transform 120ms ease;
+  }
+
+  body.mobile-ui-mode .mobileEffectToggleInput:checked + .mobileEffectToggleTrack {
+    background: #34d058;
+  }
+
+  body.mobile-ui-mode .mobileEffectToggleInput:checked + .mobileEffectToggleTrack::before {
+    transform: translateX(18px);
+  }
+
+  /* Effect name in toggle strip */
+  body.mobile-ui-mode #patchEditors .parameterEditorEffectName {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #f1f6fb !important;
+    text-align: left !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    flex: 1 1 auto !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileEffectActionButton {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    border: none !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #d0dae6 !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileEffectActionButton .material-symbols-outlined {
+    font-size: 20px !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileEffectActionButton:active {
+    background: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileEffectActionMenu {
+    display: none !important;
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    right: 0 !important;
+    z-index: 10020 !important;
+    min-width: 178px !important;
+    max-height: min(58dvh, 360px) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 4px !important;
+    border-radius: 10px !important;
+    background: #2a374a !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileEffectActionMenu.open {
+    display: block !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileEffectActionMenuItem {
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
+    padding: 12px 12px !important;
+    min-height: 44px !important;
+    border: none !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    color: #d0dae6 !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+  }
+
+  /* Dialog sheets: safer insets and smoother scrolling on real phones */
+  body.mobile-ui-mode .patchSelectorPanel,
+  body.mobile-ui-mode .mobileParameterPopup {
+    max-height: calc(100dvh - env(safe-area-inset-top) - 10px) !important;
+    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  body.mobile-ui-mode .patchSelectorHeader,
+  body.mobile-ui-mode .mobileParameterPopupTitle {
+    padding-top: max(14px, env(safe-area-inset-top)) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileEffectActionMenuItem:active {
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* ====== PARAMETER LIST ====== */
+  body.mobile-ui-mode #patchEditors .editParameterTable {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 220px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 12px var(--mobile-side-padding) 20px var(--mobile-side-padding) !important;
+    gap: 0 !important;
+    box-sizing: border-box !important;
+    -webkit-overflow-scrolling: touch !important;
+    background: #0f1620 !important;
+    border-radius: 8px !important;
+  }
+
+  /* Hide the separate name rows — names shown inline in control cells */
+  body.mobile-ui-mode #patchEditors .parameterNameRow,
+  body.mobile-ui-mode #patchEditors .parameterNameRow td.mobileHiddenParameterName {
+    display: none !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .parameterValueRow {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+    margin: 0 0 6px 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .parameterValueRow td {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Parameter card: Valeton-style full-width with name/value header and slider */
+  /* ====== PARAMETER CARDS: Valeton full-row fill style ====== */
+
+  /* Base card — all control types */
+  body.mobile-ui-mode #patchEditors .editParameterTable .editParameterValueCell.mobileControlCell {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;  /* override desktop's justify-content: center from #patchEditors .parameterValueRow td */
+    gap: 0 !important;
+    padding: 0 12px !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    max-height: 36px !important;
+    border-radius: 0 !important;
+    background: linear-gradient(180deg, var(--zx-param-bg-base-top) 0%, var(--zx-param-bg-base-bottom) 100%) !important;
+    background-image: none !important;
+    border: none !important;
+    border-bottom: 1px solid var(--zx-param-edge) !important;
+    margin-bottom: 6px !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  /* First and last card get rounded corners so the group looks like one pill */
+  body.mobile-ui-mode #patchEditors .editParameterTable .editParameterValueCell.mobileControlCell:first-child {
+    border-radius: 9px 9px 0 0 !important;
+    border-bottom: none !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editParameterTable .editParameterValueCell.mobileControlCell:last-child {
+    border-radius: 0 0 9px 9px !important;
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .editParameterTable .editParameterValueCell.mobileControlCell:only-child {
+    border-radius: 9px !important;
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Slider card: the CARD BACKGROUND itself is the blue fill.
+     --slider-fill is set on valueCell by JS on every input event.
+     overflow:hidden only here so the rounded corners clip the fill correctly. */
+  body.mobile-ui-mode #patchEditors .editParameterTable .editParameterValueCell.mobileControlCell.mobileSliderCard {
+    overflow: hidden !important;
+    background-image: linear-gradient(
+      to right,
+      var(--zx-param-fill-strong) 0%,
+      var(--zx-param-fill-strong) var(--slider-fill, 0%),
+      var(--zx-param-bg-strong) var(--slider-fill, 0%),
+      var(--zx-param-bg-strong) 100%
+    ) !important;
+    box-shadow: inset 0 1px 0 var(--zx-param-edge) !important;
+  }
+
+  /* Non-slider value rows (dropdown, selector, switch rows, etc.) use the same card pattern family. */
+  body.mobile-ui-mode #patchEditors .editParameterTable .editParameterValueCell.mobileControlCell:not(.mobileSliderCard) {
+    background-image: linear-gradient(
+      to right,
+      var(--zx-param-fill-soft) 0%,
+      var(--zx-param-fill-soft) 42%,
+      var(--zx-param-bg-strong) 42%,
+      var(--zx-param-bg-strong) 100%
+    ) !important;
+    box-shadow: inset 0 1px 0 var(--zx-param-edge) !important;
+  }
+
+  /* Label: above the slider overlay, left-aligned, white */
+  body.mobile-ui-mode #patchEditors .mobileControlName {
+    position: relative !important;
+    z-index: 3 !important;
+    flex: 0 0 auto !important;
+    min-width: 52px !important;
+    max-width: 100px !important;
+    font-size: var(--zx-font-size-ui) !important;
+    font-weight: 600 !important;
+    font-family: var(--zx-font-family-ui) !important;
+    color: rgba(229, 239, 250, 0.94) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    pointer-events: none !important;
+  }
+
+  /* Spacer between label and value — the slider fills this invisibly */
+  body.mobile-ui-mode #patchEditors .mobileControlSlider {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+    z-index: 2 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    touch-action: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Thumb: completely invisible (card background IS the fill indicator) */
+  body.mobile-ui-mode #patchEditors .mobileControlSlider::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSlider::-moz-range-thumb {
+    width: 0 !important;
+    height: 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSlider::-webkit-slider-runnable-track {
+    background: transparent !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSlider::-moz-range-track {
+    background: transparent !important;
+  }
+
+  /* Flex spacer pushes value to the right within the card */
+  body.mobile-ui-mode #patchEditors .mobileSliderCard .mobileControlValue {
+    margin-left: auto !important;
+  }
+
+  /* Value: above the slider overlay, right-aligned, bold white */
+  body.mobile-ui-mode #patchEditors .mobileControlValue {
+    position: relative !important;
+    z-index: 3 !important;
+    flex: 0 0 auto !important;
+    min-width: 40px !important;
+    text-align: right !important;
+    font-size: var(--zx-font-size-ui) !important;
+    font-weight: 600 !important;
+    font-family: var(--zx-font-family-ui) !important;
+    color: rgba(242, 248, 255, 0.96) !important;
+    white-space: nowrap !important;
+    pointer-events: none !important;
+  }
+
+  /* ====== CUSTOM PARAMETER SELECTOR: bare text + chevron, no box ====== */
+  body.mobile-ui-mode #patchEditors .mobileControlSelector {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-left: auto !important;
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    z-index: 3 !important;
+    position: relative !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSelectorValue {
+    font-size: var(--zx-font-size-ui) !important;
+    font-weight: 600 !important;
+    font-family: var(--zx-font-family-ui) !important;
+    color: rgba(242, 248, 255, 0.96) !important;
+    max-width: 100px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    opacity: 0.9 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSelectorChevron {
+    font-size: 9px !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    flex-shrink: 0 !important;
+    line-height: 1 !important;
+  }
+
+  /* Parameter Selection Popup */
+  .mobileParameterPopupBackdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    z-index: 10000 !important;
+    animation: slideUp 200ms ease-out !important;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .mobileParameterPopup {
+    background: #1a2e45 !important;
+    border-radius: 12px 12px 0 0 !important;
+    width: 100% !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: flex !important;
+    flex-direction: column !important;
+    animation: slideUp 200ms ease-out !important;
+  }
+
+  .mobileParameterPopupTitle {
+    padding: 16px 16px 12px 16px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    position: sticky !important;
+    top: 0 !important;
+    background: #1a2e45 !important;
+  }
+
+  .mobileParameterPopupList {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 8px 0 !important;
+  }
+
+  .mobileParameterPopupOption {
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #e4ecf4 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+    cursor: pointer !important;
+    transition: background-color 100ms ease !important;
+  }
+
+  .mobileParameterPopupOption:last-child {
+    border-bottom: none !important;
+  }
+
+  .mobileParameterPopupOption:active {
+    background: rgba(37, 99, 235, 0.15) !important;
+  }
+
+  .mobileParameterPopupOption.selected {
+    background: rgba(37, 99, 235, 0.25) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+  }
+
+  /* Dropdown already shows the current value — hide the redundant value label */
+  body.mobile-ui-mode #patchEditors .mobileControlDropdown ~ .mobileControlValue {
+    display: none !important;
+  }
+
+  /* Ensure desktop circular switch visuals never leak into mobile parameter rows */
+  body.mobile-ui-mode #patchEditors .editParameterTable .editParameterValueCell.parameterSwitchCell.mobileControlCell {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    background: linear-gradient(180deg, var(--zx-param-bg-base-top) 0%, var(--zx-param-bg-base-bottom) 100%) !important;
+    box-shadow: inset 0 1px 0 var(--zx-param-edge) !important;
+    font-size: inherit !important;
+    cursor: default !important;
+    overflow: hidden !important;
+  }
+
+  /* ====== TOGGLE SWITCH (for binary ON/OFF params) ====== */
+  body.mobile-ui-mode #patchEditors .mobileControlSwitchWrapper {
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    position: relative !important;
+    width: 46px !important;
+    height: 26px !important;
+    display: inline-block !important;
+    cursor: pointer !important;
+    z-index: 4 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSwitchInput {
+    opacity: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    cursor: pointer !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSwitchTrack {
+    position: absolute !important;
+    inset: 0 !important;
+    border-radius: 13px !important;
+    background: rgba(110, 133, 158, 0.52) !important;
+    transition: background-color 150ms ease !important;
+    border: 1px solid var(--zx-param-edge) !important;
+    pointer-events: none !important;  /* let clicks fall through to the input behind it */
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSwitchTrack::before {
+    content: "" !important;
+    position: absolute !important;
+    width: 20px !important;
+    height: 20px !important;
+    left: 3px !important;
+    top: 3px !important;
+    border-radius: 50% !important;
+    background: #f3f7fb !important;
+    transition: transform 150ms ease, box-shadow 150ms ease !important;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSwitchInput:checked + .mobileControlSwitchTrack {
+    background: var(--zx-accent) !important;
+    border-color: rgba(47, 156, 255, 0.5) !important;
+  }
+
+  body.mobile-ui-mode #patchEditors .mobileControlSwitchInput:checked + .mobileControlSwitchTrack::before {
+    transform: translateX(20px) !important;
+  }
+
+  /* Keep switch value node for DOM updates, but don't display it in mobile UI */
+  body.mobile-ui-mode #patchEditors .mobileControlSwitchWrapper ~ .mobileControlValue {
+    display: none !important;
+  }

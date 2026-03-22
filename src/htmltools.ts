@@ -45,7 +45,7 @@ export class ConfirmDialog
   public async getUserConfirmation(text: string): Promise<boolean>
   {
     return new Promise<boolean>( (resolve, reject) => {
-      this.confirmLabel.innerHTML = text;
+      this.confirmLabel.textContent = text;
       this.confirmEvent = async (result: boolean) => {
         resolve(result);
       }

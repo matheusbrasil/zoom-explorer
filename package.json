@@ -1,32 +1,39 @@
 {
   "name": "zoom-explorer",
   "version": "0.0.1",
-  "description": "Tools for exploring the Zoom MS Plus series of effect pedals",
-  "main": "index.js",
+  "description": "User-friendly Zoom MS series editor for desktop web, mobile web, and Tauri 2.0",
   "scripts": {
-    "build": "tsc && npm run build:copy-public",
-    "build:copy-public": "copyfiles -f ./public/** ./dist",
-    "type": "tsc --noEmit"
+    "build": "npm run build:clean && tsc && npm run build:copy-public",
+    "build:clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build:copy-public": "node scripts/copy-public.cjs",
+    "build:web": "npm run build",
+    "tauri:serve": "npm run build && http-server dist -p 1430 -c-1 --silent",
+    "serve:web": "http-server dist -p 1430 -c-1 --silent",
+    "netlify:build": "npm run build:web",
+    "type": "tsc --noEmit",
+    "tauri:dev": "npm exec tauri dev",
+    "tauri:build": "npm run build && npm exec tauri build",
+    "tauri:android:dev": "npm run build && npm exec tauri android dev",
+    "tauri:ios:dev": "npm run build && npm exec tauri ios dev"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thammer/zoom-explorer.git"
+    "url": "git+https://github.com/matheusbrasil/zoom-explorer.git"
   },
   "keywords": [
     "zoom",
     "midi"
   ],
-  "author": "Thomas Hammer",
+  "author": "Matheus Brasil",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/thammer/zoom-explorer/issues"
+    "url": "https://github.com/matheusbrasil/zoom-explorer/issues"
   },
-  "homepage": "https://github.com/thammer/zoom-explorer#readme",
+  "homepage": "https://github.com/matheusbrasil/zoom-explorer#readme",
   "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0",
     "@types/wicg-file-system-access": "^2023.10.5",
+    "http-server": "^14.1.1",
     "typescript": "^5.4.5"
-  },
-  "dependencies": {
-    "copyfiles": "^2.4.1"
   }
 }

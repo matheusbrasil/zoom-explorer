@@ -1,0 +1,27 @@
+[package]
+name = "zoom-explorer-tauri"
+version = "0.1.0"
+description = "Zoom Explorer - Tauri backend"
+authors = ["Zoom Explorer contributors"]
+license = "MIT"
+edition = "2021"
+
+[lib]
+name = "zoom_explorer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = [] }
+thiserror = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+directories = "5"
+base64 = "0.22"
+
+[target.'cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))'.dependencies]
+midir = "0.10"

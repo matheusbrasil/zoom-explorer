@@ -100,6 +100,7 @@ let idObject = {
   0x0b000060: "BrghtHall",
   0x0b000080: "AirReverb",
   0x07000ff0: "BPM", // Added manually
+  0x09000ff0: "BPM", // Added manually (variant seen on some patches/devices)
 };
 
 let zoomEffectIDsMS60BPlus: Map<number, string> = new Map(Object.entries(idObject).map(([key, value]) => [parseInt(key), value]));

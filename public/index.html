@@ -1,763 +1,1915 @@
 <!DOCTYPE html>
 <html>
-  <!-- For www.waveformer.net <script type="text/javascript" src="../common.js"></script> -->
+  <!-- (c) 2024-2026 by Thomas Hammer, h@mmer.no -->
   <head>
-    <meta charset="UTF-8">
-    <title>Zoom Explorer by Waveformer</title>
-    <link href="https://fonts.googleapis.com/css?family=Alata|Dosis|Didact|Roboto&display=swap" rel="stylesheet"/>    
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:wght@100&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <base href="./">
+    <title>Zoom Explorer</title>
+    <link href="https://fonts.googleapis.com/css?family=Alata|Dosis|Didact|Roboto&display=swap" rel="stylesheet" />    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:wght@100&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Jolly+Lodger&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-    <!-- For www.waveformer.net <link rel="stylesheet" type="text/css" href="../common.css"/> -->
-    <!-- For www.waveformer.net <link rel="stylesheet" type="text/css" href="../navbar.css"/>  -->
+    <link rel="stylesheet" type="text/css" href="common.css" />
+    <link rel="stylesheet" type="text/css" href="file-browser.css" />
+    <!-- <link rel="icon" type="image/x-icon" href="http://sym.bios.is/favicon.ico" /> -->
+    
     <style>
-      body {
-          font-family: 'Roboto', sans-serif;
-          font-size: 0.9em;
-      }
-      h1 
-      {
-          text-align: center;
-          margin: 5px 2px 0px 2px;
-      }
-      div.source {
-          text-align: right;
-          margin: 0px 4px 4px 2px;
-      }
-      table#midiDevicesTable {
-          float:left;
-      }
-      table#midiDevicesTable {
-          border: 1px solid black;
-          border-collapse: collapse;
-          text-align: center;
-          vertical-align: middle;
-          table-layout: fixed;
-          margin: 2px 4px 8px 4px;
-      } 
-      table#midiDevicesTable tr {
-          border: 1px solid black;
-          border-collapse: collapse;
-      } 
-      table#midiDevicesTable td, table#midiDevicesTable th {
-          border: 1px solid black;
-          border-collapse: collapse;
-          padding: 1px 4px 1px 4px;
-      } 
-      table#midiDevicesTable td {
-          text-align: left;
-      }
+        body.startup-pending {
+            overflow: hidden;
+        }
+        body.startup-pending > * {
+            visibility: hidden;
+        }
+        body.startup-pending #startupLoadingOverlay {
+            visibility: visible;
+            display: flex !important;
+        }
+
+        #settings {
+            display:flex;
+            flex-direction: column;
+            text-align: left;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        } 
+        #settings > div {
+            display: flex;
+            flex-direction: row;
+        }
+        #settings > p {
+            text-align: left;
+        }
+
+        #perfmonLabel {
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .midiDeviceListClass {
+            text-align: center;
+        }
+        .midiDeviceListClass .collapsible { /* this is the arrow button */
+            margin-left: auto;
+            margin-right: 5px;
+            background-color: #EEEEEE;
+        }
+        .midiDeviceListClass .collapsibleIcon {
+            align-self: right;
+            margin-right: 5px;
+        }
+        .midiDeviceListClass > table {
+            border: black 1 solid;
+            border-collapse: collapse;
+            margin: 0px -2px 0px -2px;
+        }
+        .midiDeviceListClass tr {
+            text-align: center;
+        }
+        .midiDeviceListClass th {
+            border: black 1px solid;
+            background-color: #CCCCCC;
+            padding: 2px 5px 2px 5px;
+        }
+        /* .midiDeviceListClass th label {
+            color: red;
+            vertical-align:baseline;
+        } */
+        .midiDeviceListClass th label {
+            display: inline-block;
+            white-space: nowrap;
+        }
+        .midiDeviceListClass th input {
+            vertical-align: middle;
+        }
+        .midiDeviceListClass th label span {
+            vertical-align: middle;
+        }
+        .midiDeviceListClass td {
+            border: black 1px solid;
+            background-color: #EEEEEE;
+            padding: 2px 5px 2px 5px;
+            text-align: left;
+        }
+        .midiDeviceListClass td:nth-of-type(8) { /* version */
+            text-align: right;
+        }
+        .midiDeviceListClass td:nth-of-type(9) { /* filter */
+            white-space: nowrap;
+        }
+        .midiDeviceListClass td:nth-of-type(10) { /* activity */
+            width: 12em;
+            white-space: nowrap;
+        }
+        .midiDeviceListTableSelected td {
+            background-color: #DDEEFF;
+        }
+        .midiDeviceListTable button {
+            background-color: transparent;
+            border: 0;
+            padding: 0px;
+            margin: 0px;
+            height: 1.2em;
+            vertical-align: middle;
+        }
+        /* .midiDeviceListTable td > button input {
+            vertical-align:top;
+            margin: 0px 1px 0px 1px;
+        } */
+        .midiDeviceListTable td > button input {
+            appearance: none; /*hides the default checkbox*/
+            height: 1.0em;
+            width: 1.0em;
+            background-color: #DDDDDD;
+            text-align: center;
+            vertical-align: middle;
+            font-weight: 500;
+            font-size: 0.8em;
+            outline: 1px solid black;
+            margin: 1px 2px 1px 2px;
+        }
+        .midiDeviceListTable td > button input:after {
+            content: " ";
+        }
+        .midiDeviceListTable td > button input:checked:after {
+            position: relative;
+            top: -0.2em;
+            content: "✖";
+        }
 
 
-      table#midiMonitorTable {
-          float:right;
-      }
-      table#midiMonitorTable {
-          border: 1px solid black;
-          border-collapse: collapse;
-          text-align: center;
-          vertical-align: middle;
-          table-layout: fixed;
-          margin: 2px 4px 8px 4px
-      } 
-      table#midiMonitorTable tr {
-          border: 1px solid black;
-          border-collapse: collapse;
-      } 
-      table#midiMonitorTable td, table#midiMonitorTable th {
-          border: 1px solid black;
-          border-collapse: collapse;
-          white-space: nowrap;
-          padding: 1px 4px 1px 4px;
-      } 
-      table#midiMonitorTable td {
-          text-align: left;
-      }
+        /* table#midiDevicesTable {
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 1em;
+        }
+        table#midiDevicesTable {
+            border: 1px solid black;
+            border-collapse: collapse;
+            text-align: center;
+            table-layout: fixed;
+        } 
+        table#midiDevicesTable tr {
+            border: 1px solid black;
+            border-collapse: collapse;
+        } 
+        table#midiDevicesTable td, table#midiDevicesTable th {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 1px 4px 1px 4px;
+        } 
+        table#midiDevicesTable td {
+            text-align: left;
+        }
+        table#midiDevicesTable td:nth-of-type(2) {
+            text-align: right;
+        }
+        table#midiDevicesTable td:nth-of-type(3) {
+            text-align: right;
+        }
+        table#midiDevicesTable td:nth-of-type(4) {
+            text-align: right;
+        } */
 
+        table#patchTable {
+            border: 1px solid black;
+            border-collapse: collapse;
+            text-align: center;
+            table-layout: fixed;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 1em;
+        } 
+        table#patchTable tr {
+            border: 1px solid black;
+            border-collapse: collapse;
+        } 
+        table#patchTable td, table#patchTable th {
+            border-collapse: collapse;
+            white-space:pre;
+            padding: 1px 4px 1px 4px;
+        } 
+        table#patchTable th {
+            text-align: left;
+            font-size: 1.5em;
+        }
+        /* Make sure buttons are centered inside cell */
+        table#patchTable td {
+            display:flex;
+            justify-content:center;           
+        }
 
-      table#sysexMonitorTable {
-          float:left;
-      }
-      table#sysexMonitorTable {
-          border: 1px solid black;
-          border-collapse: collapse;
-          text-align: left;
-          vertical-align: middle;
-          table-layout: fixed;
-          margin: 4px 2px 2px 4px
-      } 
-      table#sysexMonitorTable tr {
-          border: 1px solid black;
-          border-collapse: collapse;
-      } 
-      table#sysexMonitorTable th {
-          border: 1px solid black;
-          border-collapse: collapse;
-          white-space: nowrap;
-          padding: 1px 4px 1px 4px;
-      } 
+        /* .patchListContainer {
+            border: 3px solid red;
+        } */
 
-      table#sysexMonitorTable td {
-          border: 1px solid black;
-          border-collapse: collapse;
-          word-wrap: break-word;
-          padding: 1px 4px 1px 4px;
-          text-align: left;
-          font-family: 'Roboto Mono', monospace;
-      } 
+        table.editPatchTable {
+            border: 1px solid black;
+            border-collapse: collapse;
+            text-align: center;
+            vertical-align: middle;
+            table-layout: fixed;
+            margin-left: 0;
+            margin-right: auto;
+        } 
+        .editPatchTable {
+            opacity: 0.4;
+        }
+        .editPatchTable.on {
+            opacity: 1;
+        }
+        #patchEditorCollapsibleButton .collapsibleContainerTitle {
+            color: #888888;
+        }
+        #patchEditorCollapsibleButton .collapsibleContainerTitle.on {
+            color: black;
+        }
 
-      table#sysexMonitorTable td#value {
-          background-image: linear-gradient(to right, rgb(240, 240, 240) 0%, rgb(180, 180, 180) 100%);
-          background-repeat: no-repeat; 
-      }
+        table.editPatchTable tr {
+            border: 1px solid black;
+            border-collapse: collapse;
+        } 
+        table.editPatchTable td, table.editPatchTable th {
+            border-collapse: collapse;
+            padding: 1px 0px 1px px;
+        } 
+        table.editPatchTable th {
+            text-align: left;
+        }
+        table.editPatchTable th.editPatchTableButtons {
+            padding-left: 5px;
+            text-align: right;
+            width: 1px;
+            white-space: nowrap;
+        }
+        table.editPatchTable th.editPatchTableNumber {
+            padding-left: 8px;
+            padding-right: 1px;
+            font-size: 1.5em;
+            width: 1px;
+            white-space: nowrap;
+        }
+        table.editPatchTable th.editPatchTableName {
+            padding-left: 4px;
+            padding-right: 10px;
+            font-size: 1.5em;
+        }
+        table.editPatchTable th.editPatchTableTempoLabel {
+            padding-left: 1px;
+            padding-right: 4px;
+            font-size: 1.0em;
+            padding-top: 6px;
+            vertical-align: middle;
+            width: 1px;
+            white-space: nowrap;
+        }
+        table.editPatchTable th.editPatchTableTempoValue {
+            padding-left: 8px;
+            padding-right: 2px;
+            font-size: 1.5em;
+            width: 1px;
+            white-space: nowrap;
+        }
+        table.editPatchTable th.editPatchTableDescription {
+            padding-left: 8px;
+        }
+        table.editPatchTable th.editPatchTableDescription:empty::after {
+            content: "\00a0"; /* Prevent collapse of empty row. See https://stackoverflow.com/questions/42225196/prevent-collapse-of-empty-rows-in-html-table-via-css */
+        }
+        table.editPatchTable td {
+            vertical-align: top;
+        }
 
-      table#sysexMonitorTable td#time {
-          background-image: linear-gradient(to right, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 45%, rgb(180, 180, 180) 50%, rgb(255, 255, 255) 55%, rgb(255, 255, 255) 100%);
-          background-repeat: no-repeat; 
-      }
+        table.editEffectTable {
+            border: 1px solid black;
+            border-radius: 6px;
+            border-spacing: 0px;
+            border-collapse: separate;
+            text-align: center;
+            vertical-align: middle;
+            table-layout: fixed;
+            margin: 2px 4px 4px 4px;
+        } 
+        table.editEffectTable tr {
+            border: 0px solid black;
+            border-collapse: collapse;
+        } 
+        table.editEffectTable td, table.editEffectTable th {
+            border: 1px solid darkgray;
+            border-collapse: collapse;
+            font-size: 1em;
+            white-space:pre;
+            padding: 1px 4px 1px 4px;
+        } 
+        table.editEffectTable th {
+            text-align: center;
+            line-height: 0.1em;
+        }
+        .editEffectTableTopBar {
+            display:flex;
+            flex-direction: column;
+            line-height: 1em;
+            padding: 0;
+            margin: 0em ;
+            white-space:nowrap;
+        }
+        .editEffectTableButtons {
+            display:flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 3px;
+            margin: 0em;
+            white-space:nowrap;
+        }
+        table.editEffectTable .editEffectTableEffectName {
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: auto;
+            margin-bottom: auto;
+            padding-left: 3px;
+            padding-right: 3px;
+        }
+        table.editEffectTable td {
+            text-align: center;
+        }
+        table.editEffectTable td {
+        /* background-image: goes here (see ZoomPatchEditor.ts); */
+            background-repeat: no-repeat; 
+            background-size: 0%;
+        }
+        table.editEffectTable td.unmapped {
+            background: #FFCCCC;
+            outline: 2px solid orangered;
+            background-image:none !important;
+        }
+        table.editEffectTable td.changed {
+            background: #CCFFCC;
+            outline: 2px solid greenyellow;
+            background-image:none !important;
+        }
 
-      table#patchTable {
-          border: 1px solid black;
-          border-collapse: collapse;
-          text-align: center;
-          vertical-align: middle;
-          table-layout: fixed;
-          margin: 2px 4px 8px 4px;
-      } 
-      table#patchTable tr {
-          border: 1px solid black;
-          border-collapse: collapse;
-      } 
-      table#patchTable td, table#patchTable th {
-          border: 1px solid black;
-          border-collapse: collapse;
-          font-family: 'Roboto Mono', monospace;
-          white-space:pre;
-          padding: 1px 4px 1px 4px;
-      } 
-      table#patchTable th {
-          text-align: left;
-      }
-      table#patchTable td {
-          text-align: left;
-      }
+        table.editEffectOff td {
+            /* color: darkgray; */
+            opacity: 0.3;
+        }
+        table.editEffectOff .effectActionButton {
+            /* color: darkgray; */
+            opacity: 0.3;
+        }
+        table.editEffectOff .editEffectTableEffectName {
+            /* color: darkgray; */
+            opacity: 0.3;
+        }
+        table.editEffectSlot {
+            border: 2px solid black;
+        }
+        /* rounded corners on effect tables */
+        table.editEffectTable th:first-of-type {
+            border-top-left-radius: 6px;
+        }
+        table.editEffectTable th:last-of-type {
+            border-top-right-radius: 6px;
+        }
+        table.editEffectTable tr:last-of-type td:first-of-type {
+            border-bottom-left-radius: 6px;
+        }
+        table.editEffectTable tr:last-of-type td:last-of-type {
+            border-bottom-right-radius: 6px;
+        }
 
-      table#patchesTable {
-          border: 1px solid black;
-          border-collapse: collapse;
-          text-align: center;
-          vertical-align: middle;
-          table-layout: fixed;
-          margin: 2px 4px 8px 4px;
-      } 
-      table#patchesTable tr {
-          border: 1px solid black;
-          border-collapse: collapse;
-      } 
-      table#patchesTable td, table#patchesTable th {
-          border: 1px solid black;
-          border-collapse: collapse;
-          padding: 1px 4px 1px 4px;
-      } 
-      table#patchesTable td {
-          text-align: left;
-      }
-      table#patchesTable td.highlight {
-        background: lightslategray;
-      }
+        table.editEffectTable .effectOnOffButton {
+            float: left;
+            font-size: 1.2em;
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 450,
+            'GRAD' 0,
+            'opsz' 24;
+            color: black;
+            padding: 1px;
+            margin: 0px 1px 0px 1px;
+            border: 0;
+            background: transparent;
+            border-radius: 2em;
+        }
+        table.editEffectTable .effectOnOffButton.on {
+            opacity: 0.7;
+        }
+        table.editEffectTable .effectOnOffButton:hover {
+            background-color: #DDDDDD;
+        }
+        table.editEffectTable .effectOnOffButton:active {
+            background-color: #EEEEEE;
+        }
 
-      table.editPatchTable {
-          border: 1px solid black;
-          border-collapse: collapse;
-          text-align: center;
-          vertical-align: middle;
-          table-layout: fixed;
-          margin-top: 1em;
-      } 
-      table.editPatchTable tr {
-          border: 1px solid black;
-          border-collapse: collapse;
-      } 
-      table.editPatchTable td, table.editPatchTable th {
-          border-collapse: collapse;
-          padding: 1px 0px 1px px;
-      } 
-      table.editPatchTable th {
-          text-align: left;
-      }
-      table.editPatchTable th.editPatchTableButtons {
-          padding-left: 5px;
-          text-align: right;
-      }
-      table.editPatchTable th.editPatchTableNumber {
-          padding-left: 8px;
-          font-size: 1.5em;
-          width: 1px;
-          white-space: nowrap;
-      }
-      table.editPatchTable th.editPatchTableName {
-          padding-left: 4px;
-          padding-right: 10px;
-          font-size: 1.5em;
-      }
-      table.editPatchTable th.editPatchTableTempoLabel {
-          padding-left: 1px;
-          padding-right: 4px;
-          font-size: 1.0em;
-          padding-top: 6px;
-          vertical-align: middle;
-          width: 1px;
-          white-space: nowrap;
-      }
-      table.editPatchTable th.editPatchTableTempoValue {
-          padding-left: 8px;
-          padding-right: 2px;
-          font-size: 1.5em;
-          width: 1px;
-          white-space: nowrap;
-      }
-      table.editPatchTable th.editPatchTableDescription {
-          padding-left: 8px;
-      }
-      table.editPatchTable th.editPatchTableDescription:empty::after {
-          content: "\00a0"; /* Prevent collapse of empty row. See https://stackoverflow.com/questions/42225196/prevent-collapse-of-empty-rows-in-html-table-via-css */
-      }
-      table.editPatchTable td {
-          vertical-align: top;
-      }
-
-      table.editEffectTable {
-          border: 1px solid black;
-          border-radius: 6px;
-          border-spacing: 0px;
-          border-collapse: separate;
-          text-align: center;
-          vertical-align: middle;
-          table-layout: fixed;
-          margin: 2px 4px 4px 4px;
-      } 
-      table.editEffectTable tr {
-          border: 0px solid black;
-          border-collapse: collapse;
-      } 
-      table.editEffectTable td, table.editEffectTable th {
-          border: 1px solid darkgray;
-          border-collapse: collapse;
-          font-size: 1em;
-          white-space:pre;
-          padding: 1px 4px 1px 4px;
-      } 
-      table.editEffectTable th {
-          text-align: center;
-          line-height: 0.1em;
-      }
-      .editEffectTableTopBar {
-          display:flex;
-          flex-direction: column;
-          line-height: 1.3em;
-          padding: 0;
-          margin: 0em ;
-          white-space:nowrap;
-      }
-      .editEffectTableButtons {
-          display:flex;
-          flex-direction: row;
-          align-items: center;
-          justify-content: space-between;
-          padding-top: 3px;
-          margin: 0em;
-          white-space:nowrap;
-      }
-      table.editEffectTable .editEffectTableEffectName {
-          margin-left: auto;
-          margin-right: auto;
-          margin-top: auto;
-          margin-bottom: auto;
-          padding-left: 3px;
-          padding-right: 3px;
-      }
-      table.editEffectTable td {
-          text-align: center;
-      }
-      table.editEffectTable td {
-        /* background-image: linear-gradient(to right, rgb(240, 240, 240) 0%, rgb(180, 180, 180) 100%); */
-        background-repeat: no-repeat; 
-        background-size: 0%;
-      }
-      table.editEffectTable td.unmapped {
-        background: #FFCCCC;
-        outline: 2px solid orangered;
-        background-image:none !important;
-      }
-      table.editEffectTable td.changed {
-        background: #CCFFCC;
-        outline: 2px solid greenyellow;
-        background-image:none !important;
-      }
-
-      table.editEffectOff {
-          color: darkgray;
-      }
-      table.editEffectSlot {
-          border: 2px solid black;
-      }
-      /* rounded corners on effect tables */
-      table.editEffectTable th:first-of-type {
-          border-top-left-radius: 6px;
-      }
-      table.editEffectTable th:last-of-type {
-          border-top-right-radius: 6px;
-      }
-      table.editEffectTable tr:last-of-type td:first-of-type {
-          border-bottom-left-radius: 6px;
-      }
-      table.editEffectTable tr:last-of-type td:last-of-type {
-          border-bottom-right-radius: 6px;
-      }
-
-      table.editEffectTable .effectOnOffButton {
-          float: left;
-          font-size: 1.2em;
-          font-variation-settings:
-          'FILL' 0,
-          'wght' 450,
-          'GRAD' 0,
-          'opsz' 24;
-          color: black;
-          padding: 1px;
-          margin: 0px 1px 0px 1px;
-          border: 0;
-          background: transparent;
-          border-radius: 2em;
-      }
-      table.editEffectTable .effectOnOffButton.on {
-          opacity: 0.7;
-      }
-      table.editEffectTable .effectOnOffButton:hover {
+        table.editEffectTable .effectActionButton {
+            float: right;
+            font-size: 1.2em;
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 450,
+            'GRAD' 0,
+            'opsz' 24;
+            color: black;
+            padding: 1px;
+            margin: 0px 1px 0px 1px;
+            border: 1px solid #333333;
+            border-radius: 3px;
+            background-color: #EEEEEEAA;
+            visibility:visible;
+        }
+        table.editEffectTable .effectActionButton:hover:enabled {
           background-color: #DDDDDD;
-      }
-      table.editEffectTable .effectOnOffButton:active {
-          background-color: #EEEEEE;
-      }
+        }
+        table.editEffectTable .effectActionButton:active:enabled {
+            background-color: #EEEEEE;
+        }
+        table.editEffectTable .effectActionButton:disabled {
+            opacity: 0.3;
+        }
 
-      table.editEffectTable .effectActionButton {
-        float: right;
-        font-size: 1.2em;
-        font-variation-settings:
-        'FILL' 0,
-        'wght' 450,
-        'GRAD' 0,
-        'opsz' 24;
-        color: black;
-        padding: 1px;
-        margin: 0px 1px 0px 1px;
-        border: 1px solid #333333;
-        border-radius: 3px;
-        background-color: #EEEEEEAA;
-      }
-      table.editEffectTable .effectActionButton:hover:enabled {
+        .collapsibleContainer {
+            border: 1px solid black;
+            border-collapse: collapse;
+            margin-top: 1em;
+            width:fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            overflow: visible; /* changed from hidden; to allow tooltips to be visible */
+        }
+        .collapsible {
+            cursor: pointer;
+            border: none;
+            padding: 5px 5px 2px 5px;
+            width: 100%;
+            text-align: left;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+        .collapsibleIcon {
+            float: right;
+            font-size: 1.3em;
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 200,
+            'GRAD' 0,
+            'opsz' 24;
+        }
+
+        .collapsibleIcon::before {
+            content: "keyboard_arrow_up";
+        }
+
+        .collapsible:hover {
+            background-color: #DDDDDD;
+        }
+
+        .active .collapsibleIcon::before {
+            content: "keyboard_arrow_down";
+        }
+
+        .collapsibleContent {
+            padding: 0 0px;
+            border-collapse: collapse;
+            overflow: visible; /* changed from hidden; to allow tooltips to be visible */
+        }
+
+        .onOffButton {
+            float: left;
+            font-size: 1.4em;
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 800,
+            'GRAD' 0,
+            'opsz' 24;
+            color: #AAAAAA;
+            background-color: transparent;
+            padding: 0;
+            margin: 0, 0.2em, 0, 0;
+            border: 0;
+            line-height: 0.8em;
+        }
+
+        .onOffButton.on {
+            color: #FFAA00;
+        }
+
+        .onOffButton:hover {
+            color: #888888;
+        }
+
+        .onOffButton.on:hover {
+            color: #FF8800;
+        }
+
+        .saveButton {
+            float: left;
+            color: #000000;
+            background-color: transparent;
+            padding: 0;
+            margin: 0, 0.2em, 0, 0;
+            border: 0;
+            line-height: 0.8em;
+        }
+        .saveButton:hover {
+            color: #888888;
+        }
+        .saveButton > span {
+            margin: 0;
+            padding: 0;
+            line-height: 0.7em;
+            font-size: 1.4em;
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 600,
+            'GRAD' 0,
+            'opsz' 24;
+        }
+
+        table#patchesTable {
+            border: 1px solid black;
+            border-collapse: collapse;
+            text-align: center;
+            table-layout: fixed;
+            user-select: none;
+        } 
+        table#patchesTable tr {
+            border: 1px solid black;
+            border-collapse: collapse;
+        } 
+        table#patchesTable td, table#patchesTable th {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 1px 4px 1px 4px;
+        } 
+        table#patchesTable td {
+            text-align: left;
+        }
+        table#patchesTable td.highlight {
+            background:#EEEEEE;
+        }
+
+        button.loadSaveButtons {
+            padding: 2px 4px 2px 4px;
+            margin: 3px 3px 3px 3px;
+        }
+        button#connectButton {
+            font-size: 1.5em;
+            /* background-color:ivory;
+            transition-duration: 0.4s;
+            border-radius: 5px; */
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 10px 10px 10px 10px;
+        }
+
+        [tooltip]:hover:after {
+            opacity: 1;
+            transition: all 0.1s ease 0.4s;
+            visibility: visible;
+        }
+        [tooltip]:after {
+            content: attr(tooltip);
+            position: absolute;
+            bottom: -1.5em;
+            right: 100%;
+            padding: 4px 4px 4px 8px;
+            color: black;
+            background-color: lightyellow;
+            border-color: black;
+            border: 1px solid black;
+            white-space: nowrap; 
+            border-radius: 3px;  
+            box-shadow: 2px 2px 4px lightgray;  
+            opacity: 0;
+            z-index: 99999;
+            visibility: hidden;
+        }
+        [tooltip] {
+            position: relative;
+        }
+        /* Hide tooltips when parent element has overflow: hidden */
+        *[style*="overflow: hidden"] [tooltip]:after,
+        *[style*="overflow:hidden"] [tooltip]:after,
+        .overflow-hidden [tooltip]:after {
+            display: none !important;
+        }
+        *[style*="overflow: hidden"] [tooltip]:hover:after,
+        *[style*="overflow:hidden"] [tooltip]:hover:after,
+        .overflow-hidden [tooltip]:hover:after {
+            display: none !important;
+        }
+
+        .knob {
+            --stroke-scale: 0.9;
+            --half-size: calc(var(--size) / 2);
+            /* --opacity: 1; */
+            display:flex;
+            flex-direction: column;
+            text-align: center;
+            width: fit-content;
+        }
+        .knob:focus {
+            outline: 1px dotted black;
+            /* box-shadow: 1px 1px 1px 0px black; */
+            /* background-color: #EEEEEE; */
+        }
+
+        .knob svg {
+            transform: rotate(-225deg);
+            transform-origin: var(--half-size) var(--half-size);
+            fill: none;
+            stroke-linecap: round;
+            width: var(--size);
+            height: var(--size);
+            viewBox: 0 0 var(--size) var(--size);
+            margin-left: auto;
+            margin-right: auto;
+            /* opacity: var(--opacity); */
+        }
+
+        .knob circle {
+            cx: var(--half-size);
+            cy: var(--half-size);
+        }
+        .knob circle.bg {
+            --radius: calc((var(--size) - var(--stroke-width)) / 2);
+            --circumference: calc(var(--radius) * pi * 2);
+            --full-dash: calc(var(--circumference) * 0.75); /* / 270 / 360 */
+            --dash: calc((var(--value) * var(--circumference)) * 0.0075); /* / 100 * 270 / 360 */
+            r: var(--radius);
+            stroke: #000000;
+            stroke-width: calc(var(--stroke-width) * var(--stroke-scale));
+            stroke-dasharray: var(--full-dash) calc(var(--circumference) - var(--dash));
+        }
+        .knob circle.fg {
+            --radius: calc((var(--size) - var(--stroke-width)) / 2);
+            --circumference: calc(var(--radius) * pi * 2);
+            --full-dash: calc(var(--circumference) * 0.75); /* / 270 / 360 */
+            --dash: calc((var(--value) * var(--circumference)) * 0.0075); /* / 100 * 270 / 360 */
+            r: var(--radius);
+            stroke: #FFAA00;
+            /* stroke: #FFFFFF; */
+            stroke-width: var(--stroke-width);
+            stroke-dasharray: var(--dash) calc(var(--circumference) - var(--dash));
+        }
+        .knob line {
+            stroke: #000000;
+            stroke-width: calc(var(--stroke-width) * var(--stroke-scale));
+            transform: rotate(calc(270deg * var(--value) * 1.01 / 100));
+            transform-origin: var(--half-size) var(--half-size);
+        }
+        .knob label {
+            margin-top: -5px;
+        }
+
+        .rackDevicesClass {
+            margin: auto;
+            width: fit-content;
+            /* outline: 2px solid red; */
+        }
+
+        .rack {
+            margin: auto;
+            outline: 2px solid black;
+            border-radius: 6px;
+            display: grid;
+            grid-template-columns: 1fr;
+            /* grid-template-rows: repeat(3, auto); */
+            grid-template-rows: 1fr;
+            width:fit-content;
+        }
+        .rackHeader {
+            border-bottom: 1px solid black;
+            border-spacing: 0px;
+            background-color: #EEEEEE;
+            padding: 5px 5px 5px 5px;
+            font-weight: bold;
+        }
+        .rackMainArea {
+            background-color: #FFFFFF;
+            display:flex;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .rackDevice {
+            margin-left: 3px;
+            margin-right: 3px;
+            outline: 2px solid black;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            width: fit-content;
+        }
+
+        .rackDevice .collapsibleContainerTitle {
+            color: #888888;
+        }
+        .rackDevice .collapsibleContainerTitle.on {
+            color: black;
+        }
+        .rackDeviceMainArea {
+            opacity: 0.4;
+        }
+        .rackDeviceMainArea.on {
+            opacity: 1;
+        }
+
+        .rackDeviceHeader {
+            border-bottom: 1px solid black;
+            border-spacing: 0px;
+            background-color: #EE88EE;
+            padding: 5px 5px 5px 5px;       
+            font-weight: bold;     
+        }
+        .rackDeviceHeaderLabel {
+            white-space: nowrap;
+        }
+        .rackDeviceMainArea {
+            background-color: #EEEEEE;
+            display:flex;
+            justify-content: center;
+            padding: 5px;
+            flex-grow: 1; 
+            /* grid-column: 1 / -1; */
+        }
+
+        .rackDeviceParameterGroup {
+            --num-columns: 3;
+            --num-rows: 2;
+            --has-header: 0;
+            flex-grow: 1;
+            flex-basis: 23%;
+            margin: 5px;
+            padding: 3px;
+            outline: 2px solid black;
+            border-radius: 6px;
+            display: grid;
+            grid-template-columns: repeat(var(--num-columns), 1fr);
+            /* grid-template-rows: repeat(3, auto); */
+            grid-template-rows: repeat(var(--has-header), auto) repeat(var(--num-rows), 1fr);
+            gap: 3px;
+        }
+        .rackDeviceParameterGroupSelected {
+            outline: 3px solid black;
+        }
+        .rackDeviceParameterGroupOff {
+            color: #999999;
+        }
+        .rackDeviceParameterGroup.editEffectOff {
+            opacity: 0.3;
+        }
+
+        /* .rackDeviceParameterGroup div:first-child {
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        } */
+
+        .rackDeviceButtonGroup {
+            --num-columns: 4;
+            --num-rows: 2;
+            flex-grow: 1;
+            flex-basis: 23%;
+            padding: 3px;
+            display: grid;
+            grid-template-columns: repeat(var(--num-columns), 1fr);
+            /* grid-template-rows: repeat(3, auto); */
+            grid-template-rows: repeat(var(--num-rows), 1fr);
+            gap: 3px;
+        }
+
+        .rackDeviceParameterHeader {
+            font-weight: bold;
+            grid-column-start: 1;
+            grid-column-end: calc(var(--num-columns) + 1);
+            grid-row-start: 1;
+            grid-row-end: 2;
+            border-bottom: 1px solid darkgrey;
+            padding-bottom: 4px;
+
+            display:flex;
+            flex-direction: column;
+            line-height: 1em;
+            margin: 0em ;
+            white-space:nowrap;
+        }
+        .rackDeviceParameterItem {
+            /* padding: 1px 3px 1px 3px; */
+            padding-bottom: 2px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            white-space: nowrap;
+            /* border: 1px solid black; */
+        }
+        .rackDeviceParameterItem.span {
+            grid-column-start: span calc(var(--num-columns));
+        }
+        .rackDeviceParameterItem > button{
+            width: 100%;
+        }
+        .rackDeviceParameterGroup .editEffectTableEffectName {
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: auto;
+            margin-bottom: auto;
+            padding-left: 3px;
+            padding-right: 3px;
+        }
+        .rackDeviceParameterGroupButtons {
+            display:flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 3px;
+            margin: 0em;
+            white-space:nowrap;
+        }
+
+        .rackDeviceParameterGroup .effectOnOffButton {
+            /* float: left; */
+            font-size: 1.2em;
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 450,
+            'GRAD' 0,
+            'opsz' 24;
+            color: black;
+            padding: 1px;
+            margin: 0px 1px 0px 1px;
+            border: 0;
+            background: transparent;
+            border-radius: 2em;
+        }
+        .rackDeviceParameterGroup .effectOnOffButton.on {
+            opacity: 0.7;
+        }
+        .rackDeviceParameterGroup .effectOnOffButton:hover {
+            background-color: #DDDDDD;
+        }
+        .rackDeviceParameterGroup .effectOnOffButton:active {
+            background-color: #EEEEEE;
+        }
+
+        .rackDeviceParameterGroup .effectActionButton {
+            /* float: right; */
+            font-size: 1.2em;
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 450,
+            'GRAD' 0,
+            'opsz' 24;
+            color: black;
+            padding: 1px;
+            margin: 0px 1px 0px 1px;
+            border: 1px solid #333333;
+            border-radius: 3px;
+            background-color: #EEEEEEAA;
+            visibility:visible;
+        }
+        .rackDeviceParameterGroup .effectActionButton:hover:enabled {
           background-color: #DDDDDD;
-      }
-      table.editEffectTable .effectActionButton:active:enabled {
-          background-color: #EEEEEE;
-      }
-      table.editEffectTable .effectActionButton:disabled {
-          opacity: 0.3;
-      }
-      .sendSysexButton {
-        float: right;
-        padding: 1px 4px 1px 4px;
-      }
+        }
+        .rackDeviceParameterGroup .effectActionButton:active:enabled {
+            background-color: #EEEEEE;
+        }
+        .rackDeviceParameterGroup .effectActionButton:disabled {
+            opacity: 0.3;
+        }
 
-      .sysexASCIICheckbox {
-        float: right;
-        padding: 1px 4px 1px 4px;
-      }
-      .sysexEightBitCheckbox {
-        float: right;
-        padding: 1px 4px 1px 4px;
-      }
-      .sysexEightBitOffset {
-        float: right;
-        padding: 1px 4px 1px 4px;
-        text-align: right;
-      }
 
-      button.loadSaveButtons {
-        float: right;
-        padding: 1px 2px 1px 2px;
-      }
+        /*  Circular button
+            <div class="rackDeviceParameterButtonWrapper">
+                <button class="rackDeviceParameterButton">01</button>
+            </div>
+           .rackDeviceParameterButtonWrapper {
+            position: relative;
+            padding: 30px !important;
+            background-color: #FF55FF;
+            border-radius: 100%;
+            width: fit-content;        
+        }
+        .rackDeviceParameterButtonWrapper > button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0;
+            background-color: transparent;
+        } */
+        .rackDeviceParameterButton {
+            border-radius: 10px;
+            border: 2px solid darkgray;
+            background-color: white;
+            padding: 10px;
+            text-align: center;
+            vertical-align: middle;
+            display: inline-flex;
+            flex-direction: column;
+        }
+        .rackDeviceParameterButton.selected {
+            outline: 3px solid black;
+            outline-offset: -3px;
+        }
+        .rackDeviceParameterButton.notEmpty {
+            /* text-shadow:0px 0px 1px black; */
+            font-weight: bold;
+        }
+        .rackDeviceParameterButton.pressed {
+            outline: 3px solid black;
+            outline-offset: -3px;
+            font-weight: bold;
+        }
+        .rackDeviceParameterButton::after {
+            /* Trick so bold text does not change size, see https://codepen.io/cauners/pen/mdLQqPz and https://css-tricks.com/bold-on-hover-without-the-layout-shift/*/
+            content: attr(data-text);
+            font-weight: bold;
+            opacity: 0;
+            height: 0;
+            pointer-events: none;
+        }
+        .rackDeviceParameterButton:active {
+            background-color: #FF8800;
+        }
+        .rackScene {
+            display:flex;
+            flex-direction: column;
+        }
+        .rackSceneHeader {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            padding: 0px 3px 0px 3px;
+        }
+        .rackSceneRecButtonEnabled {
+            background-color: #FF0000;
+        }
 
-      .effectSelectorContainer {
-        width:fit-content;
-        border: 1px solid black;
-        border-radius: 4px;
-        display: flex;
-        flex-direction: column;
-        padding: 4px 8px 0px 0px;
-        margin-left: auto;
-        margin-right: auto;
-      }
-      .effectSelectorTitle {
-        margin: 2px 4px 10px 8px;
-        font-size: 1.3em;
-        text-align: center;
-      }
-      .effectSelectorCategoryList {
-        --num-columns: 2;
-        --num-rows: 2;
-        flex-grow: 1;
-        flex-basis: 23%;
-        margin: 5px 0px 5px 5px;
-        display: grid;
-        grid-template-columns: 0.1fr 1fr;
-        grid-template-rows: repeat(3, auto);
-        /* grid-template-rows: repeat(var(--has-header), auto) repeat(var(--num-rows), 1fr); */
-        gap: 1px;
-      }
-      .effectSelectorPedalTitle {
-        margin: 0px 8px 14px 4px;
-        padding: 2px 4px 2px 4px;
-        font-size: 1.3em;
-      }
-      .effectSelectorPedal {
-        background-color: #EEEEEE;
-        padding: 1px 6px 1px 6px;
-        margin-bottom: 9px;
-        align-content: center;
-      }
-      .effectSelectorPedal:hover {
-        outline: 3px solid lightgray;
-      }
-      .effectSelectorPedalSelected {
-        outline: 3px solid orange;
-        background-color: #CCCCCC;
-      }
-      .effectSelectorPedalSelected:hover {
-        outline: 3px solid orange;
-      }
-      .effectSelectorCategoryName {
-        margin: 0px 8px 6px 4px;
-        padding: 2px 4px 2px 4px;
-        font-size: 1.3em;
-      }
-      .effectSelectorList {
-        --num-columns: 10;
-        --num-rows: 2;
-        --has-header: 0;
-        flex-grow: 1;
-        flex-basis: 23%;
-        margin: 0px 0px 6px 0px;
-        padding: 0px 0px 0px 0px;
-        /* outline: 2px solid orange; */
-        display: grid;
-        grid-template-columns: repeat(var(--num-columns), 1fr);
-        /* grid-template-rows: repeat(3, auto); */
-        grid-template-rows: repeat(var(--has-header), auto) repeat(var(--num-rows), 1fr);
-        gap: 3px;
-      }
-      .effectSelectorEffect {
-        background-color: #EEEEEE;
-        padding: 1px 6px 1px 6px;
-        align-content: center;
-      }
-      .effectSelectorEffect:hover {
-        outline: 2px solid lightgray;
-      }
-      .effectSelectorEffectSelected {
-        outline: 2px solid black;        
-      }
-      .effectSelectorEffectSelected:hover {
-        outline: 2px solid black;
-      }
-      .effectSelectorButtons {
-        margin-top: 12px;
-        text-align: center;
-      }
+        .midiMapperClass .collapsible {
+            display:flex;
+            flex-direction: row;
+            background-color: #EEEEEE;
+        }
+        .midiMapperClass .collapsibleIcon {
+            align-self: right;
+            margin-right: 5px;
+        }
+        .midiMapperClass .midiMapperMapButton {
+            margin-left: auto;
+            margin-right: 5px;
+        }
+        .midiMapperClass .onOffButton {
+            margin-left: inherit;
+        }
+        .midiMapperClass .collapsibleContainerTitle {
+            margin-top: 4px;
+        }
+        .midiMapperClass button .down {
+            background-color: #BBBBFF;
+        }
+        .midiMapperClass > table {
+            border: black 1 solid;
+            border-collapse: collapse;
+            margin: 0px -2px 0px -2px;
+        }
+        .midiMapperClass tr {
+            text-align: center;
+        }
+        .midiMapperClass th {
+            border: black 1px solid;
+            background-color: #CCCCCC;
+            padding: 2px 5px 2px 5px;
+            caret-color: transparent;
+        }
+        .midiMapperClass td {
+            border: black 1px solid;
+            background-color: #EEEEEE;
+            padding: 2px 5px 2px 5px;
+            text-align: left;
+        }
+        .midiMapperClass .highlight {
+            background-color: #DDDDFF;
+        }
+
+        .midiMapperClass .collapsibleContainerTitle {
+            color: #888888;
+        }
+        .midiMapperClass .collapsibleContainerTitle.on {
+            color: black;
+        }
+        .midiMapperClass > table {
+            opacity: 0.4;
+        }
+        .midiMapperClass > table.on {
+            opacity: 1;
+        }
+
+
+        .zoomCCMapperClass {
+            text-align: center;
+        }
+        .zoomCCMapperClass .collapsible {
+            background-color: #EEEEEE;
+        }
+        .zoomCCMapperClass .collapsibleContainerTitle {
+            color: #888888;
+        }
+        .zoomCCMapperClass .collapsibleContainerTitle.on {
+            color: black;
+        }
+        .zoomCCMapperClass .collapsibleContent {
+            opacity: 0.4;
+        }
+        .zoomCCMapperClass .collapsibleContent.on {
+            opacity: 1;
+        }
+        .zoomCCMapperClass .collapsibleIcon {
+            align-self: right;
+            margin-right: 5px;
+        }
+        .collapsible button {
+            margin-left: auto;
+            margin-right: 5px;
+        }
+        .collapsible button .down {
+            background-color: #BBBBFF;
+        }
+        .zoomCCMapperClass > div > table {
+            border: black 1px solid;
+            border-collapse: collapse;
+            margin: 0px auto 0px auto;
+        }
+        .zoomCCMapperClass tr {
+            text-align: center;
+        }
+        .zoomCCMapperClass th {
+            border: black 1px solid;
+            background-color: #CCCCCC;
+            padding: 2px 5px 2px 5px;
+        }
+        .zoomCCMapperClass td {
+            border: black 1px solid;
+            background-color: #EEEEEE;
+            padding: 2px 5px 2px 5px;
+            text-align: left;
+        }
+        .zoomCCMapperClass .highlight {
+            background-color: #DDDDFF;
+        }
+        .zoomCCMapperDeviceSelector {
+            padding: 5px;
+            margin: 2px;
+        }
+        .zoomCCMapperDeviceSelectorLabel {
+            padding: 5px;
+        }
+        .zoomCCMapperOutputDeviceTable {
+            margin:auto;
+            padding:20px;    
+            border:#FF0000 10px solid;        
+        }
+
+        #midiFilterDialog > form > div {
+            border: 1px solid black;
+        }
+        #midiFilterDialog > form > div > div {
+            border: 1px solid black;
+            padding: 5px;
+            background-color: #DDDDDD;
+        }
+        #midiFilterDialog > form > div > table {
+            margin: auto;
+            width: 100%;
+            background-color: #EEEE;
+        }
+        #midiFilterDialog input {
+            appearance: none; /*hides the default checkbox*/
+            height: 1.5em;
+            width: 1.5em;
+            background-color: #DDDDDD;
+            text-align: center;
+            vertical-align: middle;
+            font-weight: 600;
+            font-size: 0.75em;
+            outline: 1px solid black;
+
+        }
+        #midiFilterDialog input:after {
+            content: " ";
+        }
+        #midiFilterDialog input:checked:after {
+            content: "✖";
+        }
+        #midiFilterDialog input:hover {
+            cursor: pointer; 
+            opacity: 0.8;
+        }
+        #midiFilterDialog button {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 10px;
+        }
+
+        #progressDialog {
+            text-align: left;
+            vertical-align: middle;
+        }
+        #progressDialogLabel {
+            white-space: nowrap;
+        }
+        /* #progressDialogErrorLabel {
+            white-space: nowrap;
+        } */
+        .progressDialogBarBackground {
+            background-color: #EEEEEE;
+        }
+        #progressDialogBar {
+            background-color: #00ABE8;
+            padding: 5px 0 5px 0;
+        }
+        #progressDialogBarText {
+            white-space: nowrap;
+            padding: 0 0 0 30%;
+        }
+
+        .effectSelectorContainer {
+            width:fit-content;
+            border: 1px solid black;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            padding: 4px 8px 0px 0px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .effectSelectorTitle {
+            margin: 2px 4px 10px 8px;
+            font-size: 1.3em;
+            text-align: center;
+        }
+        .effectSelectorCategoryList {
+            --num-columns: 2;
+            --num-rows: 2;
+            flex-grow: 1;
+            flex-basis: 23%;
+            margin: 5px 0px 5px 5px;
+            display: grid;
+            grid-template-columns: 0.1fr 1fr;
+            grid-template-rows: repeat(3, auto);
+            /* grid-template-rows: repeat(var(--has-header), auto) repeat(var(--num-rows), 1fr); */
+            gap: 1px;
+        }
+        .effectSelectorPedalTitle {
+            margin: 0px 8px 14px 4px;
+            padding: 2px 4px 2px 4px;
+            font-size: 1.3em;
+        }
+        .effectSelectorPedal {
+            background-color: #EEEEEE;
+            padding: 1px 6px 1px 6px;
+            margin-bottom: 9px;
+            align-content: center;
+        }
+        .effectSelectorPedal:hover {
+            outline: 3px solid lightgray;
+        }
+        .effectSelectorPedalSelected {
+            outline: 3px solid orange;
+            background-color: #CCCCCC;
+        }
+        .effectSelectorPedalSelected:hover {
+            outline: 3px solid orange;
+        }
+        .effectSelectorCategoryName {
+            margin: 0px 8px 6px 4px;
+            padding: 2px 4px 2px 4px;
+            font-size: 1.3em;
+        }
+        .effectSelectorList {
+            --num-columns: 10;
+            --num-rows: 2;
+            --has-header: 0;
+            flex-grow: 1;
+            flex-basis: 23%;
+            margin: 0px 0px 6px 0px;
+            padding: 0px 0px 0px 0px;
+            /* outline: 2px solid orange; */
+            display: grid;
+            grid-template-columns: repeat(var(--num-columns), 1fr);
+            /* grid-template-rows: repeat(3, auto); */
+            grid-template-rows: repeat(var(--has-header), auto) repeat(var(--num-rows), 1fr);
+            gap: 3px;
+        }
+        .effectSelectorEffect {
+            background-color: #EEEEEE;
+            padding: 1px 6px 1px 6px;
+            align-content: center;
+        }
+        .effectSelectorEffect:hover {
+            outline: 2px solid lightgray;
+        }
+        .effectSelectorEffectSelected {
+            outline: 2px solid black;        
+        }
+        .effectSelectorEffectSelected:hover {
+            outline: 2px solid black;
+        }
+        .effectSelectorButtons {
+            margin-top: 12px;
+            text-align: center;
+        }
 
     </style>
   </head>
-  <body>
-    <!-- For www.waveformer.net <div w3-include-html="../navbar.html"></div> -->
-    <h1>Zoom Explorer by Waveformer</h1>
-    <div class="source"><a href="https://github.com/thammer/zoom-explorer">Source code on github</a></div>
-
-    <div id="content">
-      <table id="midiDevicesTable">
-        <tr>
-            <th>Zoom device</th>
-            <th>ID</th>
-            <th>OS</th>
-            <th>Input</th>
-            <th>Output</th>
-            <th>Identity Response</th>
-        </tr>
-      </table>
-      
-      <button id="downloadPatchesButton">Download all patches</button>
-      <button id="mapEffectsButton">Map all effects</button>
-      <button id="testButton">Test</button>
-
-      <div>
-        <table id="midiMonitorTable">
-          <tr>
-            <th>#</th>
-            <th>Device</th>
-            <th>Stat</th>
-            <th>D1</th>
-            <th>D2</th>
-            <th>Type</th>
-            <th>Length</th>
-          </tr>
-        </table>
-
-            <br/>
-            <br/>
-
-        <table id="patchTable">
-          <tr>
-            <th>
-            </th>
-          </tr>
-          <tr>
-            <td>Patch info</td>
-          </tr>
-        </table>
-
-        <div id="patchEditors">    
-          <table id="editPatchTableID" class="editPatchTable">
-            <tr>
-              <th class="editPatchTableNumber">Patch 00:</th>
-              <th class="editPatchTableName" id="editPatchTableNameID">Patch Name</th>
-              <th class="editPatchTableTempoValue" id="editPatchTableTempoValueID">42</th>
-              <th class="editPatchTableTempoLabel">BPM</th>
-            </tr>
-            <tr>
-              <th colspan="4" class="editPatchTableDescription" id="editPatchTableDescriptionID"></th>
-            </tr>
-            <tr>
-              <td colspan="4">
-                <table>
-                  <tr>
-
-                    <td>
-                      <table class="editEffectTable editEffectSlot">
-                        <tr>
-                          <th colspan="4">
-                              <div class="editEffectTableTopBar">
-                                  <span class="editEffectTableEffectNameContainer">
-                                      <button class="material-symbols-outlined effectOnOffButton">radio_button_unchecked</button>
-                                      <span class="editEffectTableEffectName">LPF</span>
-                                      <button class="material-symbols-outlined effectActionButton">data_table</button>
-                                  </span>
-                                  <span class="editEffectTableButtons">
-                                      <button class="material-symbols-outlined effectActionButton">add_circle</button>
-                                      <button class="material-symbols-outlined effectActionButton">arrow_back_2</button>
-                                      <button class="material-symbols-outlined effectActionButton">delete</button>
-                                      <button class="material-symbols-outlined effectActionButton">play_arrow</button>
-                                      <button class="material-symbols-outlined effectActionButton">add_circle</button>
-                                  </span>
-                              </div>
-                          </th>
-                        </tr>
-                        <tr>
-                          <td>FREQ</td><td>Sense</td><td>Reso</td><td>Bal</td>
-                        </tr>
-                        <tr>
-                          <td>74</td>
-                          <td>SLW24</td>
-                          <td>2P-4</td>
-                          <td>88</td>
-                        </tr>
-                        <tr>
-                          <td>FREQ</td><td>Sense</td><td>Reso</td>
-                        </tr>
-                        <tr>
-                          <td>74</td>
-                          <td>SLW24</td>
-                          <td>2P-4</td>
-                        </tr>
-                      </table>
-                    </td>
-                    <td>
-                      <table class="editEffectTable editEffectOff">
-                        <tr>
-                            <th colspan="4">Low-pass Filter</th>
-                        </tr>
-                        <tr>
-                          <td>FREQ</td><td>Sense</td><td>Reso</td><td>Bal</td>
-                        </tr>
-                        <tr>
-                          <td>74</td>
-                          <td>SLW24</td>
-                          <td>2P-4</td>
-                          <td>88</td>
-                        </tr>
-                        <tr>
-                          <td>FREQ</td><td>Sense</td>
-                        </tr>
-                        <tr>
-                          <td>74</td>
-                          <td>SLW24</td>
-                        </tr>
-                      </table>
-                    </td>
-
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </div>
-            
-      <table id="patchesTable">
-        <tr>
-            <th>#</th>
-            <th>Name</th>
-            <th>#</th>
-            <th>Name</th>
-            <th>#</th>
-            <th>Name</th>
-            <th>#</th>
-            <th>Name</th>
-            <th>#</th>
-            <th>Name</th>
-        </tr>
-      </table>
-
-      <div id="effectSelectors">
-
-        <div class="effectSelectorContainer" id="effectSelectorID">
-          <div class="effectSelectorTitle">Pedal: MS-70CDR+</div>
-          <div class="effectSelectorCategoryList">
-            
-              <div class="effectSelectorCategoryName" style="background-color: aqua;">Delay</div>
-              <div class="effectSelectorList">
-                <div class="effectSelectorEffect" style="background-color: aqua;">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-              </div>
-
-              <div class="effectSelectorCategoryName">Reverb</div>
-              <div class="effectSelectorList">
-                <div class="effectSelectorEffect">HD Hall</div>
-                <div class="effectSelectorEffect">HD Hall</div>
-                <div class="effectSelectorEffect">HD Hall</div>
-                <div class="effectSelectorEffect">HD Hall</div>
-                <div class="effectSelectorEffect">HD Hall</div>
-                <div class="effectSelectorEffect">HD Hall</div>
-                <div class="effectSelectorEffect">HD Hall</div>
-                <div class="effectSelectorEffect">HD Hall</div>
-                <div class="effectSelectorEffect">HD Hall</div>
-                <div class="effectSelectorEffect">HD Hall</div>
-                <div class="effectSelectorEffect">HD Hall</div>
-                <div class="effectSelectorEffect">HD Hall</div>
-              </div>
-
-              <div class="effectSelectorCategoryName">Delay</div>
-              <div class="effectSelectorList">
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-                <div class="effectSelectorEffect">DualDelay</div>
-              </div>
-
-          </div>
-        </div>
-
+  <body class="startup-pending">
+    <div id="startupLoadingOverlay" class="visible" aria-live="polite" aria-busy="true">
+      <div class="startupLoadingCard">
+        <div class="startupLoadingSpinner" aria-hidden="true"></div>
+        <div class="startupLoadingTitle">Loading</div>
+        <div class="startupLoadingDetail">Starting Zoom Explorer...</div>
       </div>
-
-      <table id="sysexMonitorTable">
-      </table>
     </div>
-  </div>
-  <dialog id="confirmDialog">
-    <form>
-      <p>
-        <label id="confirmLabel">
-          Are you sure?
-        </label>
-      </p>
-      <div>
-        <button formmethod="dialog" value="cancel">No</button>
-        <button id="confirmButton" value="ok">Yes</button>
-      </div>
-    </form>
-  </dialog>
-  
-  <dialog id="infoDialog">
-    <form>
-      <p>
-        <label id="infoLabel">
-          Info text goes here
-        </label>
-      </p>
-      <div>
-        <button id="infoOKButton" value="ok" hidden>OK</button>
-      </div>
-    </form>
-  </dialog>    
 
-  <dialog id="textInputDialog">
-    <form>
-      <p>
-        <p>
-          <label id="textInputLabel">
-            Enter some text:
-          </label>
+    <div class="titleContainer">
+        <div></div>
+        <div class="sitename">Zoom Explorer</div>
+        <div class="versionGroup">
+            <div class="version">
+                <a href="user-manual.html" target="_blank"><span class="material-symbols-outlined">info</span>User manual</a><br/>
+                <a href="release-notes.html" target="_blank"><span class="material-symbols-outlined">star</span>Version 1.6.0 2026-01-18 Enabled Experimental Playground</a>
+
+                <div class="donate">
+                    <form action="https://www.paypal.com/donate" method="post" target="_top">
+                        <input type="hidden" name="hosted_button_id" value="4DCZLVEBQNUUW" />
+                        <input type="image" src="https://www.paypalobjects.com/en_US/NO/i/btn/btn_donateCC_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+                        <img alt="" border="0" src="https://www.paypal.com/en_NO/i/scr/pixel.gif" width="1" height="1" />
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div></div>
+        <div class="byWaveformer">by <a href="https://www.waveformer.net" target="_blank">Waveformer</a></div>
+        <div></div>
+    </div>
+
+    <div class="subtitle">a simple patch manager and editor for Zoom MS and MS+ pedals</div>
+
+    <label id="perfmonLabel">performance</label>
+    
+    <div id="settingsContainer"></div>
+
+    <div id="midiDeviceList"></div>
+
+    <div id="mainLayout">
+        <div id="sidebar">
+            <div id="fileBrowserSidebar">
+                <div class="sidebar-header">
+                    <span>File Browser</span>
+                    <button id="sidebarToggle" class="sidebar-toggle" title="Minimize sidebar">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </button>
+                </div>
+                <div id="fileBrowserContainer">
+                    <!-- File browser will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="content">
+
+        <div id="zoomCCMapper"></div>
+
+        <!-- <div class="zoomCCMapperClass collapsibleContainer">
+            <div type="button" class="collapsible">
+                <button class="material-symbols-outlined onOffButton">mode_off_on</button>
+                <span class="collapsibleContainerTitle on">Zoom MIDI CC Mapper</span>
+                <span class="material-symbols-outlined collapsibleIcon"></span>
+            </div>
+            <div class="collapsibleContent">
+                <label for="deviceSelect" class="zoomCCMapperDeviceSelectorLabel">Input device: </label>
+    
+                <select name="devices" id="deviceSelect" class="zoomCCMapperDeviceSelector">
+                  <option value="">--Please select a device--</option>
+                  <option value="dog">Dog</option>
+                  <option value="cat">Cat</option>
+                  <option value="hamster">Hamster</option>
+                  <option value="parrot">Parrot</option>
+                  <option value="spider">Spider</option>
+                  <option value="goldfish">Goldfish</option>
+                </select>
+    
+                <button type="button" class="clearLogButtonClass">Clear log</button>
+    
+                <table class="zoomCCMapperOutputDeviceTable">
+                    <tr>
+                        <th>Output device</th>
+                        <th>&#8592;</th>
+                        <th>Input Channel</th>
+                    </tr>
+                    <tr>
+                        <td>Zoom MS-70CDR+ #1</td>
+                        <th>&#8592;</th>
+                        <td>1</td>
+                    </tr>
+                </table>
+    
+                <table class="zoomCCMapperTable">
+                    <tr>
+                        <th>Channel</th>
+                        <th>Message</th>
+                        <th>Value</th>
+                        <th>&#8592;</th>
+                        <th>Device</th>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td>CC 22</td>
+                        <td>88</td>
+                        <td>&#8592;</td>
+                        <td>Zoom MS-70CDR+ #1</td>
+                        <td>Slot 1 BitCrush Mix</td>
+                        <td>42</td>
+                    </tr>
+                </table>
+            </div>
+        </div> -->
+    
+        <!--- leftovers go here -->
+    
+        <div id="midiMappers"></div>
+        <div id="rackDevices" class="rackDevicesClass"></div>
+
+
+        <!-- <div class="rack collapsibleContainer">
+            <div type="button" class="collapsible rackDeviceHeader">
+                <button class="material-symbols-outlined onOffButton">mode_off_on</button>
+                <button class="saveButton" tooltip="Save"><span class="material-symbols-outlined">save</span></button>
+                <label class="collapsibleContainerTitle on rackDeviceHeaderLabel">Berlin School Performance Rack</label>
+                <span class="material-symbols-outlined collapsibleIcon"></span>
+            </div>
+            <div class="rackMainArea collapsibleContent">
+                <div class="rackDevice">
+                    <div class="rackDeviceHeader">
+                        Scenes
+                    </div>
+                    <div class="rackDeviceMainArea">
+                        <div class="rackScene">
+                            <div class="rackSceneHeader">
+                                <div>Current: </div>
+                                <div>01</div>
+                                <button>Store</button>
+                                <button class="rackSceneRecButtonEnabled">Rec</button>
+                            </div>                    
+                            <div class="rackDeviceButtonGroup" style="background-color: #EEEEEE; --num-columns: 4; --num-rows: 4;">
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">01</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">02</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">03</button>
+                                </div>
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">04</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">05</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">A</button>
+                                </div>    
+                                <div class="rackDeviceParameterItem span">
+                                    <div style="--value: 30; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                        <svg>
+                                            <circle class="bg"></circle>
+                                            <circle class="fg"></circle>
+                                            <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                        </svg>
+                                        <label contenteditable="true">127</label>
+                                    </div>                                        
+                                </div>
+                                <div class="rackDeviceParameterItem">
+                                    <button class="rackDeviceParameterButton">B</button>
+                                </div>    
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rackDevice">
+                    <div class="rackDeviceHeader">
+                        Zoom MS-70CDR+
+                    </div>
+                    <div class="rackDeviceMainArea">
+                        <div class="rackDeviceParameterGroup rackDeviceParameterGroupSelected" style="background-color: #E8E69E; --num-columns: 4; --has-header: 1">
+                            <div class="rackDeviceParameterHeader" >
+                                <span class="rackDeviceParameterGroupButtons">
+                                    <button class="material-symbols-outlined effectOnOffButton">radio_button_unchecked</button>
+                                    <span class="editEffectTableEffectName">LoopRoll</span>
+                                    <button class="material-symbols-outlined effectActionButton">data_table</button>
+                                </span>
+                                <span class="rackDeviceParameterGroupButtons">
+                                    <button class="material-symbols-outlined effectActionButton">add_circle</button>
+                                    <button class="material-symbols-outlined effectActionButton">arrow_back_2</button>
+                                    <button class="material-symbols-outlined effectActionButton">delete</button>
+                                    <button class="material-symbols-outlined effectActionButton">play_arrow</button>
+                                    <button class="material-symbols-outlined effectActionButton">add_circle</button>
+                                </span>                                
+                            </div>
+                            <div class="rackDeviceParameterItem">
+                                <div>Time</div>
+                                <div style="--value: 30; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                            <div class="rackDeviceParameterItem">
+                                <div>Duty</div>
+                                <div style="--value: 70; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                            <div class="rackDeviceParameterItem">
+                                <div>Bal</div>
+                                <div style="--value: 70; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                            <div class="rackDeviceParameterItem">
+                                <div>On/Off</div>
+                                <div style="--value: 70; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                        </div>
+
+                        <div class="rackDeviceParameterGroup rackDeviceParameterGroupOff" style="background-color: #ABD3A3; ; --has-header: 1">
+                            <div class="rackDeviceParameterItem rackDeviceParameterHeader">
+                                SpringREV
+                            </div>
+                            <div class="rackDeviceParameterItem">
+                                <div>Bing</div>
+                                <div style="--value: 70; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                            <div class="rackDeviceParameterItem">
+                                <div>Bang</div>
+                                <div style="--value: 70; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                            <div class="rackDeviceParameterItem">
+                                <div>Bong</div>
+                                <div style="--value: 70; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                            <div class="rackDeviceParameterItem">
+                                <div>Bengobongo</div>
+                                <div style="--value: 70; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                        </div>
+                    </div>
+                </div>
+                <div id="device2" class="rackDevice">
+                    <div class="rackDeviceHeader">
+                        Korg NTS-3
+                    </div>
+                    <div class="rackDeviceMainArea">
+                        <div class="rackDeviceParameterGroup" style="--has-header: 1">
+                            <div class="rackDeviceParameterItem rackDeviceParameterHeader">
+                                &nbsp;
+                            </div>
+                            <div class="rackDeviceParameterItem">
+                                <div>Parameter 1</div>
+                                <div style="--value: 70; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                            <div class="rackDeviceParameterItem">
+                                <div>Parameter 2</div>
+                                <div style="--value: 70; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                            <div class="rackDeviceParameterItem">
+                                <div>Parameter 3</div>
+                                <div style="--value: 70; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                            <div class="rackDeviceParameterItem">
+                                <div>Parameter 4</div>
+                                <div style="--value: 70; --size: 32px; --stroke-width: 4px;" class="knob" id="testknob">
+                                    <svg>
+                                        <circle class="bg"></circle>
+                                        <circle class="fg"></circle>
+                                        <line x1="16px" y1="16px" x2="30px" y2="16px"></line>
+                                    </svg>
+                                    <label contenteditable="true">12 dB</label>
+                                </div>                                        
+                            </div>    
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- <div id="settings">
+            <b>Settings</b>
+            <div>
+                <input type="checkbox" id="performanceMode" name="performanceMode" unchecked />
+                <label for="performanceMode">Performance mode (no GUI)</label>
+            </div>
+    
+            <div>
+                <input type="checkbox" id="logging" name="logging" unchecked />
+                <label for="logging">Logging</label>
+            </div>
+    
+            <div>
+                <input type="checkbox" id="performanceStatistics" name="performanceStatistics" unchecked />
+                <label for="performanceStatistics">Performance statistics</label>
+            </div>
+            <button>Clear</button>
+        </div> -->
+    
+        <!-- <div class="midiDeviceListClass collapsibleContainer">
+            <button type="button" class="collapsible">MIDI Devices
+                <span class="material-symbols-outlined collapsibleIcon"></span>
+            </button>
+            <table class="midiDeviceListTable collapsibleContent">
+                <tr>
+                    <th>On</th>
+                    <th>Device</th>
+                    <th>Input</th>
+                    <th>Output</th>
+                    <th>Manufacturer</th>
+                    <th>Family</th>
+                    <th>Model</th>
+                    <th>Version</th>
+                    <th>Filter</th>
+                    <th><label><input type="checkbox" name="activity" unchecked /><span>Activity</span></label></th>
+                </tr>
+                <tr class="midiDeviceListTableSelected">
+                    <td><input type="checkbox" name="onOff" unchecked /></td>
+                    <td>Zoom MS-70CDR+</td>
+                    <td>Zoom Input</td>
+                    <td>Zoom Output</td>
+                    <td>Zoom Corporation</td>
+                    <td>Family</td>
+                    <td>Model</td>
+                    <td>1</td>
+                    <td><button><input type="checkbox" unchecked /><input type="checkbox" unchecked /><input type="checkbox" checked /></button></td>
+                    <td>Ch 5</td>
+                </tr>
+            </table>
+        </div> -->
+    
+        <div class="collapsibleContainer">
+            <!-- <button type="button" class="collapsible" id="patchEditorCollapsibleButton">Patch Editor
+            <span class="material-symbols-outlined collapsibleIcon"></span>
+            </button> -->
+
+            <div type="button" class="collapsible onOffElement" id="patchEditorCollapsibleButton">
+                <button class="material-symbols-outlined onOffButton">mode_off_on</button>
+                <span class="collapsibleContainerTitle on">Patch Editor</span>
+                <span class="material-symbols-outlined collapsibleIcon"></span>
+            </div>
+
+
+            <div id="patchEditors" class="collapsibleContent">    
+                <table id="editPatchTableID" class="editPatchTable">
+                    <tr>
+                        <th class="editPatchTableNumber">Patch 00:</th>
+                        <th class="editPatchTableName" id="editPatchTableNameID">Patch Name</th>
+                        <th class="editPatchTableTempoValue" id="editPatchTableTempoValueID">42</th>
+                        <th class="editPatchTableTempoLabel">BPM</th>
+                        <th class="editPatchTableButtons" rowspan="2">
+                            <button id="syncPatchToPedalButton" class="loadSaveButtons" tooltip="Save edited patch to selected memory slot on pedal" disabled><span class="material-symbols-outlined">upload_file</span><br/>Sync<br/>to Pedal</button>
+                            <button id="undoEditPatchButton" class="loadSaveButtons" disabled><span class="material-symbols-outlined">undo</span><br/>Undo<br/>Edit</button>
+                            <button id="redoEditPatchButton" class="loadSaveButtons" disabled><span class="material-symbols-outlined">redo</span><br/>Redo<br/>Edit</button>
+                            <button id="savePatchToDiskButton" class="loadSaveButtons" tooltip="Save selected patch to file"><span class="material-symbols-outlined">save</span><br/>Save<br/>to File</button>
+                            <button id="loadPatchFromDiskButton" class="loadSaveButtons" tooltip="Load patch from file and save to selected memory slot on pedal"><span class="material-symbols-outlined">file_open</span><br/>Load<br/>from File</button>
+                            <button id="loadPatchFromTextButton" class="loadSaveButtons" tooltip="Load patch from sysex text and save to selected memory slot on pedal"><span class="material-symbols-outlined">article_shortcut</span><br/>Load<br/>from Text</button>
+                    </th>
+                    </tr>
+                    <tr>
+                        <th class="editPatchTableDescription" id="editPatchTableDescriptionID" colspan="4">Patch description.</th>
+                    </tr>
+                    <tr>
+                        <td colspan="5">
+                            <table>
+                                <tr>
+
+
+                                    <td>
+                                        <table class="editEffectTable">
+                                            <tr>
+                                                <th colspan="4">
+                                                    <div class="editEffectTableTopBar">
+                                                        <span class="editEffectTableEffectNameContainer">
+                                                            <button class="material-symbols-outlined effectOnOffButton">radio_button_unchecked</button>
+                                                            <span class="editEffectTableEffectName">LPF</span>
+                                                            <button class="material-symbols-outlined effectActionButton">data_table</button>
+                                                        </span>
+                                                        <span class="editEffectTableButtons">
+                                                            <button class="material-symbols-outlined effectActionButton">add_circle</button>
+                                                            <button class="material-symbols-outlined effectActionButton">arrow_back_2</button>
+                                                            <button class="material-symbols-outlined effectActionButton">delete</button>
+                                                            <button class="material-symbols-outlined effectActionButton">play_arrow</button>
+                                                            <button class="material-symbols-outlined effectActionButton">add_circle</button>
+                                                        </span>
+                                                    </div>
+                                                </th>
+                                            </tr>
+                                            <tr>
+                                            <td>FREQ</td><td>Sense</td><td>Reso</td><td>Bal</td>
+                                            </tr>
+                                            <tr>
+                                            <td>74</td>
+                                            <td>SLW24</td>
+                                            <td>2P-4</td>
+                                            <td>88</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                        
+                                    <td>
+                                        <table class="editEffectTable">
+                                            <tr>
+                                                <th colspan="4">Low-pass Filter</th>
+                                            </tr>
+                                            <tr>
+                                            <td>FREQ</td><td>Sense</td><td>Reso</td><td>Bal</td>
+                                            </tr>
+                                            <tr>
+                                            <td>74</td>
+                                            <td>SLW24</td>
+                                            <td>2P-4</td>
+                                            <td>88</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+
+                                    <td>
+                                        <table class="editEffectTable">
+                                            <tr>
+                                                <th colspan="4">Low-pass Filter</th>
+                                            </tr>
+                                            <tr>
+                                            <td>FREQ</td><td>Sense</td><td>Reso</td><td>Bal</td>
+                                            </tr>
+                                            <tr>
+                                            <td>74</td>
+                                            <td>SLW24</td>
+                                            <td>2P-4</td>
+                                            <td>88</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+      
+        <div class="collapsibleContainer">
+            <button type="button" class="collapsible" id="patchListCollapsibleButton">Patch List
+            <span class="material-symbols-outlined collapsibleIcon"></span>
+            </button>
+            <div id="patchLists">
+                <!-- <div class="patchListContainer  collapsibleContent">
+                    <div class="patchListHeader">
+                        <button id="backupPatchesToDiskButton" class="loadSaveButtons" tooltip="Backup to disk"><span class="material-symbols-outlined">save</span><br/>Backup<br/>all Patches</button>
+                        <button id="restorePatchesFromDiskButton" class="loadSaveButtons" tooltip="Restore backup from disk"><span class="material-symbols-outlined">file_open</span><br/>Restore<br/>all Patches</button>
+                        <button id="loadPatchesFromDiskButton" class="loadSaveButtons" tooltip="Load patch(es) from file and save to selected memory slot on pedal"><span class="material-symbols-outlined">file_open</span><br/>Load<br/>Patch(es)</button>
+                        <button id="savePatchesToDiskButton" class="loadSaveButtons" tooltip="Save selected patch(es) to file"><span class="material-symbols-outlined">save</span><br/>Save<br/>Patch(es)</button>
+                        <button id="undoEditPatchListButton" class="loadSaveButtons" disabled><span class="material-symbols-outlined">undo</span><br/>Undo<br/>&nbsp;</button>
+                        <button id="redoEditPatchListButton" class="loadSaveButtons" disabled><span class="material-symbols-outlined">redo</span><br/>Redo<br/>&nbsp;</button>
+                    </div>
+                    <table id="patchesTable">
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>#</th>
+                            <th>Name</th>
+                        </tr>
+                    </table>
+                </div> -->
+            </div>
+        </div>
+
+
+    
+        <br/>
+        <p id="contact">
+            <a href="https://www.waveformer.net/zoom-explorer/" target="_blank">ZoomExplorer</a>
+            <a href="https://github.com/thammer/zoom-explorer" target="_blank">Source code on github</a> &nbsp;&nbsp;&nbsp; (c) 2024-2026 by Thomas Hammer, h@mmer.no
         </p>
-        <p>
-          <textarea id="textInput" rows="4" cols="80"> </textarea>
-        </p>
-      </p>
-      <div>
-        <button formmethod="dialog" value="cancel">Cancel</button>
-        <button id="textInputConfirmButton" value="ok">Yes</button>
-      </div>
-    </form>
-  </dialog>    
+    </div>
+    <div id="effectSelectors"></div>
+    <dialog id="confirmDialog">
+        <form>
+          <p>
+            <label id="confirmLabel">
+              Are you sure?
+            </label>
+          </p>
+          <div>
+            <button formmethod="dialog" id="cancelButton"value="cancel">No</button>
+            <button id="confirmButton" value="ok">Yes</button>
+          </div>
+        </form>
+    </dialog>   
+
+    <dialog id="infoDialog">
+        <form>
+          <p>
+            <label id="infoLabel">
+              Info text goes here
+            </label>
+          </p>
+        </form>
+    </dialog>    
+ 
+    <dialog id="progressDialog">
+        <form>
+            <p>
+                <label id="progressDialogLabel">
+                    Info text goes here
+                </label>
+            </p>
+            <div class="progressDialogBarBackground">
+                <div id="progressDialogBar">
+                    <span id="progressDialogBarText"></span>
+                </div>
+            </div>
+            <p>
+                <label id="progressDialogSummaryLabel">
+                    Summary text goes here
+                </label>
+            </p>
+            <div>
+                <button id="progressDialogConfirmButton" formmethod="dialog" value="cancel">Cancel</button>
+            </div>
+        </form>
+    </dialog>    
+
+    <dialog id="textInputDialog">
+        <div class="textInputPanel">
+            <div class="textInputHeader">
+                <h2 class="textInputTitle">Import Patch From Text</h2>
+            </div>
+            <form class="textInputForm">
+                <div class="textInputContent">
+                    <label id="textInputLabel" class="textInputLabel">
+                        Enter some text:
+                    </label>
+                    <textarea id="textInput" class="textInputArea" placeholder="Paste your patch data here..."></textarea>
+                </div>
+                <div class="textInputActions">
+                    <button class="textInputButton textInputCancelButton" formmethod="dialog" value="cancel">Cancel</button>
+                    <button class="textInputButton textInputConfirmButton" id="textInputConfirmButton" value="ok">Load</button>
+                </div>
+            </form>
+        </div>
+    </dialog>    
+
+    <dialog id="midiFilterDialog">
+        <form>
+            <div>
+                <div>
+                    Mute incoming MIDI messages
+                </div>
+                <table>
+                    <tr>
+                        <th>Clock</th>
+                        <th>CC</th>
+                        <th>Note</th>
+                    </tr>
+                    <tr>
+                        <th><input type="checkbox" name="Clock" unchecked /></th>
+                        <th><input type="checkbox" name="CC" unchecked /></th>
+                        <th><input type="checkbox" name="Note" unchecked /></th>
+                    </tr>
+                </table>
+            </div>
+            <button value="ok">OK</button>
+        </form>
+    </dialog>
 
   <script type="module" src="./index.js"></script>
-  <!-- For www.waveformer.net <script>includeHTML();</script> -->
 </body>
+  <!-- (c) 2024-2026 by Thomas Hammer, h@mmer.no -->
 </html>
