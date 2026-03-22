@@ -59,6 +59,15 @@ export class ZoomPatchEditor
   private mouseDownY = 0;
 
   private draggedEffectSlot: number | undefined = undefined;
+
+  // Mobile touch drag-and-drop state
+  private touchDragSourceSlot: number | undefined = undefined;
+  private touchDragTargetSlot: number | undefined = undefined;
+  private touchDragActive = false;
+  private touchDragGhost: HTMLElement | undefined = undefined;
+  private touchDragStartX = 0;
+  private touchDragStartY = 0;
+  private touchDragLongPressTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   private selectedEffectSlot: number | undefined = undefined;
   private lastPatchIdentity = "";
   private visibleEffectSlots: number[] = [];
@@ -183,6 +192,12 @@ export class ZoomPatchEditor
     });
 
     document.addEventListener("touchmove", e => {
+      // Effect card touch drag takes priority over knob drag
+      if (this.touchDragSourceSlot !== undefined) {
+        if (this.touchDragActive) e.preventDefault();
+        this.onEffectCardTouchMove(e);
+        if (this.touchDragActive) return;
+      }
       if (this.currentMouseMoveCell !== undefined && this.mouseMovedCallback !== undefined) {
         if (e.touches.length < 1)
           return;
@@ -212,6 +227,11 @@ export class ZoomPatchEditor
     });
 
     window.addEventListener("touchend", (e) => {
+      if (this.touchDragSourceSlot !== undefined) {
+        const wasDragActive = this.touchDragActive;
+        this.onEffectCardTouchEnd(e);
+        if (wasDragActive) return; // drag committed; skip knob drag cleanup
+      }
       if (this.mouseUpCallback !== undefined && this.currentMouseMoveCell !== undefined) {
         let touch = e.changedTouches.length > 0 ? e.changedTouches[0] : undefined;
         let xOffset = touch !== undefined ? touch.pageX - this.mouseDownX : 0;
@@ -224,6 +244,18 @@ export class ZoomPatchEditor
       this.currentMouseMoveCell = undefined;
       this.initialMouseMoveCellText = "";
     });
+
+    window.addEventListener("touchcancel", () => {
+      if (this.touchDragSourceSlot !== undefined)
+        this.removeTouchDragState();
+      let draggingCells = this.patchEditorTable.querySelectorAll(".editParameterValueCell.knobDragging");
+      for (let draggingCell of draggingCells)
+        draggingCell.classList.remove("knobDragging");
+      this.currentMouseMoveCell = undefined;
+      this.initialMouseMoveCellText = "";
+    });
+
+    this.effectsViewport.addEventListener("touchstart", (event) => this.onEffectCardTouchDragStart(event), { passive: true });
 
     this.effectsViewport.addEventListener("scroll", () => this.scheduleParameterSelectionPointerPositionUpdate(), { passive: true });
     window.addEventListener("resize", () => this.scheduleParameterSelectionPointerPositionUpdate());
@@ -239,6 +271,20 @@ export class ZoomPatchEditor
     const patchSelectorMenuID = includeControls ? ` id="patchSelectorMenu"` : "";
     const patchSelectorDropdownID = includeControls ? ` id="patchSelectorDropdown"` : "";
     const patchDirtyIndicatorID = includeControls ? ` id="patchDirtyIndicator"` : "";
+    const deleteCurrentPatchButtonID = includeControls ? ` id="deleteCurrentPatchButton"` : "";
+    const savePatchToDiskButtonID = includeControls ? ` id="savePatchToDiskButton"` : "";
+    const loadPatchFromDiskButtonID = includeControls ? ` id="loadPatchFromDiskButton"` : "";
+    const loadPatchFromTextButtonID = includeControls ? ` id="loadPatchFromTextButton"` : "";
+    const undoEditPatchButtonID = includeControls ? ` id="undoEditPatchButton"` : "";
+    const redoEditPatchButtonID = includeControls ? ` id="redoEditPatchButton"` : "";
+    const syncPatchToPedalButtonID = includeControls ? ` id="syncPatchToPedalButton"` : "";
+    const mobileOverflowMenuButtonID = includeControls ? ` id="mobileOverflowMenuButton"` : "";
+    const mobileOverflowMenuID = includeControls ? ` id="mobileOverflowMenu"` : "";
+    const mobileEffectActionMenuButtonID = includeControls ? ` id="mobileEffectActionMenuButton"` : "";
+    const mobileEffectActionMenuID = includeControls ? ` id="mobileEffectActionMenu"` : "";
+    const mobileEffectActionAddButtonID = includeControls ? ` id="mobileEffectActionAddButton"` : "";
+    const mobileEffectActionChangeButtonID = includeControls ? ` id="mobileEffectActionChangeButton"` : "";
+    const mobileEffectActionDeleteButtonID = includeControls ? ` id="mobileEffectActionDeleteButton"` : "";
 
     const topColSpan = includeControls ? 5 : 4;
     const fullColSpan = includeControls ? 5 : 4;
@@ -289,16 +335,16 @@ export class ZoomPatchEditor
           <th class="editPatchTableTempoValue"${patchTempoID}></th>
           <th class="editPatchTableStatus">
             <div class="topBarActions">
-              <button id="deleteCurrentPatchButton" class="topBarActionButton topBarLabeledActionButton" title="Delete selected patch(es)"><span class="material-symbols-outlined">delete</span><span class="topBarActionLabel">Delete Patch</span></button>
-              <button id="savePatchToDiskButton" class="topBarActionButton topBarLabeledActionButton" title="Export current patch"><span class="material-symbols-outlined">save</span><span class="topBarActionLabel">Export Patch</span></button>
-              <button id="loadPatchFromDiskButton" class="topBarActionButton topBarLabeledActionButton" title="Import patch from file"><span class="material-symbols-outlined">file_open</span><span class="topBarActionLabel">Import Patch</span></button>
-              <button id="loadPatchFromTextButton" class="topBarActionButton topBarLabeledActionButton" title="Import patch from text"><span class="material-symbols-outlined">article_shortcut</span><span class="topBarActionLabel">Import Patch From Text</span></button>
-              <button id="undoEditPatchButton" class="topBarActionButton topBarIconOnly" disabled title="Undo Edit"><span class="material-symbols-outlined">undo</span></button>
-              <button id="redoEditPatchButton" class="topBarActionButton topBarIconOnly" disabled title="Redo Edit"><span class="material-symbols-outlined">redo</span></button>
-              <button id="syncPatchToPedalButton" class="topBarActionButton topBarLabeledActionButton" disabled title="Save to pedal"><span class="material-symbols-outlined">publish</span><span class="topBarActionLabel">Save</span></button>
+              <button${deleteCurrentPatchButtonID} class="topBarActionButton topBarLabeledActionButton" title="Delete selected patch(es)"><span class="material-symbols-outlined">delete</span><span class="topBarActionLabel">Delete Patch</span></button>
+              <button${savePatchToDiskButtonID} class="topBarActionButton topBarLabeledActionButton" title="Export current patch"><span class="material-symbols-outlined">save</span><span class="topBarActionLabel">Export Patch</span></button>
+              <button${loadPatchFromDiskButtonID} class="topBarActionButton topBarLabeledActionButton" title="Import patch from file"><span class="material-symbols-outlined">file_open</span><span class="topBarActionLabel">Import Patch</span></button>
+              <button${loadPatchFromTextButtonID} class="topBarActionButton topBarLabeledActionButton" title="Import patch from text"><span class="material-symbols-outlined">article_shortcut</span><span class="topBarActionLabel">Import Patch From Text</span></button>
+              <button${undoEditPatchButtonID} class="topBarActionButton topBarIconOnly" disabled title="Undo Edit"><span class="material-symbols-outlined">undo</span></button>
+              <button${redoEditPatchButtonID} class="topBarActionButton topBarIconOnly" disabled title="Redo Edit"><span class="material-symbols-outlined">redo</span></button>
+              <button${syncPatchToPedalButtonID} class="topBarActionButton topBarLabeledActionButton" disabled title="Save to pedal"><span class="material-symbols-outlined">publish</span><span class="topBarActionLabel">Save</span></button>
               <div class="mobileOverflowMenuWrapper">
-                <button id="mobileOverflowMenuButton" class="topBarActionButton" type="button" title="More actions"><span class="material-symbols-outlined">more_vert</span></button>
-                <div id="mobileOverflowMenu" class="mobileOverflowMenu">
+                <button${mobileOverflowMenuButtonID} class="topBarActionButton" type="button" title="More actions"><span class="material-symbols-outlined">more_vert</span></button>
+                <div${mobileOverflowMenuID} class="mobileOverflowMenu">
                   <button class="mobileOverflowMenuItem" data-target="patchSelectorButton">Select Patch</button>
                   <button class="mobileOverflowMenuItem" data-target="deleteCurrentPatchButton">Delete Patch</button>
                   <button class="mobileOverflowMenuItem" data-target="savePatchToDiskButton">Export Patch</button>
@@ -326,12 +372,21 @@ export class ZoomPatchEditor
           <td colspan="${fullColSpan}" class="editPatchParametersCell">
             <div class="parameterSelectionPointer"></div>
             <div class="parameterEditorHeader">
-              <label class="mobileEffectToggle">
-                <input type="checkbox" class="mobileEffectToggleInput" />
-                <span class="mobileEffectToggleTrack"></span>
-              </label>
-              <span class="parameterEditorEffectName">No effect selected</span>
-              <button type="button" class="mobileEffectSelectorButton">Change</button>
+              <div class="parameterEditorLeft">
+                <label class="mobileEffectToggle">
+                  <input type="checkbox" class="mobileEffectToggleInput" />
+                  <span class="mobileEffectToggleTrack"></span>
+                </label>
+                <span class="parameterEditorEffectName">No effect selected</span>
+              </div>
+              <div class="parameterEditorActions">
+                <button${mobileEffectActionMenuButtonID} type="button" class="mobileEffectActionButton" title="Effect actions"><span class="material-symbols-outlined">more_vert</span></button>
+                <div${mobileEffectActionMenuID} class="mobileEffectActionMenu">
+                  <button${mobileEffectActionAddButtonID} type="button" class="mobileEffectActionMenuItem">Add Effect</button>
+                  <button${mobileEffectActionChangeButtonID} type="button" class="mobileEffectActionMenuItem">Change Effect</button>
+                  <button${mobileEffectActionDeleteButtonID} type="button" class="mobileEffectActionMenuItem">Delete Effect</button>
+                </div>
+              </div>
             </div>
             <table class="editParameterTable">
               <tr>
@@ -365,17 +420,17 @@ export class ZoomPatchEditor
 
   hide()
   {
-    this.patchEditorTable.style.display = "none";
+    this.patchEditorTable.style.setProperty("display", "none", "important");
   }
 
   show()
   {
-    this.patchEditorTable.style.display = "table";
+    this.patchEditorTable.style.removeProperty("display");
   }
 
   get visible(): boolean
   {
-    return this.patchEditorTable.style.display === "table";
+    return this.patchEditorTable.style.display !== "none";
   }
 
   setTextEditedCallback(textEditedCallback: EditPatchTextEditedListenerType)
@@ -490,6 +545,8 @@ export class ZoomPatchEditor
       cell.ondragend = () => { this.currentMouseMoveCell = undefined; return false; };
 
       cell.addEventListener("keydown", (e) => {
+        if (cell.classList.contains("mobileControlCell"))
+          return;
         if (e.key === "Enter") {
           e.preventDefault();
           cell.blur();
@@ -510,17 +567,23 @@ export class ZoomPatchEditor
       });
 
       cell.addEventListener("input", (e) => {
+        if (cell.classList.contains("mobileControlCell"))
+          return;
         if (this.textEditedCallback !== undefined)
           this.textEditedCallback(e, "input", this.undoOnEscape);
       });
 
       cell.addEventListener("focus", (e) => {
+        if (cell.classList.contains("mobileControlCell"))
+          return;
         this.undoOnEscape = cell.innerText;
         if (this.textEditedCallback !== undefined)
           this.textEditedCallback(e, "focus", this.undoOnEscape);
       });
 
       cell.addEventListener("blur", (e) => {
+        if (cell.classList.contains("mobileControlCell"))
+          return;
         if (!this.muteBlurOnEscape)
           if (this.textEditedCallback !== undefined) {
             let acceptEdit = this.textEditedCallback(e, "blur", this.undoOnEscape);
@@ -531,12 +594,20 @@ export class ZoomPatchEditor
 
       cell.addEventListener("mousedown", (e) => {
         if (e.button === 0) {
-          if (cell.classList.contains("parameterSwitchCell")) {
+          if (cell.classList.contains("parameterSwitchCell") && !cell.classList.contains("mobileControlCell")) {
             e.preventDefault();
             cell.focus();
             return;
           }
           if (cell.classList.contains("editParameterValueCell")) {
+            if (this.isMobileUIMode()) {
+              // In mobile mode, allow native interaction with inputs/switches/selectors — do NOT preventDefault
+              let targetEl = e.target as Element;
+              if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLLabelElement)
+                return;
+              if (targetEl.closest(".mobileControlSwitchWrapper") !== null || targetEl.closest(".mobileControlSelector") !== null)
+                return;
+            }
             e.preventDefault();
             cell.focus();
             if (this.isMobileUIMode())
@@ -554,12 +625,19 @@ export class ZoomPatchEditor
       cell.addEventListener("touchstart", (e) => {
         if (e.touches.length < 1)
           return;
-        if (cell.classList.contains("parameterSwitchCell")) {
+        if (cell.classList.contains("parameterSwitchCell") && !cell.classList.contains("mobileControlCell")) {
           e.preventDefault();
           cell.focus();
           return;
         }
         if (cell.classList.contains("editParameterValueCell") && this.isMobileUIMode()) {
+          // Allow interaction with mobile control elements (slider, dropdown, switch, custom selector)
+          if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLLabelElement)
+            return;
+          let targetEl = e.target as Element;
+          // Allow touches on switch wrapper (track span, etc.) and custom selector — don't call preventDefault
+          if (targetEl.closest(".mobileControlSwitchWrapper") !== null || targetEl.closest(".mobileControlSelector") !== null)
+            return;
           e.preventDefault();
           cell.focus();
           return;
@@ -575,6 +653,9 @@ export class ZoomPatchEditor
       }, { passive: false });
 
       cell.addEventListener("click", (e) => {
+        // In mobile mode the switch handles its own toggle via the checkbox change event — skip cell-level keydown dispatch
+        if (cell.classList.contains("mobileControlCell"))
+          return;
         if (!cell.classList.contains("parameterSwitchCell"))
           return;
         e.preventDefault();
@@ -781,6 +862,7 @@ export class ZoomPatchEditor
     effectTable.addEventListener("dragleave", (event) => this.onEffectCardDragLeave(event));
     effectTable.addEventListener("drop", (event) => this.onEffectCardDrop(event));
     effectTable.addEventListener("dragend", (event) => this.onEffectCardDragEnd(event));
+    // Mobile portrait drag starts at the effects viewport level.
 
     let effectOnOffButton = effectTable.querySelector(".effectOnOffButton") as HTMLButtonElement;
     effectOnOffButton.addEventListener("click", (event) => this.onEffectSlotOnOffButtonClick(event as MouseEvent));
@@ -892,6 +974,188 @@ export class ZoomPatchEditor
     this.removeDragStateClasses();
   }
 
+  // ── Mobile touch drag-and-drop ─────────────────────────────────────────────
+
+  private onEffectCardTouchDragStart(event: TouchEvent): void {
+    if (!this.isPortraitMobileUIMode()) return;
+    if (this.touchDragSourceSlot !== undefined) return;
+    if (event.touches.length < 1) return;
+    // Let button taps pass through untouched
+    if ((event.target as HTMLElement).closest("button") !== null) return;
+    const touch = event.touches[0];
+    const sourceSlot = this.getEffectSlotAtPoint(touch.clientX, touch.clientY);
+    if (sourceSlot === undefined) return;
+    this.touchDragStartX = touch.clientX;
+    this.touchDragStartY = touch.clientY;
+    this.touchDragSourceSlot = sourceSlot;
+    this.touchDragTargetSlot = this.touchDragSourceSlot;
+    this.touchDragActive = false;
+    // Activate drag after a long-press hold of 380ms
+    this.touchDragLongPressTimer = setTimeout(() => {
+      this.touchDragLongPressTimer = undefined;
+      this.touchDragActive = true;
+      this.createTouchDragGhost();
+      if ("vibrate" in navigator) (navigator as Navigator & { vibrate(p: number): void }).vibrate(40);
+    }, 380);
+  }
+
+  private getEffectCardBySlot(slot: number): HTMLTableElement | undefined {
+    const selector = `.editEffectTable[data-effect-slot="${slot}"]`;
+    return this.patchEditorTable.querySelector(selector) as HTMLTableElement | null ?? undefined;
+  }
+
+  private getAllEffectCards(): HTMLTableElement[] {
+    return Array.from(this.patchEditorTable.querySelectorAll(".editEffectTable[data-effect-slot]"));
+  }
+
+  private getEffectSlotAtPoint(clientX: number, clientY: number): number | undefined {
+    // Gather bounds for guard rails.
+    let minLeft = Number.POSITIVE_INFINITY;
+    let maxRight = Number.NEGATIVE_INFINITY;
+    let minTop = Number.POSITIVE_INFINITY;
+    let maxBottom = Number.NEGATIVE_INFINITY;
+    const cards = this.getAllEffectCards();
+    for (const card of cards) {
+      const rect = card.getBoundingClientRect();
+      minLeft = Math.min(minLeft, rect.left);
+      maxRight = Math.max(maxRight, rect.right);
+      minTop = Math.min(minTop, rect.top);
+      maxBottom = Math.max(maxBottom, rect.bottom);
+    }
+    // If touch is clearly outside the pedal strip, ignore.
+    if (!Number.isFinite(minLeft) || clientY < minTop - 16 || clientY > maxBottom + 16 || clientX < minLeft - 24 || clientX > maxRight + 24)
+      return undefined;
+
+    // Primary: hit-test inside card rects.
+    // Multiple cards can contain the point due to visual overlap, so choose the
+    // closest center instead of the first match.
+    let containingSlot: number | undefined = undefined;
+    let containingDistance = Number.POSITIVE_INFINITY;
+    for (const card of cards) {
+      if (card.dataset.effectSlot === undefined)
+        continue;
+      const slot = Number.parseInt(card.dataset.effectSlot);
+      if (Number.isNaN(slot))
+        continue;
+      const rect = card.getBoundingClientRect();
+      if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom)
+        continue;
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const distance = Math.hypot(clientX - centerX, clientY - centerY);
+      if (distance < containingDistance) {
+        containingDistance = distance;
+        containingSlot = slot;
+      }
+    }
+    if (containingSlot !== undefined)
+      return containingSlot;
+
+    // Fallback: pick nearest horizontal card center (useful near edges/gaps)
+    let nearestSlot: number | undefined = undefined;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    for (const card of cards) {
+      if (card.dataset.effectSlot === undefined)
+        continue;
+      const slot = Number.parseInt(card.dataset.effectSlot);
+      if (Number.isNaN(slot))
+        continue;
+      const rect = card.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const distance = Math.abs(clientX - centerX);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestSlot = slot;
+      }
+    }
+    return nearestSlot;
+  }
+
+  private createTouchDragGhost(): void {
+    if (this.touchDragSourceSlot === undefined) return;
+    const sourceCard = this.getEffectCardBySlot(this.touchDragSourceSlot);
+    if (sourceCard === undefined) return;
+    sourceCard.classList.add("mobile-drag-source");
+    const rect = sourceCard.getBoundingClientRect();
+    const ghost = document.createElement("div");
+    ghost.className = "mobile-drag-ghost";
+    ghost.style.left = `${rect.left}px`;
+    ghost.style.top = `${rect.top}px`;
+    ghost.style.width = `${rect.width}px`;
+    ghost.style.height = `${rect.height}px`;
+    // Show the pedal image in the ghost
+    const img = sourceCard.querySelector(".effectPedalImage") as HTMLImageElement | null;
+    if (img !== null && img.src !== "") {
+      const innerImg = document.createElement("img");
+      innerImg.src = img.src;
+      innerImg.style.cssText = "width:100%;height:100%;object-fit:contain;border-radius:6px;display:block;";
+      ghost.appendChild(innerImg);
+    }
+    document.body.appendChild(ghost);
+    this.touchDragGhost = ghost;
+  }
+
+  private onEffectCardTouchMove(event: TouchEvent): void {
+    if (this.touchDragSourceSlot === undefined || event.touches.length < 1) return;
+    const touch = event.touches[0];
+    const dx = touch.clientX - this.touchDragStartX;
+    const dy = touch.clientY - this.touchDragStartY;
+    // Cancel long-press timer if the finger moved significantly before it fired
+    if (!this.touchDragActive) {
+      if ((Math.abs(dx) > 10 || Math.abs(dy) > 10) && this.touchDragLongPressTimer !== undefined) {
+        clearTimeout(this.touchDragLongPressTimer);
+        this.touchDragLongPressTimer = undefined;
+        this.touchDragSourceSlot = undefined;
+      }
+      return;
+    }
+    // Move ghost with finger
+    if (this.touchDragGhost !== undefined)
+      this.touchDragGhost.style.transform = `translate(${dx}px, ${dy}px) scale(1.12)`;
+    const newTarget = this.getEffectSlotAtPoint(touch.clientX, touch.clientY);
+    if (newTarget !== undefined && newTarget !== this.touchDragTargetSlot) {
+      // Remove highlight from old target
+      if (this.touchDragTargetSlot !== undefined && this.touchDragTargetSlot !== this.touchDragSourceSlot)
+        this.getEffectCardBySlot(this.touchDragTargetSlot)?.classList.remove("mobile-drag-over");
+      this.touchDragTargetSlot = newTarget;
+      if (newTarget !== this.touchDragSourceSlot)
+        this.getEffectCardBySlot(newTarget)?.classList.add("mobile-drag-over");
+    }
+  }
+
+  private onEffectCardTouchEnd(event: TouchEvent): void {
+    const sourceSlot = this.touchDragSourceSlot;
+    const targetSlot = this.touchDragTargetSlot;
+    const wasDragActive = this.touchDragActive;
+    this.removeTouchDragState();
+    if (!wasDragActive) return; // was a tap — let the click event fire normally
+    // Prevent the ghost touch from generating a click event
+    event.preventDefault();
+    if (sourceSlot === undefined || targetSlot === undefined || sourceSlot === targetSlot) return;
+    if (this.effectSlotMoveCallback === undefined) return;
+    let current = sourceSlot;
+    while (current < targetSlot) { this.effectSlotMoveCallback(current, "left"); current++; }
+    while (current > targetSlot) { this.effectSlotMoveCallback(current, "right"); current--; }
+    this.selectedEffectSlot = targetSlot;
+  }
+
+  private removeTouchDragState(): void {
+    if (this.touchDragLongPressTimer !== undefined) {
+      clearTimeout(this.touchDragLongPressTimer);
+      this.touchDragLongPressTimer = undefined;
+    }
+    this.touchDragGhost?.remove();
+    this.touchDragGhost = undefined;
+    for (const card of this.getAllEffectCards()) {
+      card?.classList.remove("mobile-drag-source", "mobile-drag-over");
+    }
+    this.touchDragActive = false;
+    this.touchDragSourceSlot = undefined;
+    this.touchDragTargetSlot = undefined;
+  }
+
+  // ── End mobile touch drag-and-drop ─────────────────────────────────────────
+
   private onEffectCardClick(event: Event): void {
     if (!(event.currentTarget instanceof HTMLTableElement))
       return;
@@ -906,6 +1170,13 @@ export class ZoomPatchEditor
     let effectSlot = Number.parseInt(effectTable.dataset.effectSlot);
     if (Number.isNaN(effectSlot))
       return;
+
+    // In portrait mobile mode: if this slot is already selected, second tap opens effect selector directly
+    if (this.isPortraitMobileUIMode() && this.selectedEffectSlot === effectSlot) {
+      if (this.effectSlotSelectEffectCallback !== undefined)
+        this.effectSlotSelectEffectCallback(effectSlot);
+      return;
+    }
 
     this.selectedEffectSlot = effectSlot;
     this.updateEffectSlotFrame(effectSlot);
@@ -1489,6 +1760,7 @@ export class ZoomPatchEditor
     parameterName: string,
     currentValue: string,
     rawValue: number,
+    minValue: number,
     maxValue: number,
     isSwitchParameter: boolean,
     valueLabels?: string[]): void
@@ -1508,50 +1780,99 @@ export class ZoomPatchEditor
 
     if (isSwitchParameter) {
       // Toggle switch for ON/OFF parameters (2 values)
-      let switchWrap = document.createElement("label");
-      switchWrap.className = "mobileControlSwitch";
+      let switchWrapper = document.createElement("div");
+      switchWrapper.className = "mobileControlSwitchWrapper";
       let switchInput = document.createElement("input");
       switchInput.type = "checkbox";
+      switchInput.className = "mobileControlSwitchInput";
       switchInput.checked = rawValue > 0;
       let switchTrack = document.createElement("span");
       switchTrack.className = "mobileControlSwitchTrack";
-      switchWrap.appendChild(switchInput);
-      switchWrap.appendChild(switchTrack);
       switchInput.addEventListener("change", () => {
         let nextRaw = switchInput.checked ? 1 : 0;
+        valueLabel.textContent = nextRaw > 0 ? "ON" : "OFF";
         valueCell.dispatchEvent(new CustomEvent("mobile-set-raw", { bubbles: true, detail: { rawValue: nextRaw } }));
       });
-      valueCell.appendChild(switchWrap);
+      switchWrapper.appendChild(switchInput);
+      switchWrapper.appendChild(switchTrack);
+      valueCell.appendChild(switchWrapper);
       valueCell.appendChild(valueLabel);
     }
     else if (valueLabels !== undefined && valueLabels.length >= 3 && valueLabels.length <= 30 && !valueLabels.some((v, i) => v === i.toString())) {
-      // Dropdown for parameters with 3+ distinct named values
-      let select = document.createElement("select");
-      select.className = "mobileControlDropdown";
-      for (let i = 0; i < valueLabels.length; i++) {
-        let option = document.createElement("option");
-        option.value = i.toString();
-        option.textContent = valueLabels[i];
-        if (i === rawValue) option.selected = true;
-        select.appendChild(option);
-      }
-      select.addEventListener("change", () => {
-        let nextRaw = Number.parseInt(select.value);
-        valueCell.dispatchEvent(new CustomEvent("mobile-set-raw", { bubbles: true, detail: { rawValue: nextRaw } }));
-      });
-      valueCell.appendChild(select);
-      valueCell.appendChild(valueLabel);
+      // Custom popup selector for parameters with 3+ distinct named values
+      let selectorContainer = document.createElement("div");
+      selectorContainer.className = "mobileControlSelector";
+      let selectorValue = document.createElement("span");
+      selectorValue.className = "mobileControlSelectorValue";
+      selectorValue.textContent = currentValue;
+      let selectorChevron = document.createElement("span");
+      selectorChevron.className = "mobileControlSelectorChevron";
+      selectorChevron.textContent = "▼";
+      selectorContainer.appendChild(selectorValue);
+      selectorContainer.appendChild(selectorChevron);
+
+      // Create popup modal for value selection
+      let createAndShowPopup = () => {
+        let backdrop = document.createElement("div");
+        backdrop.className = "mobileParameterPopupBackdrop";
+        let popup = document.createElement("div");
+        popup.className = "mobileParameterPopup";
+        let popupTitle = document.createElement("div");
+        popupTitle.className = "mobileParameterPopupTitle";
+        popupTitle.textContent = parameterName;
+        popup.appendChild(popupTitle);
+
+        let popupList = document.createElement("div");
+        popupList.className = "mobileParameterPopupList";
+        for (let i = 0; i < valueLabels.length; i++) {
+          let option = document.createElement("div");
+          option.className = "mobileParameterPopupOption";
+          if (i === rawValue) option.classList.add("selected");
+          option.textContent = valueLabels[i];
+          option.addEventListener("click", () => {
+            valueCell.dispatchEvent(new CustomEvent("mobile-set-raw", { bubbles: true, detail: { rawValue: i } }));
+            selectorValue.textContent = valueLabels[i];
+            document.body.removeChild(backdrop);
+          });
+          popupList.appendChild(option);
+        }
+        popup.appendChild(popupList);
+        backdrop.appendChild(popup);
+        backdrop.addEventListener("click", (e) => {
+          if (e.target === backdrop) document.body.removeChild(backdrop);
+        });
+        document.body.appendChild(backdrop);
+      };
+
+      selectorContainer.addEventListener("click", createAndShowPopup);
+      valueCell.appendChild(selectorContainer);
     }
     else {
       // Slider for numeric/continuous parameters
       let slider = document.createElement("input");
       slider.type = "range";
       slider.className = "mobileControlSlider";
-      slider.min = "0";
-      slider.max = Math.max(1, maxValue).toString();
+      let minVal = Number.isFinite(minValue) ? minValue : 0;
+      let maxVal = Math.max(minVal + 1, Number.isFinite(maxValue) ? maxValue : 1);
+      slider.min = minVal.toString();
+      slider.max = maxVal.toString();
       slider.step = "1";
-      slider.value = Math.max(0, Math.min(maxValue, rawValue)).toString();
+      slider.value = Math.max(minVal, Math.min(maxVal, rawValue)).toString();
+      
+      // Set initial fill on the CARD (not the slider) so the entire row background is the fill
+      let range = Math.max(1, maxVal - minVal);
+      let fillPercent = ((Number.parseInt(slider.value) - minVal) / range) * 100;
+      valueCell.classList.add("mobileSliderCard");
+      valueCell.style.setProperty("--slider-fill", `${fillPercent}%`);
+      
       slider.addEventListener("input", () => {
+        let nextRaw = Number.parseInt(slider.value);
+        let percent = ((nextRaw - minVal) / range) * 100;
+        valueCell.style.setProperty("--slider-fill", `${percent}%`);
+        // Update value label immediately for live feedback during drag
+        valueLabel.textContent = nextRaw.toString();
+      });
+      slider.addEventListener("change", () => {
         let nextRaw = Number.parseInt(slider.value);
         valueCell.dispatchEvent(new CustomEvent("mobile-set-raw", { bubbles: true, detail: { rawValue: nextRaw } }));
       });
@@ -1599,10 +1920,18 @@ export class ZoomPatchEditor
     let displayParameters = this.getDisplayParameters(screen, patch, effectSlot, effectIDMap, effectID);
     let fallbackName = displayParameters.length > 1 ? displayParameters[1].name : "Effect";
     let effectName = this.resolveEffectName(effectIDMap, effectID, fallbackName, pedalName);
+    let isBlankEffect = this.isBlankEffectName(effectName) || this.isBlankEffectName(fallbackName);
     this.parameterTitle.textContent = effectName;
 
-    // Update mobile effect on/off toggle
+    // Update mobile effect on/off toggle — hide it for blank/THRU effects
     let effectToggle = this.patchEditorTable.querySelector(".mobileEffectToggleInput") as HTMLInputElement | null;
+    let effectToggleLabel = this.patchEditorTable.querySelector(".mobileEffectToggle") as HTMLElement | null;
+    if (effectToggleLabel !== null) {
+      if (isBlankEffect)
+        effectToggleLabel.style.setProperty("display", "none", "important");
+      else
+        effectToggleLabel.style.removeProperty("display");
+    }
     if (effectToggle !== null && patch.effectSettings !== null && effectSlot < patch.effectSettings.length) {
       let isEffectOn = patch.effectSettings[effectSlot].enabled;
       effectToggle.checked = isEffectOn;
@@ -1732,7 +2061,7 @@ export class ZoomPatchEditor
         let lowerParameterName = parameterName.trim().toLowerCase();
         let isSwitchParameter = maxValue === 1 || switchParameterNames.has(lowerParameterName) || lowerParameterName.startsWith("hidden");
         valueCell.classList.toggle("parameterSwitchCell", isSwitchParameter);
-        valueCell.classList.toggle("mobileControlCell", portraitMobileMode);
+        valueCell.classList.toggle("mobileControlCell", mobileMode);
         if (isSwitchParameter) {
           let offLabel = "OFF";
           let onLabel = "ON";
@@ -1753,8 +2082,8 @@ export class ZoomPatchEditor
           valueCell.dataset.switchOnLabel = onLabel;
           valueCell.contentEditable = "false";
           valueCell.tabIndex = 0;
-          if (portraitMobileMode)
-            this.renderMobileControlCell(valueCell, parameterName, currentLabel, rawValue, 1, true);
+          if (mobileMode)
+            this.renderMobileControlCell(valueCell, parameterName, currentLabel, rawValue, 0, 1, true);
           this.updateBackgroundSizeIfChanged(valueCell, "0%");
         }
         else {
@@ -1764,7 +2093,7 @@ export class ZoomPatchEditor
           valueCell.removeAttribute("tabindex");
           valueCell.contentEditable = supportsContentEditablePlaintextOnly() ? "plaintext-only" : "true";
           valueCell.classList.remove("parameterSwitchOn");
-          if (portraitMobileMode) {
+          if (mobileMode) {
             let paramValueLabels: string[] | undefined = undefined;
             let paramIndex = parameterNumber - 2;
             let resolvedID = mappedEffectID ?? effectID;
@@ -1776,7 +2105,16 @@ export class ZoomPatchEditor
                   paramValueLabels = pvm.values;
               }
             }
-            this.renderMobileControlCell(valueCell, parameterName, valueString, rawValue, Math.max(1, maxValue), false, paramValueLabels);
+            this.renderMobileControlCell(
+              valueCell,
+              parameterName,
+              valueString,
+              rawValue,
+              bpmLinkedParameter ? ZoomPatchEditor.BPM_TEMPO_MIN : 0,
+              Math.max(1, maxValue),
+              false,
+              paramValueLabels
+            );
           }
           else if (valueCell.childElementCount > 0)
             valueCell.replaceChildren(document.createTextNode(valueString));
@@ -1792,7 +2130,7 @@ export class ZoomPatchEditor
               }
             }
             percentage = Math.max(0, Math.min(100, percentage));
-            if (!portraitMobileMode)
+            if (!mobileMode)
               this.updateBackgroundSizeIfChanged(valueCell, percentage.toFixed(0).toString() + "%");
             else
               this.updateBackgroundSizeIfChanged(valueCell, "0%");

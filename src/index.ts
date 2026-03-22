@@ -518,7 +518,7 @@ function initPatchSelectorUI() {
     updatePatchSelectorButtonLabel();
 }
 function initMobileEffectSelectorButton() {
-    let button = document.querySelector("#editPatchTableID .mobileEffectSelectorButton");
+    let button = document.querySelector("#editPatchTableID #mobileEffectActionChangeButton");
     if (!(button instanceof HTMLButtonElement))
         return;
     button.onclick = null;
@@ -529,6 +529,8 @@ function initMobileEffectSelectorButton() {
         if (effectSlot < 0)
             effectSlot = 0;
         handleEffectSlotSelectEffect(currentZoomPatch, currentZoomDevice, currentZoomDevice.effectIDMap, effectSlot);
+        let menu = document.querySelector("#editPatchTableID #mobileEffectActionMenu");
+        menu?.classList.remove("open");
     });
     // Wire effect on/off toggle
     let toggle = document.querySelector("#editPatchTableID .mobileEffectToggleInput");
@@ -542,10 +544,53 @@ function initMobileEffectSelectorButton() {
             handleEffectSlotOnOff(currentZoomPatch, currentZoomDevice, currentZoomDevice.effectIDMap, effectSlot, toggle.checked);
         });
     }
+    // Wire action buttons
+    let addButton = document.querySelector("#editPatchTableID #mobileEffectActionAddButton");
+    if (addButton instanceof HTMLButtonElement) {
+        addButton.addEventListener("click", () => {
+            if (currentZoomPatch === undefined || currentZoomDevice === undefined)
+                return;
+            let effectSlot = Number.isInteger(currentZoomPatch.currentEffectSlot) ? currentZoomPatch.currentEffectSlot : 0;
+            if (effectSlot < 0)
+                effectSlot = 0;
+            handleEffectSlotAddLeft(currentZoomPatch, currentZoomDevice, currentZoomDevice.effectIDMap, effectSlot);
+            let menu = document.querySelector("#editPatchTableID #mobileEffectActionMenu");
+            menu?.classList.remove("open");
+        });
+    }
+    let deleteButton = document.querySelector("#editPatchTableID #mobileEffectActionDeleteButton");
+    if (deleteButton instanceof HTMLButtonElement) {
+        deleteButton.addEventListener("click", () => {
+            if (currentZoomPatch === undefined || currentZoomDevice === undefined)
+                return;
+            let effectSlot = Number.isInteger(currentZoomPatch.currentEffectSlot) ? currentZoomPatch.currentEffectSlot : 0;
+            if (effectSlot < 0)
+                effectSlot = 0;
+            handleEffectSlotDelete(currentZoomPatch, currentZoomDevice, currentZoomDevice.effectIDMap, effectSlot);
+            let menu = document.querySelector("#editPatchTableID #mobileEffectActionMenu");
+            menu?.classList.remove("open");
+        });
+    }
+
+    let actionMenuButton = document.querySelector("#editPatchTableID #mobileEffectActionMenuButton");
+    let actionMenu = document.querySelector("#editPatchTableID #mobileEffectActionMenu");
+    if (actionMenuButton instanceof HTMLButtonElement && actionMenu instanceof HTMLDivElement) {
+        actionMenuButton.onclick = null;
+        actionMenuButton.addEventListener("click", (event) => {
+            event.stopPropagation();
+            actionMenu.classList.toggle("open");
+        });
+        document.addEventListener("click", () => {
+            actionMenu.classList.remove("open");
+        });
+        actionMenu.addEventListener("click", (event) => {
+            event.stopPropagation();
+        });
+    }
 }
 function initMobileOverflowMenu() {
-    let menuButton = document.getElementById("mobileOverflowMenuButton");
-    let menu = document.getElementById("mobileOverflowMenu");
+    let menuButton = document.querySelector("#editPatchTableID #mobileOverflowMenuButton");
+    let menu = document.querySelector("#editPatchTableID #mobileOverflowMenu");
     if (!(menuButton instanceof HTMLButtonElement) || !(menu instanceof HTMLDivElement))
         return;
     menuButton.addEventListener("click", (e) => {
@@ -983,7 +1028,7 @@ function initConvertedPatchEditor(zoomDevice) {
     effectLists.set("MS-50G", buildEffectIDList("MS-50G"));
     effectLists.set("MS-60B", buildEffectIDList("MS-60B"));
     effectLists.set("MS-70CDR", buildEffectIDList("MS-70CDR"));
-    zoomEffectSelector.setHeading("Amps and Effects");
+    zoomEffectSelector.setHeading("Effects");
     let pedalName = zoomDevice?.deviceInfo?.deviceName ?? zoomDevice?.deviceName ?? "";
     zoomEffectSelector.setEffectList(effectLists, pedalName);
 }
@@ -1205,6 +1250,26 @@ function handlePatchEdited(zoomPatch, zoomDevice, effectIDMap, event, type, init
     shouldLog(LogLevel.Info) && console.log(`type = ${type}, cell.id = ${cell.id}, effectSlot = ${effectSlot}, parameterNumber = ${parameterNumber}`);
     if (cell.id === "editPatchTableNameID") {
         if (type === "focus") {
+            const mobileMode = document.body.classList.contains("mobile-ui-mode");
+            if (mobileMode) {
+                let currentName = zoomPatch.name !== null ? zoomPatch.name.replace(/ +$/, "") : "";
+                // Prevent inline contentEditable editing on mobile; use a simple prompt instead.
+                cell.blur();
+                let nextName = window.prompt("Patch name", currentName);
+                if (nextName !== null) {
+                    if (zoomPatch !== undefined && nextName !== currentName) {
+                        setPatchParameter(zoomPatch, zoomDevice, effectIDMap, "name", nextName, "name");
+                        updateDirtyState(true);
+                    }
+                    cell.innerText = zoomPatch.nameTrimmed;
+                    if (zoomDevice !== undefined)
+                        updatePatchSelectorOptions(zoomDevice);
+                }
+                else {
+                    cell.innerText = zoomPatch.nameTrimmed;
+                }
+                return true;
+            }
             shouldLog(LogLevel.Info) && console.log("focus");
             cell.innerText = zoomPatch.name !== null ? zoomPatch.name.replace(/ +$/, "") : ""; // use the full name, but remove spaces at the end
         }
@@ -1213,6 +1278,7 @@ function handlePatchEdited(zoomPatch, zoomDevice, effectIDMap, event, type, init
             if (zoomPatch !== undefined && cell.innerText !== initialValueString) {
                 setPatchParameter(zoomPatch, zoomDevice, effectIDMap, "name", cell.innerText, "name");
                 cell.innerText = zoomPatch.nameTrimmed;
+                updateDirtyState(true);
                 if (zoomDevice !== undefined)
                     updatePatchSelectorOptions(zoomDevice);
             }
@@ -1263,6 +1329,19 @@ function handlePatchEdited(zoomPatch, zoomDevice, effectIDMap, event, type, init
                 else if (type === "blur") {
                     updateParameter = true;
                 }
+                else if (type === "mobile-set-raw" && event instanceof CustomEvent) {
+                    let requestedRaw = Number.parseInt(`${event.detail?.rawValue ?? ""}`);
+                    if (Number.isNaN(requestedRaw))
+                        return false;
+                    rawValue = clampTempoFromBPMParameter(requestedRaw);
+                    updateParameter = true;
+                    if (zoomPatch.currentEffectSlot !== effectSlot) {
+                        zoomPatch.currentEffectSlot = effectSlot;
+                        if (patchAndDeviceMatches)
+                            zoomDevice?.setCurrentEffectSlot(effectSlot);
+                        patchEditor.updateEffectSlotFrame(effectSlot);
+                    }
+                }
                 else if (type === "key" && event instanceof KeyboardEvent) {
                     updateParameter = false;
                     rawValue = clampTempoFromBPMParameter(zoomPatch.tempo);
@@ -1285,7 +1364,13 @@ function handlePatchEdited(zoomPatch, zoomDevice, effectIDMap, event, type, init
                 }
                 if (updateParameter && rawValue !== zoomPatch.tempo) {
                     let valueString = rawValue.toString().padStart(3, "0");
-                    cell.innerHTML = valueString;
+                    const mobileValueEl = cell.querySelector<HTMLElement>(".mobileControlValue, .mobileControlSelectorValue");
+                    if (mobileValueEl !== null) {
+                        mobileValueEl.textContent = valueString;
+                    }
+                    else if (!cell.classList.contains("mobileControlCell")) {
+                        cell.innerHTML = valueString;
+                    }
                     patchEditor.updateValueBar(cell, rawValue, BPM_TEMPO_MAX, BPM_TEMPO_MIN);
                     setPatchParameter(zoomPatch, zoomDevice, effectIDMap, "tempo", rawValue, "tempo");
                     patchEditor.updateTempo(rawValue);
@@ -1316,8 +1401,18 @@ function handlePatchEdited(zoomPatch, zoomDevice, effectIDMap, event, type, init
                 if (rawValue !== zoomPatch.effectSettings[effectSlot].parameters[parameterIndex]) {
                     let mappedValueString = ZoomDevice.getStringFromRawParameterValueAndMap(effectIDMap, effectID, parameterNumber, rawValue);
                     setPatchEffectParameter(zoomDevice, zoomPatch, effectSlot, parameterNumber, rawValue);
-                    if (mappedValueString.length > 0)
-                        cell.innerHTML = mappedValueString;
+                    if (mappedValueString.length > 0) {
+                        // In mobile mode the cell contains complex child elements (slider, switch, selector).
+                        // Update only the value display element instead of wiping innerHTML.
+                        const mobileValueEl = cell.querySelector<HTMLElement>(".mobileControlValue, .mobileControlSelectorValue");
+                        if (mobileValueEl !== null) {
+                            mobileValueEl.textContent = mappedValueString;
+                        } else if (cell.classList.contains("mobileControlCell")) {
+                            // Keep mobile layout intact even when a value label element is temporarily absent.
+                        } else {
+                            cell.innerHTML = mappedValueString;
+                        }
+                    }
                     updateDirtyState(true);
                 }
                 return true;
@@ -1723,6 +1818,9 @@ function moveEffectInSlot(zoomDevice, zoomPatch, effectSlot, direction, forceSto
             getScreenCollectionAndUpdateEditPatchTable(zoomDevice);
         }
     }, actionDescription);
+}
+function handleEffectSlotAddLeft(zoomPatch, zoomDevice, effectIDMap, effectSlot) {
+    handleEffectSlotAdd(zoomPatch, zoomDevice, effectIDMap, effectSlot, "left");
 }
 function handleEffectSlotAdd(zoomPatch, zoomDevice, effectIDMap, effectSlot, direction) {
     if (zoomDevice !== undefined && zoomDevice !== currentZoomDevice)
@@ -3140,7 +3238,7 @@ async function start(reconnectTimeoutMilliseconds) {
     effectLists.set("MS-50G", buildEffectIDList("MS-50G"));
     effectLists.set("MS-60B", buildEffectIDList("MS-60B"));
     effectLists.set("MS-70CDR", buildEffectIDList("MS-70CDR"));
-    zoomEffectSelector.setHeading("Amps and Effects");
+    zoomEffectSelector.setHeading("Effects");
     zoomEffectSelector.setEffectList(effectLists);
     let zoomDevices = [];
     setStartupLoadingState("Loading", "Starting MIDI subsystem...");
@@ -3317,6 +3415,69 @@ function hideStartupLoadingOverlay() {
     startupLoadingOverlay.overlay.classList.remove("visible");
     document.body.classList.remove("startup-pending");
 }
+function createOrientationLockOverlay() {
+    let overlay = document.getElementById("orientationLockOverlay");
+    if (!(overlay instanceof HTMLDivElement)) {
+        overlay = document.createElement("div");
+        overlay.id = "orientationLockOverlay";
+        overlay.setAttribute("aria-live", "polite");
+        overlay.innerHTML = `
+      <div class="orientationLockContent">
+        <div class="orientationLockIcon" aria-hidden="true"></div>
+        <div class="orientationLockTitle">Rotate Device</div>
+        <div class="orientationLockDetail">Portrait mode is required.</div>
+      </div>
+    `;
+        document.body.appendChild(overlay);
+    }
+    return overlay;
+}
+const orientationLockOverlay = createOrientationLockOverlay();
+let portraitLockRetryHandlersRegistered = false;
+function shouldEnforcePortraitMode() {
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const shortestSide = Math.min(window.innerWidth, window.innerHeight);
+    const longestSide = Math.max(window.innerWidth, window.innerHeight);
+    // Phone-first rule: enforce on touch devices with phone-like dimensions.
+    return coarsePointer && shortestSide <= 500 && longestSide <= 1100;
+}
+function isLandscapeOrientation() {
+    return window.innerWidth > window.innerHeight;
+}
+async function tryLockPortraitOrientation() {
+    if (!("orientation" in screen))
+        return;
+    let orientation = screen.orientation;
+    if (orientation === undefined || orientation.lock === undefined)
+        return;
+    try {
+        await orientation.lock("portrait");
+    }
+    catch {
+        // Some browsers require user gesture or do not support lock in this context.
+    }
+}
+function ensurePortraitLockRetryHandlers() {
+    if (portraitLockRetryHandlersRegistered)
+        return;
+    const retry = () => {
+        if (shouldEnforcePortraitMode())
+            void tryLockPortraitOrientation();
+    };
+    document.addEventListener("touchstart", retry, { passive: true });
+    document.addEventListener("click", retry, { passive: true });
+    portraitLockRetryHandlersRegistered = true;
+}
+function updatePortraitOrientationEnforcement() {
+    const enforcePortrait = shouldEnforcePortraitMode();
+    const blockedInLandscape = enforcePortrait && isLandscapeOrientation();
+    document.body.classList.toggle("portrait-lock-active", blockedInLandscape);
+    orientationLockOverlay.classList.toggle("visible", blockedInLandscape);
+    if (enforcePortrait) {
+        void tryLockPortraitOrientation();
+        ensurePortraitLockRetryHandlers();
+    }
+}
 if (toplevelContentDiv !== null)
     toplevelContentDiv.style.display = "none";
 setStartupLoadingState("Loading", "Starting Zoom Explorer...");
@@ -3435,15 +3596,25 @@ patchLists.appendChild(patchList.viewElement);
 initializeModernEditorLayout();
 initMobileEffectSelectorButton();
 initMobileOverflowMenu();
-const mobileUILayoutQuery = window.matchMedia("(orientation: portrait) and (max-width: 430px)");
+const mobileUILayoutQuery = window.matchMedia("(max-width: 980px)");
+function shouldUseMobileUILayoutMode() {
+    // Keep mobile UI mode stable across rotation by using the shortest side,
+    // otherwise landscape startup may instantiate desktop parameter rows.
+    const shortestSide = Math.min(window.innerWidth, window.innerHeight);
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    return mobileUILayoutQuery.matches && coarsePointer && shortestSide <= 430;
+}
 function applyAdaptiveUILayoutMode() {
-    document.body.classList.toggle("mobile-ui-mode", mobileUILayoutQuery.matches);
+    document.body.classList.toggle("mobile-ui-mode", shouldUseMobileUILayoutMode());
+    updatePortraitOrientationEnforcement();
 }
 applyAdaptiveUILayoutMode();
 if (mobileUILayoutQuery.addEventListener !== undefined)
     mobileUILayoutQuery.addEventListener("change", applyAdaptiveUILayoutMode);
 window.addEventListener("resize", applyAdaptiveUILayoutMode);
 window.addEventListener("orientationchange", applyAdaptiveUILayoutMode);
+window.addEventListener("resize", updatePortraitOrientationEnforcement);
+window.addEventListener("orientationchange", updatePortraitOrientationEnforcement);
 window.addEventListener("resize", scheduleViewportFitScale);
 window.addEventListener("orientationchange", scheduleViewportFitScale);
 if (patchEditors !== null) {
