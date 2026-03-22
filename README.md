@@ -1,6 +1,18 @@
 # zoom-explorer
 Zoom Explorer is a web-based tool for exploring the Zoom MS Plus series effect pedals, and this Readme contains my findings regarding MIDI-communication with these pedals.
 
+## Fork and project direction
+
+This repository is forked from the original project at [thammer/zoom-explorer](https://github.com/thammer/zoom-explorer) and is now maintained at [matheusbrasil/zoom-explorer](https://github.com/matheusbrasil/zoom-explorer).
+
+The fork goal is to evolve Zoom Explorer into a more user-friendly application that supports:
+
+* desktop web browsers
+* mobile web browsers
+* native desktop/mobile runtimes through Tauri 2.0
+
+The project has been migrated to use Tauri 2.0 and is also prepared for browser deployment on Netlify.
+
 The Zoom Explorer webpage is here: [www.waveformer.net/zoom-explorer](https://www.waveformer.net/zoom-explorer/).
 
 The user-friendly patch manager for the Zoom MS+ pedals is here: [sym.bios.is](https://sym.bios.is/)
@@ -78,6 +90,28 @@ npm run tauri:ios:dev
 ```
 
 If the pedal does not appear, close any other MIDI app that might lock the port, then reconnect the pedal USB cable.
+
+## Web deployment (Netlify)
+
+This project can be deployed as a web browser application on Netlify.
+
+### Build settings
+
+* Build command: `npm run netlify:build`
+* Publish directory: `dist`
+
+### Local verification before deploy
+
+```
+npm install
+npm run build:web
+```
+
+Then verify the generated `dist` output locally:
+
+```
+npm run serve:web
+```
 
 ## Device IDs
 
